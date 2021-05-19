@@ -12,6 +12,6 @@ export MY_SPECTRUM_OPTIONS="--gpu --aff on"
 
 Compile: make  
 run: line_model: ./phase_field INPUT_FILE MACRO_INPUTS  
-     DNS: ibrun -n NUM_GPUS INPUT_FILE MACRO_INPUTS  
+     DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS  
      
      
