@@ -5,6 +5,11 @@ Model comes from a nonlinear transformed Echebarria's model https://journals.aps
 
 Compiler: xl   
 MPI: spectrum MPI (CUDA-aware)  
+
+module load xl cuda spectrum_mpi  
+export CUDA_PATH=$TACC_CUDA_DIR  
+export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
+
 Compile: make  
 run: line_model: ./phase_field INPUT_FILE MACRO_INPUTS  
      DNS: ibrun -n NUM_GPUS INPUT_FILE MACRO_INPUTS  
