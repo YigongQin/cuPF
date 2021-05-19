@@ -828,8 +828,8 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    curandState* dStates;
    int period = params.noi_period;
    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
-   float* random_nums;
-   cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
+  // float* random_nums;
+  // cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
 
   // MPI send/recv buffers
   BC_buffs SR_buffs;
@@ -862,7 +862,7 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    
    //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
    init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
-   gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
+  // gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
    commu_BC(comm, SR_buffs, pM, params.Mt+2, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
    commu_BC(comm, SR_buffs, pM, params.Mt+3, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
@@ -921,7 +921,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(U_old); cudaFree(U_new);
   cudaFree(dpsi);  
-  cudaFree(dStates); cudaFree(random_nums);
+  cudaFree(dStates); //cudaFree(random_nums);
 }
 
 

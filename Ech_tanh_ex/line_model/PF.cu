@@ -559,8 +559,8 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
    curandState* dStates;
    int period = params.noi_period;
    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
-   float* random_nums;
-   cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
+  // float* random_nums;
+   //cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
 
  /* Mac_input Mgpu;
   cudaMalloc((void **)&(Mgpu.Gt),  sizeof(float) * mac.Nt);
@@ -577,7 +577,7 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
    //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
    init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
-   gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
+   //gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
 
    set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi, fnx, fny);
@@ -641,11 +641,11 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(U, U_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(y, y_device, fny * sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(x_device); cudaFree(y_device);
+  cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(psi_old); cudaFree(psi_new);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(U_old); cudaFree(U_new);
-  cudaFree(dpsi);  
+  cudaFree(dpsi); cudaFree(dStates);  
    printf(" ymax %f \n",y[fny-2] );
 
 }
