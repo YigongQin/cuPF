@@ -395,7 +395,7 @@ rhs_U(float* U, float* U_new, float* ph, float* dpsi, int fnx, int fny ){
 // (phi_new , psi_new, U_old, dpsi) with rotten BC  to (phi_old, psi_old, U_new) with rotten BC
 __global__ void
 merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_new, float* dpsi, float* dpsi_new,\
-       float* y, int fnx, int fny, int nt,int num_block_x, int num_block_y){
+       float* y, int fnx, int fny, int nt ){
   
 
   // load old data
@@ -782,8 +782,8 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
    for (int kt=0; kt<params.Mt/2; kt++){
   //  printf("time step %d\n",kt);
     set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi_new, fnx, fny);
-    merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
-                    fnx, fny, 2*kt+1, num_block_x, num_block_y);
+ //   merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
+                    fnx, fny, 2*kt+1);
 
   //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi_new, fnx, fny);
 
@@ -792,8 +792,8 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
 
     // //cudaDeviceSynchronize();
     set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_old, dpsi, fnx, fny);
-    merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
-      fnx, fny, 2*kt+2, num_block_x, num_block_y);
+ //   merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
+      fnx, fny, 2*kt+2);
   }
 
    cudaDeviceSynchronize();
