@@ -11,12 +11,11 @@ using namespace std;
 
 // this is dependent on the time tiling and grid size of one thread block
 // we first finish a non-time tiling version
-#define BLOCK_DIM_X 16
-#define BLOCK_DIM_Y 16
-#define BLOCKSIZE BLOCK_DIM_X*BLOCK_DIM_Y
+
 #define HALO 1//halo in global region
-#define REAL_DIM_X 14 //BLOCK_DIM_X-2*HALO
-#define REAL_DIM_Y 14 //BLOCK_DIM_Y-2*HALO
+#define BLOCK_DIM_X 128
+#define REAL_DIM 126 //BLOCK_DIM_X-2*HALO
+#define SHARESIZE 384
 
 void printCudaInfo();
 extern float toBW(int bytes, float sec);
@@ -400,66 +399,76 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
   
 
   // load old data
-  __shared__ float ps_shared[BLOCKSIZE];
-  __shared__ float ph_shared[BLOCKSIZE];
-  __shared__ float U_shared[BLOCKSIZE];
-  __shared__ float dpsi_shared[BLOCKSIZE];
+  __shared__ float ps_shared[SHARESIZE];
+  __shared__ float ph_shared[SHARESIZE];
+  __shared__ float U_shared[SHARESIZE];
+  __shared__ float dpsi_shared[SHARESIZE];
   // write data into new array and update at last
-  __shared__ float ps_shared_new[BLOCKSIZE];
-  __shared__ float ph_shared_new[BLOCKSIZE];
-  __shared__ float U_shared_new[BLOCKSIZE];
-  __shared__ float dpsi_shared_new[BLOCKSIZE];
+  __shared__ float ps_shared_new[SHARESIZE];
+  __shared__ float ph_shared_new[SHARESIZE];
+  __shared__ float U_shared_new[SHARESIZE];
+  __shared__ float dpsi_shared_new[SHARESIZE];
   
   // local id in thread block
-  int place = threadIdx.x;
-  int local_id_x = place % BLOCK_DIM_X;
-  int local_id_y = place / BLOCK_DIM_X;
+  int place = threadIdx.x; //0, BLOCK_DIM_X
   
   // block id in core region
   int block_id = blockIdx.x; // 0~num_block_x*num_block_y 
-  int block_id_x = block_id % num_block_x;
-  int block_id_y = block_id / num_block_x;
 
-  int block_addr_x = block_id_x * REAL_DIM_X;
-  int block_addr_y = block_id_y * REAL_DIM_Y;
+
+  int block_addr = block_id * REAL_DIM;
+
 
   // location in global addr (i, j)
   // add HALO due to global halo region; then minus the halo region in the thread block; last add the local id
-  int i = block_addr_x + HALO - HALO + local_id_x;
-  int j = block_addr_y + HALO - HALO + local_id_y;
-  int C = j*fnx + i;
-
+  int C = block_addr + HALO - HALO + fnx+ place; // the according location of the global memory note here you
+  // can reach the data only between 0<j<fny-1 
+  int j = C/fnx ; 
+  int i = C - fnx*j;
+  
   // load necessary data
-  if ((i < fnx) && (j < fny)){
+  if ((i < fnx) && (j < fny-1) && (j>0) ){
   ps_shared[place] = ps[C];
   ph_shared[place] = ph[C];
   U_shared[place]  = U[C];
-  dpsi_shared[place]  = dpsi[C];}
+  dpsi_shared[place]  = dpsi[C];
+  
+  ps_shared[place+ BLOCK_DIM_X] = ps[C+fnx];
+  ph_shared[place+ BLOCK_DIM_X] = ph[C+fnx];
+  U_shared[place+ BLOCK_DIM_X]  = U[C+fnx];
+  dpsi_shared[place+ BLOCK_DIM_X]  = dpsi[C+fnx];
+  
+  ps_shared[place -BLOCK_DIM_X] = ps[C-fnx];
+  ph_shared[place-BLOCK_DIM_X] = ph[C-fnx];
+  U_shared[place-BLOCK_DIM_X]  = U[C-fnx];
+  dpsi_shared[place-BLOCK_DIM_X]  = dpsi[C-fnx];  
+  }
   __syncthreads();
   // updaate BC first
   // bottom line
-  if ((j == 0) && (i < fnx)){
-      ps_shared[place] = ps_shared[place + 2*BLOCK_DIM_X];
-      ph_shared[place] = ph_shared[place + 2*BLOCK_DIM_X];
-      dpsi_shared[place] = dpsi_shared[place + 2*BLOCK_DIM_X];
-      U_shared[place] = U_shared[place + 2*BLOCK_DIM_X];
+  /*
+  if ((j == 2) && (i < fnx) &&(place>=2*BLOCK_DIM_X) ){
+      ps_shared[place - 2*BLOCK_DIM_X] = ps_shared[place];
+      ph_shared[place - 2*BLOCK_DIM_X] = ph_shared[place];
+      dpsi_shared[place - 2*BLOCK_DIM_X] = dpsi_shared[place];
+      U_shared[place - 2*BLOCK_DIM_X] = U_shared[place];
 
-      ps[C] = ps_shared[place + 2*BLOCK_DIM_X];
-      ph[C] = ph_shared[place + 2*BLOCK_DIM_X];
-      dpsi[C] = dpsi_shared[place + 2*BLOCK_DIM_X];
-      U[C] = U_shared[place + 2*BLOCK_DIM_X];
+      ps[C-2*fnx] = ps_shared[place];
+      ph[C-2*fnx] = ph_shared[place];
+      dpsi[C-2*fnx] = dpsi_shared[place];
+      U[C-2*fnx] = U_shared[place];
   }
   // up line
-  if ((j == fny - 1)&& (i < fnx)){
-      ps_shared[place] = ps_shared[place - 2*BLOCK_DIM_X];
-      ph_shared[place] = ph_shared[place - 2*BLOCK_DIM_X];
-      dpsi_shared[place]   = dpsi_shared[place - 2*BLOCK_DIM_X];
-      U_shared[place] = U_shared[place - 2*BLOCK_DIM_X];
+  if ((j == fny - 3)&& (i < fnx) &&(place<BLOCK_DIM_X)){
+      ps_shared[place+2*BLOCK_DIM_X] = ps_shared[place];
+      ph_shared[place+2*BLOCK_DIM_X] = ph_shared[place];
+      dpsi_shared[place+2*BLOCK_DIM_X]   = dpsi_shared[place];
+      U_shared[place+2*BLOCK_DIM_X] = U_shared[place];
       
-      ps[C] = ps_shared[place - 2*BLOCK_DIM_X];
-      ph[C] = ph_shared[place - 2*BLOCK_DIM_X];
-      dpsi[C] = dpsi_shared[place - 2*BLOCK_DIM_X];
-      U[C] = U_shared[place - 2*BLOCK_DIM_X];
+      ps[C+2*fnx] = ps_shared[place];
+      ph[C+2*fnx] = ph_shared[place];
+      dpsi[C+2*fnx] = dpsi_shared[place];
+      U[C+2*fnx] = U_shared[place];
   }
    
   __syncthreads();
@@ -490,11 +499,11 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
   }
   
   __syncthreads();
-  
+  */
   // update U
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
     // only update the inner res
-    if ((local_id_x>0)&& (local_id_x<BLOCK_DIM_X-1) && (local_id_y>0) && (local_id_y<BLOCK_DIM_Y-1)) {
+    if (0<place<BLOCK_DIM_X -1) {
       // find the indices of the 8 neighbors for center
         int R=place+1;
         int L=place-1;
@@ -585,7 +594,7 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
 
   //  update psi and phi
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
-      if ((local_id_x>0)&& (local_id_x<BLOCK_DIM_X-1) && (local_id_y>0) && (local_id_y<BLOCK_DIM_Y-1)) {
+      if (0<place<BLOCK_DIM_X -1) {
        // find the indices of the 8 neighbors for center
        int R=place+1;
        int L=place-1;
@@ -758,14 +767,13 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
    printf("nx: %d and ny: %d\n", fnx, fny);
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
    // change the 2d block due to we donn't want to include halo region
-   int num_block_x = (fnx - 2 + REAL_DIM_X - 1) / REAL_DIM_X;
-   int num_block_y = (fny - 2 + REAL_DIM_Y - 1) / REAL_DIM_Y;
-   printf("block_dim_x: %d and block_dim_y: %d\n", REAL_DIM_X, REAL_DIM_Y);
-   printf("block_x: %d and block_y: %d\n", num_block_x, num_block_y);
-   int num_block_2d_s = num_block_x * num_block_y; //each one take one block with (32-2)+ (32-2) ture block within (fnx-2), (fny-2)
+   int num_block_sh = (fnx*(fny-2) + REAL_DIM - 1) / REAL_DIM;
+
+   printf("blocks: %d and block_size: %d\n", num_block_sh, REAL_DIM);
+   
    
    initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
-   set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi, fnx, fny);
+   set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi_new, fnx, fny);
    set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_old, dpsi, fnx, fny);
    rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi_new, fnx, fny, 0);
    cudaDeviceSynchronize();
@@ -773,7 +781,8 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
 
    for (int kt=0; kt<params.Mt/2; kt++){
   //  printf("time step %d\n",kt);
-    merge_PF<<< num_block_2d_s, BLOCKSIZE >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
+    set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi_new, fnx, fny);
+    merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
                     fnx, fny, 2*kt+1, num_block_x, num_block_y);
 
   //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi_new, fnx, fny);
@@ -782,7 +791,8 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
   //  rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_new, phi_new, U_new, psi_old, phi_old, y_device, dpsi, fnx, fny, 2*kt+1 );
 
     // //cudaDeviceSynchronize();
-    merge_PF<<< num_block_2d_s, BLOCKSIZE >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
+    set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_old, dpsi, fnx, fny);
+    merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
       fnx, fny, 2*kt+2, num_block_x, num_block_y);
   }
 
