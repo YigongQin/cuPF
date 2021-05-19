@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May 29 11:10:53 2020
+
+@author: yigongqin
+"""
+
+## NOTE: this is copied from python input, be careful when write C++ code
+
+    G = 0.02                        # thermal gradient        K/um
+    R = 50                          # pulling speed           um/s
+    delta = 0.01                    # strength of the surface tension anisotropy         
+    k = 0.14                        # interface solute partition coefficient
+    c_infm = 7.8                  # shift in melting temperature     K
+    Dl = 3000                       # liquid diffusion coefficient      um**2/s
+    d0 = 0.005                    # capillary length -- associated with GT coefficient   um
+    W0 = 0.14                     # interface thickness      um
+    
+    lT = c_infm*( 1.0/k-1 )/G       # thermal length           um
+    lamd = 5*np.sqrt(2)/8*W0/d0     # coupling constant
+    tau0 = 0.6267*lamd*W0**2/Dl     # time scale               s
+    
+    c_infty = 3
+    # non-dimensionalized parameters based on W0 and tau0
+    
+    R_tilde = R*tau0/W0
+    Dl_tilde = Dl*tau0/W0**2
+    lT_tilde = lT/W0
+    
+    eps = 1e-8                      	# divide-by-zero treatment
+    alpha0 = 0                    	# misorientation angle in degree
+    
+    dx = 0.8                            # mesh width
+    dt = 0.8*(dx)**2/(4*Dl_tilde)       # time step size for forward euler
+
+    asp_ratio = 0.62                  	# aspect ratio
+   # nx = 128            		# number of cells in x, number of grids is nx+1
+    ny = asp_ratio*nx
+
+
+    lxd = dx*W0*nx                     # horizontal length in micron
+    lyd = asp_ratio*lxd
+
+    #Mt = 100000                      	# total  number of time steps
+
+    eta = 0.04  
+    seed_val = 200              		# magnitude of noise
+    noi_period = 200
+    U0 = -1                		# initial value for U, -1 < U0 < 0
+    nts = 10				# number snapshots to save, Mt/nts must be int
+    ictype = 0                   	# initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
+    filename = 'phase_field.mat'
+    direc = './'                        # saving directory
+    
+    ha_wd = 10;
+    xmin = -960
+    ymin = -595.2
+    Ti = 877.6
+    num_theta = 75
+    Nx = 513
+    Ny = 308
+    Nt = 80
+
