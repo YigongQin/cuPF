@@ -10,11 +10,6 @@
 #define TIPP 100
 #define BLANK 0.3
 
-#define HALO 1//halo in global region
-#define BLOCK_DIM_X 128
-#define REAL_DIM 126 //BLOCK_DIM_X-2*HALO
-#define SHARESIZE 384
-
 using namespace std;
 void printCudaInfo();
 extern float toBW(int bytes, float sec);
@@ -430,238 +425,7 @@ rhs_U(float* U, float* U_new, float* ph, float* dpsi, int fnx, int fny ){
 }
 
 
-__global__ void
-merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_new, float* dpsi, float* dpsi_new,\
-       float* y, int fnx, int fny, int nt,curandState* states, float intR, float lT_tilde  ){
-  
 
-  // load old data
-  __shared__ float ps_shared[SHARESIZE];
-  __shared__ float ph_shared[SHARESIZE];
-  __shared__ float U_shared[SHARESIZE];
-  __shared__ float dpsi_shared[SHARESIZE];
-  // write data into new array and update at last
-  __shared__ float ps_shared_new[SHARESIZE];
-  __shared__ float ph_shared_new[SHARESIZE];
-  __shared__ float U_shared_new[SHARESIZE];
-  __shared__ float dpsi_shared_new[SHARESIZE];
-  
-  // local id in thread block
-  int tid = threadIdx.x; //0, BLOCK_DIM_X
-  
-  // block id in core region
-  int block_id = blockIdx.x; // 0~num_block_x*num_block_y 
-
-  int block_addr = block_id * REAL_DIM;
-
-
-  // location in global addr (i, j)
-  // add HALO due to global halo region; then minus the halo region in the thread block; last add the local id
-  int C = block_addr + HALO - HALO + fnx+ tid; // the according location of the global memory note here you
-  // can reach the data only between 0<j<fny-1 
-  int j = C/fnx ; 
-  int i = C - fnx*j;
-
-  int place = tid + BLOCK_DIM_X;
-  
-  // load necessary data
-  if ((i < fnx) && (j < fny-1) && (j>0) ){
-  ps_shared[place] = ps[C];
-  ph_shared[place] = ph[C];
-  U_shared[place]  = U[C];
-  dpsi_shared[place]  = dpsi[C];
-  
-  ps_shared[place+ BLOCK_DIM_X] = ps[C+fnx];
-  ph_shared[place+ BLOCK_DIM_X] = ph[C+fnx];
-  U_shared[place+ BLOCK_DIM_X]  = U[C+fnx];
-  dpsi_shared[place+ BLOCK_DIM_X]  = dpsi[C+fnx];
-  
-  ps_shared[place -BLOCK_DIM_X] = ps[C-fnx];
-  ph_shared[place-BLOCK_DIM_X] = ph[C-fnx];
-  U_shared[place-BLOCK_DIM_X]  = U[C-fnx];
-  dpsi_shared[place-BLOCK_DIM_X]  = dpsi[C-fnx];  
-  }
-  __syncthreads();
-  // update U
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
-    // only update the inner res
-    if ( (0<tid) && (tid<BLOCK_DIM_X -1) ) {
-      // find the indices of the 8 neighbors for center
-        int R=place+1;
-        int L=place-1;
-        int T=place+BLOCK_DIM_X;
-        int B=place-BLOCK_DIM_X;
-        float hi = cP.hi;
-        float Dl_tilde = cP.Dl_tilde;
-        float k = cP.k;
-        float nx, nz;
-        float eps = cP.eps;
-        // =============================================================
-        // 1. ANISOTROPIC DIFFUSION
-        // =============================================================
-
-        // these ph's are defined on cell centers
-        // these ps's are defined on cell centers
-        float psipjp=( ps_shared[place] + ps_shared[R] + ps_shared[T] + ps_shared[T+1] ) * 0.25f;
-        float psipjm=( ps_shared[place] + ps_shared[R] + ps_shared[B] + ps_shared[B+1] ) * 0.25f;
-        float psimjp=( ps_shared[place] + ps_shared[L] + ps_shared[T-1] + ps_shared[T] ) * 0.25f;
-        float psimjm=( ps_shared[place] + ps_shared[L] + ps_shared[B-1] + ps_shared[B] ) * 0.25f;
-
-        float phipjp=( ph_shared[place] + ph_shared[R] + ph_shared[T] + ph_shared[T+1] ) * 0.25f;
-        float phipjm=( ph_shared[place] + ph_shared[R] + ph_shared[B] + ph_shared[B+1] ) * 0.25f;
-        float phimjp=( ph_shared[place] + ph_shared[L] + ph_shared[T-1] + ph_shared[T] ) * 0.25f;
-        float phimjm=( ph_shared[place] + ph_shared[L] + ph_shared[B-1] + ph_shared[B] ) * 0.25f;
-
-        // if (C==1001){
-        //   printf("detailed check of neighbours 3\n");
-        //   printf("R: %f ; L:%f ; T: %f ; B: %f \n", phipjp, phipjm, phimjp, phimjm);
-        // }
-        float jat    = 0.5f*(1.0f+(1.0f-k)*U_shared[place])*(1.0f-ph_shared[place]*ph_shared[place])*dpsi_shared[place];
-        /*# ============================
-        # right edge flux (i+1/2, j)
-        # ============================*/
-        float phx = ph_shared[R]-ph_shared[place];
-        float phz = phipjp - phipjm;
-        float phn2 = phx*phx + phz*phz;
-        if (phn2 > eps) {nx = phx / sqrtf(phn2);}
-                   else {nx = 0.0f;}
-
-        float psx = ps_shared[R]-ps_shared[place];
-        float psz = psipjp - psipjm;
-
-        float A  = atheta( phx,phz);
-        float Ap = aptheta(phx,phz);
-        float JR = A * ( A*psx - Ap*psz );
-
-        float jat_ip = 0.5f*(1.0f+(1.0f-k)*U_shared[R])*(1.0f-ph_shared[R]*ph_shared[R])*dpsi_shared[R];	
-        float UR = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[R])*(U_shared[R]-U_shared[place]) + 0.5f*(jat + jat_ip)*nx;
-    	 
-    	 
-        /* ============================
-        # left edge flux (i-1/2, j)
-        # ============================*/
-        phx = ph_shared[place]-ph_shared[L];
-        phz = phimjp - phimjm;
-        phn2 = phx*phx + phz*phz;
-        if (phn2 > eps) {nx = phx / sqrtf(phn2);}
-                   else {nx = 0.0f;}
-
-        psx = ps_shared[place]-ps_shared[L];
-        psz = psimjp - psimjm;
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JL = A * ( A*psx - Ap*psz );
-        
-        float jat_im = 0.5f*(1.0f+(1.0f-k)*U_shared[L])*(1.0f-ph_shared[L]*ph_shared[L])*dpsi_shared[L];
-        float UL = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[L])*(U_shared[place]-U_shared[L]) + 0.5f*(jat + jat_im)*nx;
-    	 
-    	 
-        /*# ============================
-        # top edge flux (i, j+1/2)
-        # ============================*/     
-        phx = phipjp - phimjp;
-        phz = ph_shared[T]-ph_shared[place];
-        phn2 = phx*phx + phz*phz;
-        if (phn2 > eps) {nz = phz / sqrtf(phn2);}
-                   else {nz = 0.0f;}    	
-
-        psx = psipjp - psimjp;
-        psz = ps_shared[T]-ps_shared[place];
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JT = A * ( A*psz + Ap*psx );
-  
-        float jat_jp = 0.5f*(1.0f+(1.0f-k)*U_shared[T])*(1.0f-ph_shared[T]*ph_shared[T])*dpsi_shared[T];      
-        
-        float UT = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[T])*(U_shared[T]-U_shared[place]) + 0.5f*(jat + jat_jp)*nz;
-    	 
-    	 
-        /*# ============================
-        # bottom edge flux (i, j-1/2)
-        # ============================*/  
-        phx = phipjm - phimjm;
-        phz = ph_shared[place]-ph_shared[B];
-        phn2 = phx*phx + phz*phz;
-        if (phn2 > eps) {nz = phz / sqrtf(phn2);}
-                   else {nz = 0.0f;} 
-
-        psx = psipjm - psimjm;
-        psz = ps_shared[place]-ps_shared[B];
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JB = A * ( A*psz + Ap*psx );
-
-        float jat_jm = 0.5f*(1.0f+(1.0f-k)*U_shared[B])*(1.0f-ph_shared[B]*ph_shared[B])*dpsi_shared[B];              
-        float UB = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[B])*(U_shared[place]-U_shared[B]) + 0.5f*(jat + jat_jm)*nz;
-        
-        float rhs_U = ( (UR-UL) + (UT-UB) ) * hi + cP.sqrt2 * jat;
-        float tau_U = (1.0f+cP.k) - (1.0f-cP.k)*ph_shared[place];
-
-        U_shared_new[place] = U_shared[place] + cP.dt * ( rhs_U / tau_U );
-       // U_new[C] = U_shared_new[place];
-        
-  __syncthreads();
-
-
-         /*# =============================================================
-        #
-        # 2. EXTRA TERM: sqrt2 * atheta**2 * phi * |grad psi|^2
-        #
-        # =============================================================
-        # d(phi)/dx  d(psi)/dx d(phi)/dz  d(psi)/dz at nodes (i,j)*/
-        float phxn = ( ph_shared[R] - ph_shared[L] ) * 0.5f;
-        float phzn = ( ph_shared[T] - ph_shared[B] ) * 0.5f;
-        float psxn = ( ps_shared[R] - ps_shared[L] ) * 0.5f;
-        float pszn = ( ps_shared[T] - ps_shared[B] ) * 0.5f;
-
-        float A2 = atheta(phxn,phzn);
-        A2 = A2*A2;
-        float gradps2 = (psxn)*(psxn) + (pszn)*(pszn);
-        float extra =  -cP.sqrt2 * A2 * ph_shared[place] * gradps2;
-
-        /*# =============================================================
-        #
-        # 3. double well (transformed): sqrt2 * phi + nonlinear terms
-        #
-        # =============================================================*/
-
-       // float Up = (y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-        float Up = (y[j]/cP.W0 - intR )/lT_tilde;
-
-        float rhs_psi = ((JR-JL) + (JT-JB) + extra) * cP.hi*cP.hi + \
-                   cP.sqrt2*ph_shared[place] - cP.lamd*(1.0f-ph_shared[place]*ph_shared[place])*cP.sqrt2*(U_shared_new[place] + Up);
-
-        /*# =============================================================
-        #
-        # 4. dpsi/dt term
-        #
-        # =============================================================*/
-        float tp = (1.0f-(1.0f-cP.k)*Up);
-        float tau_psi;
-        if (tp >= cP.k){tau_psi = tp*A2;}
-               else {tau_psi = cP.k*A2;}
-        
-        dpsi_shared_new[place] = rhs_psi / tau_psi;
-
-        float rand;
-        if ( ( ph[C]>-0.995 ) && ( ph[C]<0.995 ) ) {rand= cP.dt_sqrt*cP.hi*cP.eta*(curand_uniform(states+C)-0.5);}
-        else {rand = 0.0f;}
-       // ps_new[C] = ps[C] +  cP.dt * dpsi[C] + rand; 
-
-        ps_shared_new[place] = ps_shared[place] +  cP.dt * dpsi_shared_new[place] + rand;
-        ph_shared_new[place] = tanhf(ps_shared_new[place]/cP.sqrt2);
-
-        ps_new[C] = ps_shared_new[place];
-        ph_new[C] = ph_shared_new[place];
-        dpsi_new[C] = dpsi_shared_new[place];
-        U_new[C] = U_shared_new[place];
-         }
-       }
-
-}
 
 __global__ void
 ave_x(float* phi, float* meanx, int fnx, int fny){
@@ -765,8 +529,7 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
   float* phi_old;// = NULL;
   float* phi_new;// = NULL;
   float* dpsi;// = NULL;
-  float* dpsi_new;   
- // allocate x, y, phi, psi, U related params
+  // allocate x, y, phi, psi, U related params
   int length = fnx*fny;
 
   cudaMalloc((void **)&x_device, sizeof(float) * fnx);
@@ -779,7 +542,7 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
   cudaMalloc((void **)&psi_new,  sizeof(float) * length);
   cudaMalloc((void **)&U_new,    sizeof(float) * length);
   cudaMalloc((void **)&dpsi,    sizeof(float) * length);
-  cudaMalloc((void **)&dpsi_new,    sizeof(float) * length);
+
   cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
   cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
   cudaMemcpy(y_device2, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
@@ -811,17 +574,16 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
    int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
    int num_block_2d = (fnx*fny+blocksize_2d-1)/blocksize_2d;
    int num_block_1d = (fnx+fny+blocksize_1d-1)/blocksize_1d;
-   int num_block_sh = (fnx*(fny-2) + REAL_DIM - 1) / REAL_DIM;
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
    //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
    init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
    //gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
 
-   set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi_new, fnx, fny);
+   set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi, fnx, fny);
    set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_old, dpsi, fnx, fny);
 
-   rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi_new, fnx, fny, 0, dStates, intR, lT_tilde );
+   rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi, fnx, fny, 0, dStates, intR, lT_tilde );
 
    int cur_tip = 1; //params.ha_wd;
    int tip_thres = (int) ((1-BLANK)*fny);
@@ -840,27 +602,23 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
     //  printf("time step %d\n",kt);
     // rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi, fnx, fny, 2*kt, random_nums );
      //cudaDeviceSynchronize();
-     set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_old, dpsi_new, fnx, fny);
+     set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_old, dpsi, fnx, fny);
      //cudaDeviceSynchronize();
-    // rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
+     rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
 
      //cudaDeviceSynchronize();
      varGR( (2*kt+1)*params.dt*params.tau0, Dt, params, mac,&intR, &lT_tilde);
     // if ((2*kt+2)%10000==0) printf("lT, intR, %f, %f \n",lT_tilde,intR);
-    // rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_new, phi_new, U_new, psi_old, phi_old, y_device, dpsi, fnx, fny, 2*kt+1, dStates, intR, lT_tilde );
-     merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
-                    fnx, fny, 2*kt+1, dStates, intR, lT_tilde);
+     rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_new, phi_new, U_new, psi_old, phi_old, y_device, dpsi, fnx, fny, 2*kt+1, dStates, intR, lT_tilde );
      //gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
      //cudaDeviceSynchronize();
      set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_new, dpsi, fnx, fny);
      //cudaDeviceSynchronize();
-    // rhs_U<<< num_block_2d, blocksize_2d >>>(U_new, U_old, phi_old, dpsi, fnx, fny);
+     rhs_U<<< num_block_2d, blocksize_2d >>>(U_new, U_old, phi_old, dpsi, fnx, fny);
      //cudaDeviceSynchronize();
      varGR( (2*kt+2)*params.dt*params.tau0, Dt, params, mac,&intR, &lT_tilde);
-    // rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi, fnx, fny, 2*kt+2, dStates, intR, lT_tilde );
+     rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, y_device, dpsi, fnx, fny, 2*kt+2, dStates, intR, lT_tilde );
 
-     merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
-                    fnx, fny, 2*kt+2, dStates, intR, lT_tilde);
 
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
@@ -887,7 +645,7 @@ void setup(Mac_input mac, GlobalConstants params, int fnx, int fny, float* x, fl
   cudaFree(psi_old); cudaFree(psi_new);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(U_old); cudaFree(U_new);
-  cudaFree(dpsi); cudaFree(dStates); cudaFree(dpsi_new); 
+  cudaFree(dpsi); cudaFree(dStates);  
    printf(" ymax %f \n",y[fny-2] );
 
 }
