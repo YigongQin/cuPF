@@ -521,6 +521,12 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         // =============================================================
 
         // these ph's are defined on cell centers
+        // these ps's are defined on cell centers
+        float psipjp=( ps_shared[place] + ps_shared[R] + ps_shared[T] + ps_shared[T+1] ) * 0.25f;
+        float psipjm=( ps_shared[place] + ps_shared[R] + ps_shared[B] + ps_shared[B+1] ) * 0.25f;
+        float psimjp=( ps_shared[place] + ps_shared[L] + ps_shared[T-1] + ps_shared[T] ) * 0.25f;
+        float psimjm=( ps_shared[place] + ps_shared[L] + ps_shared[B-1] + ps_shared[B] ) * 0.25f;
+
         float phipjp=( ph_shared[place] + ph_shared[R] + ph_shared[T] + ph_shared[T+1] ) * 0.25f;
         float phipjm=( ph_shared[place] + ph_shared[R] + ph_shared[B] + ph_shared[B+1] ) * 0.25f;
         float phimjp=( ph_shared[place] + ph_shared[L] + ph_shared[T-1] + ph_shared[T] ) * 0.25f;
@@ -539,7 +545,14 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         float phn2 = phx*phx + phz*phz;
         if (phn2 > eps) {nx = phx / sqrtf(phn2);}
                    else {nx = 0.0f;}
-        
+
+        float psx = ps_shared[R]-ps_shared[place];
+        float psz = psipjp - psipjm;
+
+        float A  = atheta( phx,phz);
+        float Ap = aptheta(phx,phz);
+        float JR = A * ( A*psx - Ap*psz );
+
         float jat_ip = 0.5f*(1.0f+(1.0f-k)*U_shared[R])*(1.0f-ph_shared[R]*ph_shared[R])*dpsi_shared[R];	
         float UR = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[R])*(U_shared[R]-U_shared[place]) + 0.5f*(jat + jat_ip)*nx;
     	 
@@ -552,6 +565,13 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         phn2 = phx*phx + phz*phz;
         if (phn2 > eps) {nx = phx / sqrtf(phn2);}
                    else {nx = 0.0f;}
+
+        psx = ps_shared[place]-ps_shared[L];
+        psz = psimjp - psimjm;
+
+        A  = atheta( phx,phz);
+        Ap = aptheta(phx,phz);
+        float JL = A * ( A*psx - Ap*psz );
         
         float jat_im = 0.5f*(1.0f+(1.0f-k)*U_shared[L])*(1.0f-ph_shared[L]*ph_shared[L])*dpsi_shared[L];
         float UL = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[L])*(U_shared[place]-U_shared[L]) + 0.5f*(jat + jat_im)*nx;
@@ -565,6 +585,13 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         phn2 = phx*phx + phz*phz;
         if (phn2 > eps) {nz = phz / sqrtf(phn2);}
                    else {nz = 0.0f;}    	
+
+        psx = psipjp - psimjp;
+        psz = ps_shared[T]-ps_shared[place];
+
+        A  = atheta( phx,phz);
+        Ap = aptheta(phx,phz);
+        float JT = A * ( A*psz + Ap*psx );
   
         float jat_jp = 0.5f*(1.0f+(1.0f-k)*U_shared[T])*(1.0f-ph_shared[T]*ph_shared[T])*dpsi_shared[T];      
         
@@ -580,6 +607,13 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         if (phn2 > eps) {nz = phz / sqrtf(phn2);}
                    else {nz = 0.0f;} 
 
+        psx = psipjm - psimjm;
+        psz = ps_shared[place]-ps_shared[B];
+
+        A  = atheta( phx,phz);
+        Ap = aptheta(phx,phz);
+        float JB = A * ( A*psz + Ap*psx );
+
         float jat_jm = 0.5f*(1.0f+(1.0f-k)*U_shared[B])*(1.0f-ph_shared[B]*ph_shared[B])*dpsi_shared[B];              
         float UB = hi*Dl_tilde*0.5f*(2.0f - ph_shared[place] - ph_shared[B])*(U_shared[place]-U_shared[B]) + 0.5f*(jat + jat_jm)*nz;
         
@@ -587,88 +621,13 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         float tau_U = (1.0f+cP.k) - (1.0f-cP.k)*ph_shared[place];
 
         U_shared_new[place] = U_shared[place] + cP.dt * ( rhs_U / tau_U );
-        U_new[C] = U_shared_new[place];
+       // U_new[C] = U_shared_new[place];
         
-        
-      }
-   }
   __syncthreads();
 
-  //  update psi and phi
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
-    if ( (0<tid) && (tid<BLOCK_DIM_X -1) ){
-       // find the indices of the 8 neighbors for center
-       int R=place+1;
-       int L=place-1;
-       int T=place+BLOCK_DIM_X;
-       int B=place-BLOCK_DIM_X;
-        // =============================================================
-        // 1. ANISOTROPIC DIFFUSION
-        // =============================================================
 
-        // these ps's are defined on cell centers
-        float psipjp=( ps_shared[place] + ps_shared[R] + ps_shared[T] + ps_shared[T+1] ) * 0.25f;
-        float psipjm=( ps_shared[place] + ps_shared[R] + ps_shared[B] + ps_shared[B+1] ) * 0.25f;
-        float psimjp=( ps_shared[place] + ps_shared[L] + ps_shared[T-1] + ps_shared[T] ) * 0.25f;
-        float psimjm=( ps_shared[place] + ps_shared[L] + ps_shared[B-1] + ps_shared[B] ) * 0.25f;
 
-        float phipjp=( ph_shared[place] + ph_shared[R] + ph_shared[T] + ph_shared[T+1] ) * 0.25f;
-        float phipjm=( ph_shared[place] + ph_shared[R] + ph_shared[B] + ph_shared[B+1] ) * 0.25f;
-        float phimjp=( ph_shared[place] + ph_shared[L] + ph_shared[T-1] + ph_shared[T] ) * 0.25f;
-        float phimjm=( ph_shared[place] + ph_shared[L] + ph_shared[B-1] + ph_shared[B] ) * 0.25f;
-        
-        // if (C==132){
-        //   printf("detailed check of neighbours 2\n");
-        //   printf("R: %f ; L:%f ; T: %f ; B: %f \n", psipjp, psipjm, psimjp, psimjm);
-        // }
 
-        // ============================
-        // right edge flux
-        // ============================
-        float psx = ps_shared[R]-ps_shared[place];
-        float psz = psipjp - psipjm;
-        float phx = ph_shared[R]-ph_shared[place];
-        float phz = phipjp - phipjm;
-
-        float A  = atheta( phx,phz);
-        float Ap = aptheta(phx,phz);
-        float JR = A * ( A*psx - Ap*psz );
-        
-        // ============================
-        // left edge flux
-        // ============================
-        psx = ps_shared[place]-ps_shared[L];
-        psz = psimjp - psimjm;
-        phx = ph_shared[place]-ph_shared[L];
-        phz = phimjp - phimjm; 
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JL = A * ( A*psx - Ap*psz );
-
-        // ============================
-        // top edge flux
-        // ============================
-        psx = psipjp - psimjp;
-        psz = ps_shared[T]-ps_shared[place];
-        phx = phipjp - phimjp;
-        phz = ph_shared[T]-ph_shared[place];
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JT = A * ( A*psz + Ap*psx );
-
-        // ============================
-        // bottom edge flux
-        // ============================
-        psx = psipjm - psimjm;
-        psz = ps_shared[place]-ps_shared[B];
-        phx = phipjm - phimjm;
-        phz = ph_shared[place]-ph_shared[B];
-
-        A  = atheta( phx,phz);
-        Ap = aptheta(phx,phz);
-        float JB = A * ( A*psz + Ap*psx );
 
          /*# =============================================================
         #
@@ -714,7 +673,7 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
         ps_new[C] = ps_shared_new[place];
         ph_new[C] = ph_shared_new[place];
         dpsi_new[C] = dpsi_shared_new[place];
-
+        U_new[C] = U_shared_new[place];
          }
        }
 
