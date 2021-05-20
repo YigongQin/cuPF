@@ -505,7 +505,7 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
   // update U
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
     // only update the inner res
-    if (0<tid<BLOCK_DIM_X -1) {
+    if ( (0<tid) && (tid<BLOCK_DIM_X -1) ) {
       // find the indices of the 8 neighbors for center
         int R=place+1;
         int L=place-1;
@@ -596,7 +596,7 @@ merge_PF(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* U_
 
   //  update psi and phi
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) {
-      if (0<tid<BLOCK_DIM_X -1) {
+    if ( (0<tid) && (tid<BLOCK_DIM_X -1) ){
        // find the indices of the 8 neighbors for center
        int R=place+1;
        int L=place-1;
@@ -783,7 +783,7 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
 
    for (int kt=0; kt<params.Mt/2; kt++){
   //  printf("time step %d\n",kt);
-    set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_new, dpsi_new, fnx, fny);
+    set_BC<<< num_block_1d, blocksize_1d >>>(psi_new, phi_new, U_old, dpsi_new, fnx, fny);
     merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_new, phi_new, U_old, psi_old, phi_old, U_new, dpsi_new, dpsi, y_device, \
                     fnx, fny, 2*kt+1);
 
@@ -793,7 +793,7 @@ void setup(GlobalConstants params, int fnx, int fny, float* x, float* y, float* 
   //  rhs_psi<<< num_block_2d, blocksize_2d >>>(psi_new, phi_new, U_new, psi_old, phi_old, y_device, dpsi, fnx, fny, 2*kt+1 );
 
     // //cudaDeviceSynchronize();
-    set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_old, dpsi, fnx, fny);
+    set_BC<<< num_block_1d, blocksize_1d >>>(psi_old, phi_old, U_new, dpsi, fnx, fny);
     merge_PF<<< num_block_sh, BLOCK_DIM_X >>>(psi_old, phi_old, U_new, psi_new, phi_new, U_old, dpsi, dpsi_new, y_device, \
       fnx, fny, 2*kt+2);
   }
