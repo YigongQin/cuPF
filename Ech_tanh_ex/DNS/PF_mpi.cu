@@ -550,19 +550,22 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
 
         if ( (ph_new[C] > LS) && (ph[C] < LS) ){
            if ( (alpha<ACR) && (alpha>-ACR) ){
-            int n1 = 0; int n2=0; int n3=0;
+            float n1 = 0.0f; float n2=0.0f; float n3=0.0f;
             float alpha1 = 0.0f; float alpha2 = 0.0f; float alpha3 = 0.0f;
               for (int locj=-1;locj<2;locj++){
                   for (int loci=-1;loci<2;loci++){
                      int os_loc = locj*fnx+loci+C;
+                     float weight;
+                     if ((loci+locj)%2==0) {weight=0.7f;}
+                     else {weight=1.0f;}
                      if (ph[os_loc]>LS){
                        float atemp = alpha_m[os_loc];
-                       if      (alpha1 == 0.0f){n1+=1; alpha1=atemp;}
-                       else if ( (atemp-alpha1<ACR) && (atemp-alpha1>-ACR) ){n1+=1;}
-                       else if (alpha2 == 0.0f){n2+=1; alpha2=atemp;}
-                       else if ( (atemp-alpha2<ACR) && (atemp-alpha2>-ACR) ){n2+=1;}
-                       else if (alpha3 == 0.0f){n3+=1; alpha3=atemp;}
-                       else if ( (atemp-alpha3<ACR) && (atemp-alpha3>-ACR) ){n3+=1;}
+                       if      (alpha1 == 0.0f){n1+=weight; alpha1=atemp;}
+                       else if ( (atemp-alpha1<ACR) && (atemp-alpha1>-ACR) ){n1+=weight;}
+                       else if (alpha2 == 0.0f){n2+=weight; alpha2=atemp;}
+                       else if ( (atemp-alpha2<ACR) && (atemp-alpha2>-ACR) ){n2+=weight;}
+                       else if (alpha3 == 0.0f){n3+=weight; alpha3=atemp;}
+                       else if ( (atemp-alpha3<ACR) && (atemp-alpha3>-ACR) ){n3+=weight;}
                        else{printf("case not closed!!!\n");}
                      }  
              }}
