@@ -177,7 +177,8 @@ int main(int argc, char** argv)
 
         getParam(lineText, "Nx", temp_Nx);
         getParam(lineText, "Ny", temp_Ny);
-        getParam(lineText, "Nt", temp_Nt); 
+        getParam(lineText, "Nt", temp_Nt);
+//        getParam(lineText, "cfl", params.cfl); 
     }
     
     float dxd = params.dx*params.W0;
@@ -225,7 +226,7 @@ int main(int argc, char** argv)
     params.R_tilde = params.R*params.tau0/params.W0;
     params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
     params.lT_tilde = params.lT/params.W0;
-    params.dt = 0.25*0.8*pow(params.dx,2)/(4*params.Dl_tilde);
+    params.dt = 0.8*pow(params.dx,2)/(4*params.Dl_tilde);
 //    params.ny = (int) (params.asp_ratio*params.nx);
     params.lxd = -params.xmin*0.99; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
@@ -262,6 +263,7 @@ int main(int argc, char** argv)
     std::cout<<"asp_ratio = "<<params.asp_ratio<<std::endl;
     std::cout<<"nx = "<<params.nx<<std::endl;
     std::cout<<"ny = "<<params.ny<<std::endl;
+    //std::cout<<"cfl_coeff = "<<params.cfl<<std::endl;
     std::cout<<"Mt = "<<params.Mt<<std::endl;
     std::cout<<"eta = "<<params.eta<<std::endl;
     std::cout<<"U0 = "<<params.U0<<std::endl;
@@ -411,8 +413,8 @@ int main(int argc, char** argv)
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
       if (theta_id>=num_theta) printf("theta overflow \n");
-      alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
-     // alpha[id] = theta_arr[theta_id];
+     // alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
+      alpha[id] = theta_arr[theta_id];
        }
 
       else {alpha[id]=0.0f;}

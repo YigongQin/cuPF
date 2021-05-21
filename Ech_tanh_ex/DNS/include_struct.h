@@ -28,7 +28,8 @@ struct GlobalConstants {
   float lx; 
   float lyd; 
   float eta; 
-  float U0; 
+  float U0;
+ // float cfl; 
   // parameters that are not in the input file
   float hi;
   float cosa;
