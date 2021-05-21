@@ -15,4 +15,5 @@ run: line_model: ./phase_field INPUT_FILE MACRO_INPUTS
      DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS  
      
      
-![Alt text](https://github.com/YigongQin/PF_cpp/edit/main/timing.png?raw=true  "Timing")
+<img width="556" alt="timing" src="https://user-images.githubusercontent.com/62076142/119079425-b1549500-b9bd-11eb-9743-768b549f3645.png">
+
