@@ -16,85 +16,8 @@
 #include <hdf5.h>
 using namespace std;
 #define LS -0.995
+#include "include_struct.h"
 
-
-struct GlobalConstants {
-  int nx;
-  int ny;
-  int Mt;
-  int nts; 
-  int ictype;
-  float G;
-  float R;
-  float delta;
-  float k;
-  float c_infm;
-  float Dl;
-  float d0;
-  float W0;
-  float lT;
-  float lamd; 
-  float tau0;
-  float c_infty; 
-  float R_tilde;
-  float Dl_tilde; 
-  float lT_tilde; 
-  float eps; 
-  float alpha0; 
-  float dx; 
-  float dt; 
-  float asp_ratio; 
-  float lxd;
-  float lx; 
-  float lyd; 
-  float eta; 
-  float U0; 
-  // parameters that are not in the input file
-  float hi;
-  float cosa;
-  float sina;
-  float sqrt2;
-  float a_s;
-  float epsilon;
-  float a_12;
-  float dt_sqrt;
-  int noi_period;
-  int seed_val;
-  // MPI-related
-  float Ti;
-  int ha_wd;
-  int Mnx;
-  int Mny;
-  int Mnt;
-  float xmin;
-  float ymin;
-  
-};
-
-struct params_MPI{
-
-    int rank;
-    int px;
-    int py;
-    int nproc;
-    int nprocx;
-    int nprocy;
-    int nx_loc;
-    int ny_loc;
-};
-
-struct Mac_input{
-  int Nx;
-  int Ny;
-  int Nt;
-  float* X_mac; 
-  float* Y_mac; 
-  float* t_mac;
-  float* alpha_mac;
-  float* psi_mac;
-  float* U_mac;
-  float* T_3D;
-};
 
 
 void setup(MPI_Comm comm, params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, float* alpha);
@@ -302,7 +225,7 @@ int main(int argc, char** argv)
     params.R_tilde = params.R*params.tau0/params.W0;
     params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
     params.lT_tilde = params.lT/params.W0;
-    params.dt = 0.8*pow(params.dx,2)/(4*params.Dl_tilde);
+    params.dt = 0.25*0.8*pow(params.dx,2)/(4*params.Dl_tilde);
 //    params.ny = (int) (params.asp_ratio*params.nx);
     params.lxd = -params.xmin*0.99; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
@@ -452,6 +375,11 @@ int main(int argc, char** argv)
     // initialize the angles:
     float grain_gap = M_PI/2.0/num_theta;     
     printf("grain gap %f \n", grain_gap);
+    float* theta_arr=(float*) malloc(num_theta* sizeof(float));
+    for (int i=0; i<num_theta; i++){
+        theta_arr[i] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
+    }
+
     float Dx = mac.X_mac[1] - mac.X_mac[0];
     float Dy = mac.Y_mac[1] - mac.Y_mac[0];
     for(int id=0; id<length; id++){
@@ -482,7 +410,9 @@ int main(int argc, char** argv)
                +delta_x*(1.0f-delta_y)*mac.alpha_mac[ offset+1 ] +   delta_x*delta_y*mac.alpha_mac[ offset+mac.Nx+1 ];
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
-      alpha[id] = theta_id*grain_gap-M_PI/2.0;
+      if (theta_id>=num_theta) printf("theta overflow \n");
+      alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
+     // alpha[id] = theta_arr[theta_id];
        }
 
       else {alpha[id]=0.0f;}
