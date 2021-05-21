@@ -10,8 +10,8 @@ module load xl cuda spectrum_mpi
 export CUDA_PATH=$TACC_CUDA_DIR  
 export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
 
-Before running micro code, generate input files in MACRO_INPUTS_DIR:
-mkdir MACRO_INPUTS_DIR            (change the dir in the new_Ini_DNS.py file)
+Before running micro code, generate input files in MACRO_INPUTS_DIR:  
+mkdir MACRO_INPUTS_DIR            (change the dir in the new_Ini_DNS.py file)  
 python3 new_Ini_DNS.py MACRO_MAT_FILE
 
 Compile: make  
