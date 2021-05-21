@@ -10,9 +10,13 @@ module load xl cuda spectrum_mpi
 export CUDA_PATH=$TACC_CUDA_DIR  
 export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
 
+Before running micro code, generate input files in MACRO_INPUTS_DIR:
+mkdir MACRO_INPUTS_DIR            (change the dir in the new_Ini_DNS.py file)
+python3 new_Ini_DNS.py MACRO_MAT_FILE
+
 Compile: make  
-run: line_model: ./phase_field INPUT_FILE MACRO_INPUTS  
-     DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS  
+line_model: ./phase_field INPUT_FILE MACRO_INPUTS_DIR  
+DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS_DIR 
      
      
 <img width="556" alt="timing" src="https://user-images.githubusercontent.com/62076142/119079589-00022f00-b9be-11eb-837f-288778b5244c.png">
