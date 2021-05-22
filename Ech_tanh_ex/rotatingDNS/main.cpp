@@ -228,7 +228,7 @@ int main(int argc, char** argv)
     params.lT_tilde = params.lT/params.W0;
     params.dt = 0.8*pow(params.dx,2)/(4*params.Dl_tilde);
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = -params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.lxd = -params.xmin*0.995; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -384,6 +384,8 @@ int main(int argc, char** argv)
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
+    if (pM.rank==0) printf("DX = %f, DY= %f, x0= %f, y0= %f \n",Dx,Dy,mac.X_mac[0],mac.Y_mac[0] );
+
     for(int id=0; id<length; id++){
 
       int j = id/length_x;
@@ -409,17 +411,17 @@ int main(int argc, char** argv)
       psi[id] = psi[id]/params.W0;
       phi[id]=tanhf(psi[id]/params.sqrt2);
      //   Uc[id]=0.0;
-      if (phi[id]>LS){
+      //if (phi[id]>LS){
       alpha[id] =  (1.0f-delta_x)*(1.0f-delta_y)*mac.alpha_mac[ offset ] + (1.0f-delta_x)*delta_y*mac.alpha_mac[ offset+mac.Nx ]\
                +delta_x*(1.0f-delta_y)*mac.alpha_mac[ offset+1 ] +   delta_x*delta_y*mac.alpha_mac[ offset+mac.Nx+1 ];
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
       if (theta_id>=num_theta) printf("theta overflow %d\n",theta_id);
       alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
-      //alpha[id] = theta_arr[theta_id];
-       }
+     // alpha[id] = theta_arr[theta_id];
+     //  }
 
-      else {alpha[id]=0.0f;}
+     // else {alpha[id]=0.0f;}
       }
 
     else{

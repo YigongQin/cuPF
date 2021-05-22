@@ -442,9 +442,9 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
       if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
       if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
       if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
+
       int offset =  kx + ky*Nx + kt*Nx*Ny;
       int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
-      //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
      // printf("%d ", Nx);
       float Tinterp= ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
                +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
@@ -474,7 +474,7 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
         //int new_noi_loc = nt%cP.noi_period;//*cP.seed_val)%(fnx*fny);
         ps_new[C] = ps[C] +  cP.dt * dpsi[C] + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
         ph_new[C] = tanhf(ps_new[C]/cP.sqrt2);
-
+/*
         if ( (ph_new[C] > LS) && (ph[C] < LS) ){
            if ( (alpha<ACR) && (alpha>-ACR) ){
             float n1 = 0.0f; float n2=0.0f; float n3=0.0f;
@@ -500,7 +500,7 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
            else if (n2>=n3) {alpha_m[C]=alpha2;}
            else {alpha_m[C]=alpha3;} 
           }
-       }
+       }*/
         //if (C==1000){printf("%f ",ph_new[C]);}
      }
 } 
@@ -808,7 +808,7 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
-  //for (int kt=0; kt<0; kt++){
+  //for (int kt=0; kt<5000; kt++){
   //   cudaDeviceSynchronize();
      //if ( (2*kt+2)%period==0) gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
