@@ -378,6 +378,7 @@ int main(int argc, char** argv)
     float grain_gap = M_PI/2.0/(num_theta-1);     
     printf("grain gap %f \n", grain_gap);
     float* theta_arr=(float*) malloc(num_theta* sizeof(float));
+    srand(params.seed_val);
     for (int i=0; i<num_theta; i++){
         theta_arr[i] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
     }
@@ -415,8 +416,8 @@ int main(int argc, char** argv)
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
       if (theta_id>=num_theta) printf("theta overflow %d\n",theta_id);
-      alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
-      //alpha[id] = theta_arr[theta_id];
+      //alpha[id] = theta_id*grain_gap-M_PI/2.0; // 
+      alpha[id] = theta_arr[theta_id];
        }
 
       else {alpha[id]=0.0f;}
@@ -452,7 +453,8 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
-    string out_format = "DNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_seed"+to_string(params.seed_val);
+    string inputfilename(fileName);
+    string out_format = inputfilename+"DNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_seed"+to_string(params.seed_val) + "_delta"+to_string(params.delta) + "_grains" + to_string(num_theta);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file; 
    // ofstream out( out_file );

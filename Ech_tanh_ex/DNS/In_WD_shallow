@@ -31,7 +31,7 @@ Created on Fri May 29 11:10:53 2020
     eps = 1e-8                      	# divide-by-zero treatment
     alpha0 = 0                    	# misorientation angle in degree
     
-    dx = 0.8                            # mesh width
+    dx = 3.2                            # mesh width
     dt = 0.8*(dx)**2/(4*Dl_tilde)       # time step size for forward euler
 
     asp_ratio = 0.62                  	# aspect ratio
@@ -61,4 +61,4 @@ Created on Fri May 29 11:10:53 2020
     Nx = 513
     Ny = 308
     Nt = 80
-    cfl = 0.8
+    cfl = 0.2
