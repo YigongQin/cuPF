@@ -40,6 +40,7 @@ struct GlobalConstants {
   float a_12;
   float dt_sqrt;
   int noi_period;
+  float cfl;
 };
 
 

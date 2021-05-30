@@ -121,6 +121,7 @@ int main(int argc, char** argv)
         getParam(lineText, "Ny", temp_Ny);
         getParam(lineText, "Nt", temp_Nt);
         getParam(lineText, "ztip0", ztip0);
+        getParam(lineText, "cfl", params.cfl);
     }
 
     // Close the file
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
     params.R_tilde = params.R*params.tau0/params.W0;
     params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
     params.lT_tilde = params.lT/params.W0;
-    params.dt = 0.8*pow(params.dx,2)/(4*params.Dl_tilde); //0.0142639;
+    params.dt = params.cfl*pow(params.dx,2)/(4*params.Dl_tilde); //0.0142639;
     params.nx = (int) (params.lxd/dxd);
     params.ny = (int) (params.asp_ratio*params.nx);
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
@@ -290,7 +291,7 @@ int main(int argc, char** argv)
     }
 
 
-    string out_format = "line_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_seed"+to_string(params.seed_val);
+    string out_format = "line_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_Mt"+to_string(params.Mt)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
 
