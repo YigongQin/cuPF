@@ -49,7 +49,16 @@ struct GlobalConstants {
   int Mnt;
   float xmin;
   float ymin;
-  
+ 
+  // nucleation parameters
+  float Tmelt;
+  float Tliq;
+  float Tsol;
+  float undcool_mean;
+  float undcool_std;
+  float nuc_Nmax;
+  float nuc_rad;
+  int pts_cell; 
 };
 
 struct params_MPI{

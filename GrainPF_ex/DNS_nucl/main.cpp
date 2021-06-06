@@ -179,6 +179,12 @@ int main(int argc, char** argv)
         getParam(lineText, "Ny", temp_Ny);
         getParam(lineText, "Nt", temp_Nt);
         getParam(lineText, "cfl", params.cfl); 
+
+        getParam(lineText, "Tmelt", params.Tmelt);
+        getParam(lineText, "undcool_mean", params.undcool_mean);
+        getParam(lineText, "undcool_std", params.undcool_std);
+        getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
+        getParam(lineText, "nuc_rad", params.nuc_rad);
     }
     
     float dxd = params.dx*params.W0;
@@ -245,6 +251,9 @@ int main(int argc, char** argv)
     params.lyd = params.ny*dxd;
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
     params.Mt = (params.Mt/2)*2; 
+    params.pts_cell = (int) (params.nuc_rad/dxd);
+    params.Tliq = params.Tmelt - params.c_infm;
+    params.Tsol = params.Tmelt - params.c_infm/params.k;
 
     if (pM.rank==0){ 
     std::cout<<"G = "<<params.G<<std::endl;
@@ -289,6 +298,15 @@ int main(int argc, char** argv)
     std::cout<<"mac Nx = "<<mac.Nx<<std::endl;
     std::cout<<"mac Ny = "<<mac.Ny<<std::endl;
     std::cout<<"mac Nt = "<<mac.Nt<<std::endl;
+
+    std::cout<<"nucleation parameters "<<std::endl;
+    std::cout<<"liquidus temperature = "<<params.Tliq<<std::endl;
+    std::cout<<"solidus temperature  = "<<params.Tsol<<std::endl;
+    std::cout<<"undcooling mean = "<<params.undcool_mean<<std::endl;
+    std::cout<<"undcooling std  = "<<params.undcool_std<<std::endl;
+    std::cout<<"nucleation density = "<<params.nuc_Nmax<<std::endl;
+    std::cout<<"nucleation radius = "<<params.nuc_rad<<std::endl;
+    std::cout<<"nucleation points = "<<params.pts_cell<<std::endl;
     }
     // step1 plus: read mat file from macrodata
     //
