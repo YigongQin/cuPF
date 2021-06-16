@@ -86,4 +86,6 @@ struct Mac_input{
   float* U_mac;
   float* T_3D;
   float* theta_arr;
+  float* cost;
+  float* sint;
 };

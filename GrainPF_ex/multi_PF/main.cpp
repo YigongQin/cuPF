@@ -397,11 +397,15 @@ int main(int argc, char** argv)
     float grain_gap = M_PI/2.0/NUM_PF;     
     //printf("grain gap %f \n", grain_gap);
     mac.theta_arr = new float[NUM_PF+1];
+    mac.cost = new float[NUM_PF+1];
+    mac.sint = new float[NUM_PF+1];
     srand(params.seed_val);
     mac.theta_arr[0] = 0.0f;
     for (int i=0; i<NUM_PF; i++){
         //mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
         mac.theta_arr[i+1] = (i+0.5)*grain_gap- M_PI/2.0;
+        mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
+        mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
     }
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
@@ -479,7 +483,7 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
-    string out_format = "reduced_multi_Phi_nucl_curve_randDNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_Mt"+to_string(params.Mt)+"_seed"+to_string(params.seed_val) + "_delta"+to_string(params.delta)+ "_grains"+ to_string((int)num_theta)+"_barrier"+to_string(params.undcool_mean)+"_nucden"+to_string(params.nuc_Nmax);
+    string out_format = "reduced2_multi_Phi_nucl_curve_randDNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_Mt"+to_string(params.Mt)+"_seed"+to_string(params.seed_val) + "_delta"+to_string(params.delta)+ "_grains"+ to_string((int)num_theta)+"_barrier"+to_string(params.undcool_mean)+"_nucden"+to_string(params.nuc_Nmax);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file; 
    // ofstream out( out_file );
