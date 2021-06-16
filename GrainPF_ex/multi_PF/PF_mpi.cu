@@ -476,7 +476,7 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
   // if the points are at boundary, return
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) &&(PF_id<NUM_PF) ) {
        // find the indices of the 8 neighbors for center
-      if ( (ph[C]<1.0f) && (ph[C]>-1.0f) ){
+      //if ( (ph[C]<1.0f) && (ph[C]>-1.0f) ){
        //if (C==1000){printf("find");}
        int R=C+1;
        int L=C-1;
@@ -485,6 +485,24 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
        float alpha = theta_arr[PF_id+1];
        float sina = sinf(alpha);
        float cosa = cosf(alpha);
+
+       // first checkout the anisotropy 
+        float phxn = ( ph[R] - ph[L] ) * 0.5f;
+        float phzn = ( ph[T] - ph[B] ) * 0.5f;
+
+       float A2;
+       float ux2 = cosa*phxn + sina*phzn;
+         ux2 = ux2*ux2;
+       float uz2 = -sina*phxn + cosa*phzn;
+         uz2 = uz2*uz2;
+       float MAG_sq = (ux2 + uz2);
+       float MAG_sq2= MAG_sq*MAG_sq;
+       if (MAG_sq > cP.eps){
+          A2 =  cP.a_s*( 1.0f + cP.epsilon*(ux2*ux2 + uz2*uz2) / MAG_sq2);}
+       else {A2 = 1.0f;}        //float A2 = atheta(phxn,phzn,cosa,sina);
+        //float Ak2 = kine_ani(phxn,phzn,cosa,sina);
+        if (MAG_sq>1e-12){
+        A2 = A2*A2;
 
         // =============================================================
         // 1. ANISOTROPIC DIFFUSION
@@ -536,18 +554,6 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
         Ap = aptheta(phx,phz,cosa,sina);
         float JB = A * ( A*phz + Ap*phx );
 
-         /*# =============================================================
-        #
-        # 2. EXTRA TERM: sqrt2 * atheta**2 * phi * |grad psi|^2
-        #
-        # =============================================================
-        # d(phi)/dx  d(psi)/dx d(phi)/dz  d(psi)/dz at nodes (i,j)*/
-        float phxn = ( ph[R] - ph[L] ) * 0.5f;
-        float phzn = ( ph[T] - ph[B] ) * 0.5f;
-
-        float A2 = atheta(phxn,phzn,cosa,sina);
-        float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        A2 = A2*A2;
 
         /*# =============================================================
         #
@@ -605,7 +611,7 @@ rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, 
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
         if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
         //if (C==1000){printf("%f ",ph_new[C]);}
-      }
+      }else{ph_new[C] = ph[C];}
      }
 } 
 
