@@ -227,7 +227,7 @@ int main(int argc, char** argv)
     printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nt-1]); 
     // calculate the parameters
     params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
-    params.lamd = 5*sqrt(2.0)/8*params.W0/params.d0;//     # coupling constant
+    params.lamd = 0.8839*params.W0/params.d0;//     # coupling constant
     params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
     params.R_tilde = params.R*params.tau0/params.W0;
     params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);

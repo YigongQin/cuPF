@@ -305,8 +305,8 @@ gen_rand_num(curandState *state, float* random_nums, int len_plus){
 __inline__ __device__ float
 kine_ani(float ux, float uz, float cosa, float sina){
 
-   float a_s = 1.0f + 3.0f*0.13f;
-   float epsilon = -4.0f*0.13f/a_s;
+   float a_s = 1.0f + 3.0f*cP.kin_delta;
+   float epsilon = -4.0f*cP.kin_delta/a_s;
    float ux2 = cosa*ux + sina*uz;
          ux2 = ux2*ux2;
    float uz2 = -sina*ux + cosa*uz;
