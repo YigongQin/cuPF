@@ -382,7 +382,7 @@ init_nucl_status(float* ph, int* nucl_status, int cnx, int cny, int fnx){
 }
 
 __global__ void
-add_nucl(int* nucl_status, int cnx, int cny, float* ph, float* alpha_m, float* x, float* y, int fnx, curandState* states, \
+add_nucl(int* nucl_status, int cnx, int cny, float* ph, int* alpha_m, float* x, float* y, int fnx, int fny, curandState* states, \
         float dt, float t, float* X, float* Y, float* Tmac, float* u_3d, int Nx, int Ny, int Nt){
 
   // fnx = (2*cP.) 
@@ -398,8 +398,8 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, float* alpha_m, float* x
       int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
       int glob_C = glob_j*fnx + glob_i;
 
-     if (ph[glob_C]>LS) {nucl_status[C]=1;}
-     else {  
+     for (int pf_id=0; pf_id<NUM_PF; pf_id++) { if (ph[glob_C+pf_id*fnx*fny]>LS) nucl_status[C]=1;}
+     if (nucl_status[C]==0) {  
       int kx = (int) (( x[glob_i] - X[0] )/Dx);
       float delta_x = ( x[glob_i] - X[0] )/Dx - kx;
          //printf("%f ",delta_x);
@@ -437,14 +437,16 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, float* alpha_m, float* x
        // if (curand_uniform(states+C)< cP.nuc_Nmax ){ //nuc_posb){
         // printf("possibility, constant %f\n", cP.nuc_Nmax);
            // start to render circles
-         float rand_angle = curand_uniform(states+C)*(-M_PI/2.0f);
-         printf("time %f, nucleation starts at cell no. %d get orientation %f\n", t, C, rand_angle*180/M_PI);
+         //float rand_angle = curand_uniform(states+C)*(-M_PI/2.0f);
+         int rand_PF = curand(states+C)%NUM_PF;
+         int offset_rand = rand_PF*fnx*fny;
+         printf("time %f, nucleation starts at cell no. %d get PF no. %d\n", t, C, rand_PF);
          for (int locj=-cP.pts_cell;locj<=cP.pts_cell;locj++){
               for (int loci=-cP.pts_cell;loci<=cP.pts_cell;loci++){
-                     int os_loc = locj*fnx+loci+glob_C;
+                     int os_loc = locj*fnx+loci+glob_C+offset_rand;
                      float dist_C = cP.dx*( (1.0f+cP.pts_cell)/2.0f - sqrtf(loci*loci + locj*locj) );
                      ph[os_loc] = tanhf( dist_C /cP.sqrt2 );
-                     alpha_m[os_loc] = rand_angle;
+                  //   alpha_m[os_loc] = rand_angle;
               }
          }
          nucl_status[C] = 1;
@@ -483,9 +485,14 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
        int T=C+fnx;
        int B=C-fnx;
        //float alpha = theta_arr[PF_id+1];
-       float sina = sint[PF_id+1];
-       float cosa = cost[PF_id+1];
-
+       float cosa, sina;
+       if (ph[C]>LS){
+       sina = sint[PF_id+1];
+       cosa = cost[PF_id+1];
+       }else{
+       sina = 0.0f;
+       cosa = 1.0f;
+       }
        // first checkout the anisotropy 
         float phxn = ( ph[R] - ph[L] ) * 0.5f;
         float phzn = ( ph[T] - ph[B] ) * 0.5f;
@@ -899,7 +906,7 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, fnx, fny, 2*kt+1,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
  
-    // add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, phi_old, alpha_m, x_device, y_device, fnx, dStates, \
+     //add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
