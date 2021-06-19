@@ -11,6 +11,7 @@ Created on Fri May 29 11:10:53 2020
     G = 0.02                        # thermal gradient        K/um
     R = 50                          # pulling speed           um/s
     delta = 0.01                    # strength of the surface tension anisotropy         
+    kin_delta = 0.13
     k = 0.14                        # interface solute partition coefficient
     c_infm = 7.8                  # shift in melting temperature     K
     Dl = 3000                       # liquid diffusion coefficient      um**2/s
@@ -61,7 +62,7 @@ Created on Fri May 29 11:10:53 2020
     Nx = 513
     Ny = 434
     Nt = 366
-    cfl = 0.12
+    cfl = 0.24
  
     Tmelt = 933.3
     undcool_mean = 0.7   # Kelvin  nuleantion barrier

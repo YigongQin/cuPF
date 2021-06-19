@@ -483,7 +483,7 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
-    string out_format = "reduced2_multi_Phi_nucl_curve_randDNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_Mt"+to_string(params.Mt)+"_seed"+to_string(params.seed_val) + "_delta"+to_string(params.delta)+ "_grains"+ to_string((int)num_theta)+"_barrier"+to_string(params.undcool_mean)+"_nucden"+to_string(params.nuc_Nmax);
+    string out_format = "multi_PF_nucl_curve_randDNS_nx"+to_string(params.nx)+"_ny"+to_string(params.ny)+"_Mt"+to_string(params.Mt)+"_seed"+to_string(params.seed_val) + "_delta"+to_string(params.delta)+ "_grains"+ to_string((int)num_theta)+"_barrier"+to_string(params.undcool_mean)+"_nucden"+to_string(params.nuc_Nmax);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file; 
    // ofstream out( out_file );

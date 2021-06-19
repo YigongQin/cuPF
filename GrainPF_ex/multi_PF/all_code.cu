@@ -19,7 +19,7 @@ using namespace std;
 #define ACR 1e-5
 #define NBW 1
 #define NUM_PF 10
-#define OMEGA 100
+#define OMEGA 200
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -77,7 +77,7 @@ void print2d(float* array, int fnx, int fny){
 
 
 __global__ void
-set_BC_mpi_y(float* ph, int fnx, int fny, \
+set_BC_mpi_y(float* ps, float* ph, float* U, float* dpsi, float* ph2, int fnx, int fny, \
         int px, int py, int nprocx, int nprocy, int ha_wd){
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -110,7 +110,7 @@ set_BC_mpi_y(float* ph, int fnx, int fny, \
 
 }
 __global__ void
-set_BC_mpi_x(float* ph, int fnx, int fny, \
+set_BC_mpi_x(float* ps, float* ph, float* U, float* dpsi, float* ph2, int fnx, int fny, \
         int px, int py, int nprocx, int nprocy, int ha_wd){
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -457,7 +457,7 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, float* alpha_m, float* x
 
 // psi equation
 __global__ void
-rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, \
+rhs_psi(float* ps, float* ph, float* U, float* ps_new, float* ph_new, float* x, float* y, float* dpsi, int fnx, int fny, int nt, \
        float t, float* X, float* Y, float* Tmac, float* u_3d, int Nx, int Ny, int Nt, curandState* states, float* cost, float* sint ){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
@@ -783,8 +783,13 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
   float* x_device;// = NULL;
   float* y_device;// = NULL;
 
+  float* psi_old;// = NULL;
+  float* psi_new;// = NULL;
+  float* U_old;// = NULL;
+  float* U_new;// = NULL;
   float* phi_old;// = NULL;
   float* phi_new;// = NULL;
+  float* dpsi;// = NULL;
   int* alpha_m;
   int* nucl_status;
   
@@ -800,7 +805,12 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
   cudaMalloc((void **)&y_device, sizeof(float) * fny);
 
   cudaMalloc((void **)&phi_old,  sizeof(float) * length);
+  cudaMalloc((void **)&psi_old,  sizeof(float) * length);
+  cudaMalloc((void **)&U_old,    sizeof(float) * length);
   cudaMalloc((void **)&phi_new,  sizeof(float) * length);
+  cudaMalloc((void **)&psi_new,  sizeof(float) * length);
+  cudaMalloc((void **)&U_new,    sizeof(float) * length);
+  cudaMalloc((void **)&dpsi,    sizeof(float) * length);
   cudaMalloc((void **)&alpha_m,    sizeof(int) * length);  
   cudaMalloc((void **)&nucl_status,    sizeof(int) * length_c);
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
@@ -808,8 +818,12 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
 
   cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
   cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
+  cudaMemcpy(psi_old, psi, sizeof(float) * length, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_old, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
+  cudaMemcpy(U_old, U, sizeof(float) * length, cudaMemcpyHostToDevice);
+  cudaMemcpy(psi_new, psi, sizeof(float) * length, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_new, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
+  cudaMemcpy(U_new, U, sizeof(float) * length, cudaMemcpyHostToDevice);
 
   cudaMemcpy(alpha_m, alpha, sizeof(int) * length, cudaMemcpyHostToDevice);
 
@@ -871,11 +885,11 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
   // commu_BC(comm, SR_buffs, pM, params.Mt+2, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
   // commu_BC(comm, SR_buffs, pM, params.Mt+3, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-   set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-   set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-   set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-   set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-   rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, fnx, fny, 0,\
+   set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(psi_new, PFs_new, U_old, dpsi, phi_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+   set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(psi_new, PFs_new, U_old, dpsi, phi_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+   set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(psi_old, PFs_old, U_new, dpsi, phi_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+   set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(psi_old, PFs_old, U_new, dpsi, phi_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+   rhs_psi<<< num_block_PF, blocksize_2d >>>(psi_old, PFs_old, U_old, psi_new, PFs_new, x_device, y_device, dpsi, fnx, fny, 0,\
 0, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
@@ -888,15 +902,15 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
 
      //if ( params.ha_wd==1 ) commu_BC(comm, SR_buffs, pM, 2*kt, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(psi_new, PFs_new, U_old, dpsi, phi_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(psi_new, PFs_new, U_old, dpsi, phi_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
      //cudaDeviceSynchronize();
    //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
 
 
      //cudaDeviceSynchronize();
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, fnx, fny, 2*kt+1,\
+     rhs_psi<<< num_block_PF, blocksize_2d >>>(psi_new, PFs_new, U_new, psi_old, PFs_old, x_device, y_device, dpsi, fnx, fny, 2*kt+1,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
  
     // add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, phi_old, alpha_m, x_device, y_device, fnx, dStates, \
@@ -904,13 +918,13 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(psi_old, PFs_old, U_new, dpsi, phi_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(psi_old, PFs_old, U_new, dpsi, phi_new, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
      //cudaDeviceSynchronize();
    //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_new, U_old, phi_old, dpsi, fnx, fny);
      //cudaDeviceSynchronize();*/
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, fnx, fny, 2*kt+2,\
+     rhs_psi<<< num_block_PF, blocksize_2d >>>(psi_old, PFs_old, U_old, psi_new, PFs_new, x_device, y_device, dpsi, fnx, fny, 2*kt+2,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
 
    }
@@ -918,11 +932,15 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
    collect_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
+   cudaMemcpy(psi, psi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
+   cudaMemcpy(U, U_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(float),cudaMemcpyDeviceToHost);
   cudaFree(x_device); cudaFree(y_device);
+  cudaFree(psi_old); cudaFree(psi_new);
   cudaFree(phi_old); cudaFree(phi_new);
-  cudaFree(nucl_status); 
+  cudaFree(U_old); cudaFree(U_new);
+  cudaFree(dpsi); cudaFree(nucl_status); 
   cudaFree(dStates); //cudaFree(random_nums);
   cudaFree(PFs_new); cudaFree(PFs_old);
 }
