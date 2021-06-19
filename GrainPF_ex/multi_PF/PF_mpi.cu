@@ -398,7 +398,7 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, int* alpha_m, float* x, 
       int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
       int glob_C = glob_j*fnx + glob_i;
 
-     for (int pf_id=0; pf_id<NUM_PF; pf_id++) { if (ph[glob_C+pf_id*fnx*fny]>LS) nucl_status[C]=1;}
+     for (int pf_id=0; pf_id<NUM_PF; pf_id++) { if (ph[glob_C+pf_id*fnx*fny]>LS) {nucl_status[C]=1;} }
      if (nucl_status[C]==0) {  
       int kx = (int) (( x[glob_i] - X[0] )/Dx);
       float delta_x = ( x[glob_i] - X[0] )/Dx - kx;
@@ -617,7 +617,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         //else {rand = 0.0f;}      //  ps_new[C] = ps[C] +  cP.dt * dpsi[C];
         //int new_noi_loc = nt%cP.noi_period;*cP.seed_val)%(fnx*fny);
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
-        if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
+        //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
         //if (C==1000){printf("%f ",ph_new[C]);}
       }else{ph_new[C] = ph[C];}
      }
@@ -906,7 +906,7 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, fnx, fny, 2*kt+1,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
  
-     //add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
+     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);

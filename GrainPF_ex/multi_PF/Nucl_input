@@ -67,6 +67,6 @@ Created on Fri May 29 11:10:53 2020
     Tmelt = 933.3
     undcool_mean = 0.7   # Kelvin  nuleantion barrier
     undcool_std = 0.1   # Kelvin fixed
-    nuc_Nmax = 0      # 1/um^2 density; 0 to very big number 
+    nuc_Nmax = 0.1      # 1/um^2 density; 0 to very big number 
     nuc_rad = 0.3      # 0.2 um radius of a nucleai
 
