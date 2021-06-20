@@ -19,7 +19,7 @@ using namespace std;
 #define ACR 1e-5
 #define NBW 1
 #define NUM_PF 10
-#define OMEGA 100
+#define OMEGA 200
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -605,13 +605,13 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         //# 4. dpsi/dt term
        // #
         //# =============================================================
-        float tp = (1.0f-(1.0f-cP.k)*Up);
-        float tau_psi;
-        if (tp >= cP.k){tau_psi = tp*A2;}
-               else {tau_psi = cP.k*A2;}
+        //float tp = (1.0f-(1.0f-cP.k)*Up);
+        //float tau_psi;
+        //if (tp >= cP.k){tau_psi = tp*A2;}
+              // else {tau_psi = cP.k*A2;}
         
         //dpsi[C] = rhs_psi / tau_psi; 
-        float dphi = rhs_psi / tau_psi;
+        float dphi = rhs_psi / A2; //tau_psi;
         //float rand;
         //if ( ( ph[C]>-0.995 ) && ( ph[C]<0.995 ) ) {rand= cP.dt_sqrt*cP.hi*cP.eta*(curand_uniform(states+C)-0.5);}
         //else {rand = 0.0f;}      //  ps_new[C] = ps[C] +  cP.dt * dpsi[C];

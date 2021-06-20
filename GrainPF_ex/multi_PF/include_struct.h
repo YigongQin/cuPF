@@ -10,6 +10,7 @@ struct GlobalConstants {
   float k;
   float c_infm;
   float Dl;
+  float Dh;
   float d0;
   float W0;
   float lT;
@@ -19,6 +20,7 @@ struct GlobalConstants {
   float R_tilde;
   float Dl_tilde; 
   float lT_tilde; 
+  float beta0_tilde;
   float eps; 
   float alpha0; 
   float dx; 
@@ -30,6 +32,9 @@ struct GlobalConstants {
   float eta; 
   float U0;
   float cfl; 
+  float kin_delta;
+  float beta0;
+  float kin_coeff;
   // parameters that are not in the input file
   float hi;
   float cosa;

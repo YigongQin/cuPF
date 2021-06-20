@@ -144,7 +144,7 @@ int main(int argc, char** argv)
         getParam(lineText, "delta", params.delta); 
         getParam(lineText, "k", params.k); 
         getParam(lineText, "c_infm", params.c_infm); 
-        getParam(lineText, "Dl", params.Dl); 
+        getParam(lineText, "Dh", params.Dh); 
         getParam(lineText, "d0", params.d0); 
         getParam(lineText, "W0", params.W0);  
         getParam(lineText, "c_infty", params.c_infty);
@@ -166,7 +166,8 @@ int main(int argc, char** argv)
         params.seed_val = (int)seed_val;
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
-
+        getParam(lineText, "kin_delta", params.kin_delta);
+        getParam(lineText, "beta0", params.beta0);
         // new multiple
         getParam(lineText, "Ti", params.Ti);
         getParam(lineText, "ha_wd", ha_wd);
@@ -218,6 +219,10 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/U.txt",mac.U_mac);
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
 
+    for (int pi = 0; pi<mac.Nt; pi++){
+      mac.t_mac[pi] *= 0.04;     
+    }
+
     h5in_file = H5Fopen( (mac_folder+"/Temp.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     datasetT = H5Dopen2(h5in_file, "Temp", H5P_DEFAULT);
     dataspaceT = H5Dget_space(datasetT);
@@ -228,11 +233,14 @@ int main(int argc, char** argv)
     // calculate the parameters
     params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
     params.lamd = 0.8839*params.W0/params.d0;//     # coupling constant
-    params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
-    params.R_tilde = params.R*params.tau0/params.W0;
-    params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
-    params.lT_tilde = params.lT/params.W0;
-    params.dt = params.cfl*pow(params.dx,2)/(4*params.Dl_tilde);
+    //params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
+    params.tau0 = params.beta0*params.lamd*params.W0/0.8839;
+    //params.kin_coeff = tauk/params.tau0;
+    //params.R_tilde = params.R*params.tau0/params.W0;
+    //params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
+    //params.lT_tilde = params.lT/params.W0;
+    params.beta0_tilde = params.beta0*params.W0/params.tau0;
+    params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
     params.lxd = -params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
@@ -259,9 +267,13 @@ int main(int argc, char** argv)
     std::cout<<"G = "<<params.G<<std::endl;
     std::cout<<"R = "<<params.R<<std::endl;
     std::cout<<"delta = "<<params.delta<<std::endl;
+    std::cout<<"kinetic delta = "<<params.kin_delta<<std::endl;
+    std::cout<<"beta0 = "<<params.beta0<<std::endl;
+
     std::cout<<"k = "<<params.k<<std::endl;
     std::cout<<"c_infm = "<<params.c_infm<<std::endl;
-    std::cout<<"Dl = "<<params.Dl<<std::endl;
+   // std::cout<<"Dl = "<<params.Dl<<std::endl;
+    std::cout<<"Dh = "<<params.Dh<<std::endl;
     std::cout<<"d0 = "<<params.d0<<std::endl;
     std::cout<<"W0 = "<<params.W0<<std::endl;
     std::cout<<"c_infty = "<<params.c_infty<<std::endl;
@@ -281,9 +293,10 @@ int main(int argc, char** argv)
     std::cout<<"lT = "<<params.lT<<std::endl;
     std::cout<<"lamd = "<<params.lamd<<std::endl;
     std::cout<<"tau0 = "<<params.tau0<<std::endl;
-    std::cout<<"R_tilde = "<<params.R_tilde<<std::endl;
-    std::cout<<"Dl_tilde = "<<params.Dl_tilde<<std::endl;
-    std::cout<<"lT_tilde = "<<params.lT_tilde<<std::endl;
+    //std::cout<<"kinetic effect = "<<params.kin_coeff<<std::endl;
+    //std::cout<<"R_tilde = "<<params.R_tilde<<std::endl;
+    //std::cout<<"Dl_tilde = "<<params.Dl_tilde<<std::endl;
+    std::cout<<"beta0_tilde = "<<params.beta0_tilde<<std::endl;
     std::cout<<"dt = "<<params.dt<<std::endl;
     std::cout<<"lxd = "<<params.lxd<<std::endl;
     std::cout<<"lyd = "<<params.lyd<<std::endl;
