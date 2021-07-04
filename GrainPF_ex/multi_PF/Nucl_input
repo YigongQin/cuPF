@@ -51,7 +51,7 @@ Created on Fri May 29 11:10:53 2020
     Nx = 513
     Ny = 434
     Nt = 366
-    cfl = 0.5
+    cfl = 1.5
  
     # nuleation parameters
     undcool_mean = 0.75   # Kelvin  nuleantion barrier
