@@ -143,11 +143,16 @@ int main(int argc, char** argv)
         getParam(lineText, "R", params.R); 
         getParam(lineText, "delta", params.delta); 
         getParam(lineText, "k", params.k); 
-        getParam(lineText, "c_infm", params.c_infm); 
+        //getParam(lineText, "c_infm", params.c_infm); 
         getParam(lineText, "Dh", params.Dh); 
-        getParam(lineText, "d0", params.d0); 
+        //getParam(lineText, "d0", params.d0); 
         getParam(lineText, "W0", params.W0);  
         getParam(lineText, "c_infty", params.c_infty);
+        getParam(lineText, "m_slope", params.m_slope);
+        //getParam(lineText, "beta0", params.beta0);
+        getParam(lineText, "GT", params.GT);
+        getParam(lineText, "L_cp", params.L_cp);
+        getParam(lineText, "mu_k", params.mu_k);
         getParam(lineText, "eps", params.eps);
         getParam(lineText, "alpha0", params.alpha0);
         getParam(lineText, "dx", params.dx);
@@ -169,7 +174,7 @@ int main(int argc, char** argv)
         getParam(lineText, "kin_delta", params.kin_delta);
         getParam(lineText, "beta0", params.beta0);
         // new multiple
-        getParam(lineText, "Ti", params.Ti);
+        //getParam(lineText, "Ti", params.Ti);
         getParam(lineText, "ha_wd", ha_wd);
         params.ha_wd = (int)ha_wd;
         getParam(lineText, "xmin", params.xmin);
@@ -230,8 +235,15 @@ int main(int argc, char** argv)
     status = H5Dread(datasetT, H5T_NATIVE_FLOAT, memspace, dataspaceT,
                      H5P_DEFAULT, mac.T_3D);
     printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nt-1]); 
+
     // calculate the parameters
-    params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
+    params.c_infm = params.c_infty*params.m_slope;
+    params.Tliq = params.Tmelt - params.c_infm;
+    params.Tsol = params.Tmelt - params.c_infm/params.k;
+    params.Ti = params.Tsol;   
+    params.d0 = params.GT/params.L_cp;
+    params.beta0 = 1.0/(params.mu_k*params.L_cp);
+    //params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
     params.lamd = 0.8839*params.W0/params.d0;//     # coupling constant
     //params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
     params.tau0 = params.beta0*params.lamd*params.W0/0.8839;
@@ -260,8 +272,6 @@ int main(int argc, char** argv)
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
     params.Mt = (params.Mt/2)*2; 
     params.pts_cell = (int) (params.nuc_rad/dxd);
-    params.Tliq = params.Tmelt - params.c_infm;
-    params.Tsol = params.Tmelt - params.c_infm/params.k;
 
     if (pM.rank==0){ 
     std::cout<<"G = "<<params.G<<std::endl;
@@ -290,7 +300,7 @@ int main(int argc, char** argv)
     std::cout<<"U0 = "<<params.U0<<std::endl;
     std::cout<<"nts = "<<params.nts<<std::endl;
     std::cout<<"ictype = "<<params.ictype<<std::endl;
-    std::cout<<"lT = "<<params.lT<<std::endl;
+    //std::cout<<"lT = "<<params.lT<<std::endl;
     std::cout<<"lamd = "<<params.lamd<<std::endl;
     std::cout<<"tau0 = "<<params.tau0<<std::endl;
     //std::cout<<"kinetic effect = "<<params.kin_coeff<<std::endl;

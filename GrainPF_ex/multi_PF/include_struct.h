@@ -35,6 +35,10 @@ struct GlobalConstants {
   float kin_delta;
   float beta0;
   float kin_coeff;
+  float GT;
+  float m_slope;
+  float mu_k;
+  float L_cp;
   // parameters that are not in the input file
   float hi;
   float cosa;

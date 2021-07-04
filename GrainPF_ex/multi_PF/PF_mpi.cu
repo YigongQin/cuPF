@@ -587,8 +587,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
              ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
                +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
 
-        float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-
+        float Up = (Tinterp-cP.Tmelt)/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
+       // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
         float repul=0.0f;
         for (int pf_id=0; pf_id<NUM_PF; pf_id++){
             
@@ -598,7 +598,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
            }
         }
         float rhs_psi = ((JR-JL) + (JT-JB) ) * cP.hi*cP.hi + \
-                  (1.0f-ph[C]*ph[C])*( ph[C] - cP.lamd*(1.0f-ph[C]*ph[C])*( Up-1.0f) )  - 0.5f*OMEGA*(ph[C]+1.0f)*repul;
+                  (1.0f-ph[C]*ph[C])*( ph[C] - cP.lamd*(1.0f-ph[C]*ph[C])*( Up) )  - 0.5f*OMEGA*(ph[C]+1.0f)*repul;
 
       //# =============================================================
         //#
