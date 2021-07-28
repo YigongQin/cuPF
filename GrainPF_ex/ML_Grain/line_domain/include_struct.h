@@ -39,6 +39,7 @@ struct GlobalConstants {
   float m_slope;
   float mu_k;
   float L_cp;
+  int num_theta;
   // parameters that are not in the input file
   float hi;
   float cosa;

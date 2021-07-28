@@ -778,7 +778,51 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 }
 
 
-void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha){
+void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+
+     bool contin_flag = true;
+
+     while(contin_flag){
+       // at this line
+        cur_tip += 1;
+        for (int i=1; i<fnx-1;i++){
+             int C = fnx*cur_tip + i;
+             if (alpha[C]==0){contin_flag=false;}
+        }
+     }
+     cur_tip -=1;
+     tip_y[kt] = y[cur_tip];
+     ntip[kt] = cur_tip;
+     printf("frame %d, tip %f\n", kt, tip_y[kt]);
+}
+
+void calc_frac(int cur_tip, int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int*ntip){
+     for (int kt=0; kt<nts+1;kt++){
+     int counts=0;
+     cur_tip = ntip[kt];
+     printf("cur_tip, %d\n",cur_tip);
+     int offset = fnx*cur_tip+1;
+     int summa=0;
+     for (int j=0; j<num_grains;j++){
+       counts=0;
+       //int aid = 1;
+       
+      // for (int i=1; i<fnx-1;i++){
+       while(alpha[offset]==aseq[j]){
+            // int C = fnx*cur_tip + i;
+             offset+=1;
+             counts+=1;
+             if(offset==fnx*cur_tip+fnx-1) {break;}
+        }
+       frac[kt*num_grains+j] = counts*1.0/(fnx-2);
+       summa += counts;//frac[kt*num_grains+j];
+       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
+     }
+     printf("offset %d, summation %d\n", offset%fnx, summa);     
+     }
+}
+
+void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, float* tip_y, float* frac, int* aseq){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -886,10 +930,14 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
 0, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
+   int kts = params.Mt/params.nts;
+   int cur_tip=1;
+   int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
+   calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
-   //for (int kt=0; kt<0; kt++){
+   //for (int kt=0; kt<1; kt++){
   //   cudaDeviceSynchronize();
      //if ( (2*kt+2)%period==0) gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
@@ -906,8 +954,15 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, fnx, fny, 2*kt+1,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
  
-     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
+//     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
+     if ( (2*kt+2)%kts==0) {
+             //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
+             collect_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
+             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             //QoIs based on alpha field
+             calc_qois(cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+          }
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
@@ -920,13 +975,15 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, fnx, fny, 2*kt+2,\
 t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
 
+
    }
+   calc_frac(cur_tip, alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq,ntip);
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
    collect_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
-   cudaMemcpy(alpha, alpha_m, length * sizeof(float),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
   cudaFree(x_device); cudaFree(y_device);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(nucl_status); 

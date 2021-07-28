@@ -20,7 +20,7 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 10
 
-void setup(MPI_Comm comm, params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i);
+void setup(MPI_Comm comm, params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, float* tip_y, float* frac, int* aseq);
 
 
 // add function for easy retrieving params
@@ -32,6 +32,15 @@ T get(std::stringstream& ss)
     if (!ss) // if it failed to read
         throw std::runtime_error("could not parse parameter");
     return t;
+}
+
+template <typename T>
+std::string to_stringp(const T a_value, int n )
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return out.str();
 }
 
 void getParam(std::string lineText, std::string key, float& param){
@@ -133,7 +142,6 @@ int main(int argc, char** argv)
     float ictype;
     float ha_wd;
     float num_thetaf;
-    int num_theta;
     float temp_Nx, temp_Ny, temp_Nt;
     float seed_val, nprd;
     GlobalConstants params;
@@ -181,7 +189,7 @@ int main(int argc, char** argv)
         getParam(lineText, "xmin", params.xmin);
         getParam(lineText, "ymin", params.ymin);
         getParam(lineText, "num_theta", num_thetaf);
-        num_theta = (int) num_thetaf;
+        params.num_theta = (int) num_thetaf;
         getParam(lineText, "Nx", temp_Nx);
         getParam(lineText, "Ny", temp_Ny);
         getParam(lineText, "Nt", temp_Nt);
@@ -255,7 +263,7 @@ int main(int argc, char** argv)
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = num_theta*5.0f; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.lxd = params.num_theta*5.0f; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -318,7 +326,7 @@ int main(int argc, char** argv)
 
     std::cout<<"Ti = "<<params.Ti<<std::endl;
     std::cout<<"ha_wd = "<<params.ha_wd<<std::endl;
-    std::cout<<"num_theta = "<<num_theta<<std::endl;
+    std::cout<<"num_grains = "<<params.num_theta<<std::endl;
     std::cout<<"mac Nx = "<<mac.Nx<<std::endl;
     std::cout<<"mac Ny = "<<mac.Ny<<std::endl;
     std::cout<<"mac Nt = "<<mac.Nt<<std::endl;
@@ -402,6 +410,10 @@ int main(int argc, char** argv)
     float* Uc=(float*) malloc(length* sizeof(float));
     float* alpha=(float*) malloc(length* sizeof(float));    
     int* alpha_i=(int*) malloc(length* sizeof(int));
+    float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
+    float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
+
+
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -425,8 +437,8 @@ int main(int argc, char** argv)
     mac.sint = new float[NUM_PF+1];
     srand(atoi(argv[3]));
     mac.theta_arr[0] = 0.0f;
-    int* aseq=(int*) malloc(num_theta* sizeof(int));
-    for (int i=0; i<num_theta; i++){
+    int* aseq=(int*) malloc(params.num_theta* sizeof(int));
+    for (int i=0; i<params.num_theta; i++){
        aseq[i] = rand()%NUM_PF +1; 
     }
     for (int i=0; i<NUM_PF; i++){
@@ -473,9 +485,10 @@ int main(int argc, char** argv)
       //alpha_i[id] = mac.alpha_mac[ roffset ];
       //alpha[id] = mac.alpha_mac[ roffset ];
       //alpha_i[id] = (int) ( (alpha[id]+M_PI/2.0)/grain_gap)+1;
-      int aid= (int) (x[i]/(params.lxd/num_theta));
-      if (aid==num_theta) {aid = num_theta-1;}
+      int aid= (int) (x[i]/(params.lxd/params.num_theta));
+      if (aid==params.num_theta) {aid = params.num_theta-1;}
       alpha_i[id] = aseq[aid];
+      if (i==90) printf("%d ", alpha_i[id]);
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       //int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
       //if (theta_id>=num_theta) printf("theta overflow %d\n",theta_id);
@@ -496,7 +509,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup(comm, pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i);
+    setup(comm, pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq);
 
 
 
@@ -516,7 +529,7 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
- string out_format = "ML_Mt"+to_string(params.Mt)+"_grains"+to_string(num_theta)+"_seed"+to_string(atoi(argv[3]));
+ string out_format = "ML_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_anis"+to_stringp(params.kin_delta,3)+"_seed"+to_string(atoi(argv[3]));
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
@@ -524,28 +537,36 @@ int main(int argc, char** argv)
    // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );
 
     // claim file and dataset handles
-    hid_t  h5_file, alpha_o, dataspace, xcoor, ycoor, dataspacex, dataspacey;
-    hsize_t dimsf[2], dimx[1], dimy[1], dimf[1];
+    hid_t  h5_file, alpha_o, yt_o, frac_o, seq_o, dataspace, xcoor, ycoor, dataspacex, dataspacey, dataspacet, dataspacefrac, dataspaceg;
+    hsize_t dimsf[2], dimx[1], dimy[1], dimf[1], dimg[1], dimfrac[1], dimnt[1];
     dimsf[0] = length; dimsf[1] = params.nts; dimx[0]=length_x; dimy[0]=length_y; dimf[0]=length;
-
+    dimg[0] = params.num_theta; dimfrac[0] = (params.nts+1)*params.num_theta; dimnt[0] = params.nts+1;
     // claim file and dataset handles
     // create file, data spaces and datasets
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     dataspace = H5Screate_simple(1, dimf, NULL);
     dataspacex = H5Screate_simple(1, dimx, NULL);
     dataspacey = H5Screate_simple(1, dimy, NULL);
+    dataspacet =  H5Screate_simple(1, dimnt, NULL);
+    dataspacefrac = H5Screate_simple(1, dimfrac, NULL);
+    dataspaceg =  H5Screate_simple(1, dimg, NULL);
     xcoor = H5Dcreate2(h5_file, "x_coordinates", H5T_NATIVE_FLOAT_g, dataspacex,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ycoor = H5Dcreate2(h5_file, "y_coordinates", H5T_NATIVE_FLOAT_g, dataspacey,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     //phi_o = H5Dcreate2(h5_file, "phi", H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     //U_o = H5Dcreate2(h5_file, "Uc", H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     alpha_o = H5Dcreate2(h5_file, "alpha", H5T_NATIVE_INT, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    yt_o = H5Dcreate2(h5_file, "y_t", H5T_NATIVE_FLOAT_g, dataspacet,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    frac_o = H5Dcreate2(h5_file, "fractions", H5T_NATIVE_FLOAT_g, dataspacefrac,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    seq_o = H5Dcreate2(h5_file, "sequence", H5T_NATIVE_INT, dataspaceg,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     // write the coordinates, temperature field and the true solution to the hdf5 file
    // status = H5Dwrite(phi_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, phi);
    // status = H5Dwrite(U_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, Uc);
     status = H5Dwrite(alpha_o, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, alpha_i);
     status = H5Dwrite(xcoor, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, x);
     status = H5Dwrite(ycoor, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, y);
-
+    status = H5Dwrite(frac_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, frac);
+    status = H5Dwrite(yt_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, tip_y);
+    status = H5Dwrite(seq_o, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, aseq);
     // close all the hdf handles
     H5Sclose(dataspace);H5Sclose(dataspacex);
     //H5Dclose(phi_o);
