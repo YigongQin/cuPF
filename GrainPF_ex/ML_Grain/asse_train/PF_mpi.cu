@@ -18,7 +18,7 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 10
+#define NUM_PF 5
 #define OMEGA 200
 
 void printCudaInfo(int rank, int i);
@@ -793,13 +793,13 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
      cur_tip -=1;
      tip_y[kt] = y[cur_tip];
      ntip[kt] = cur_tip;
-     printf("frame %d, tip %f\n", kt, tip_y[kt]);
+     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 }
 
-void calc_frac(int cur_tip, int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int*ntip){
+void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
      for (int kt=0; kt<nts+1;kt++){
      int counts=0;
-     cur_tip = ntip[kt];
+     int cur_tip = ntip[kt];
      printf("cur_tip, %d\n",cur_tip);
      int offset = fnx*cur_tip+1;
      int summa=0;
@@ -812,7 +812,7 @@ void calc_frac(int cur_tip, int* alpha, int fnx, int fny, int nts, int num_grain
             // int C = fnx*cur_tip + i;
              offset+=1;
              counts+=1;
-             if(offset==fnx*cur_tip+fnx-1) {break;}
+             if(offset>=fnx*cur_tip+fnx-1) {break;}
         }
        frac[kt*num_grains+j] = counts*1.0/(fnx-2);
        summa += counts;//frac[kt*num_grains+j];
@@ -931,6 +931,7 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
    int kts = params.Mt/params.nts;
+   printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
    calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
@@ -977,7 +978,11 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
 
 
    }
-   calc_frac(cur_tip, alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq,ntip);
+  // for (int i=0;i<params.nts+1;i++){
+  //     printf("ntip %d \n", ntip[i]);
+  // }
+
+   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq,ntip);
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);

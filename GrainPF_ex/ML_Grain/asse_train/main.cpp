@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 10
+#define NUM_PF 5
 
 void setup(MPI_Comm comm, params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, float* tip_y, float* frac, int* aseq);
 
@@ -139,9 +139,9 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 1;
+    int num_case = 1001;
     float grain_size= 5.0;
-    bool equal_len =false;
+    bool equal_len = false;
     float nts;
     float ictype;
     float ha_wd;
@@ -454,19 +454,22 @@ int main(int argc, char** argv)
     float sum_frac = 0.0;
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
     std::default_random_engine generator;
-    std::normal_distribution<float> distribution(grain_size,0.4*grain_size);
+    std::normal_distribution<float> distribution(grain_size,0.3*grain_size);
     for (int run=0;run<num_case;run++){
+    printf("case %d\n",run);
     srand(atoi(argv[3])+run);
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
+    sum_frac = 0.0f;
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = rand()%NUM_PF +1;
-       frac_ini[i] = distribution(generator); 
+       frac_ini[i] = abs(distribution(generator)); 
        sum_frac += frac_ini[i];
     }
    
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= sum_frac;
         grain_grid[i] = (int) (frac_ini[i]*pM.nx_loc);
+    printf("grain %d, PF %d, grid %d, frac %f\n",i,aseq[i],grain_grid[i],frac_ini[i]);
     }
 
     for (int i=0; i<params.num_theta-1; i++){
@@ -523,6 +526,7 @@ int main(int argc, char** argv)
       }
       }
       alpha_i[id] = aseq[aid];
+      //printf("%d ", alpha_i[id]);
       //if (i==90) printf("%d ", alpha_i[id]);
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
       //int theta_id = (int) ( (alpha[id]+M_PI/2.0)/grain_gap);
@@ -570,7 +574,8 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
- string out_format = "ML_PF10_case"+to_string(num_case)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_anis"+to_stringp(params.kin_delta,3)+"_seed"+to_string(atoi(argv[3]));
+    int phs = NUM_PF;
+    string out_format = "ML_PF"+to_string(phs)+"_case"+to_string(num_case)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_seed"+to_string(atoi(argv[3]));
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
