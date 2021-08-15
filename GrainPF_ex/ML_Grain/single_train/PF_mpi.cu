@@ -814,7 +814,7 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 }
 
-void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* left_coor){
      for (int kt=0; kt<nts+1;kt++){
      int counts=0;
      int cur_tip = ntip[kt];
@@ -836,6 +836,29 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        frac[kt*num_grains+j] = counts*1.0/(fnx-2);
        summa += counts;//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
+       // <1> find the odd cases (t>0,j>0) where the fraction suddenly goes to zero but <2> at this moment, the left non-zero
+       // grain is in the same phase field. Then you need to (1) retrieve the last left-coor, (2) devide the big grain base 
+       // on left_coor, change the j and j-1 grain fractions (3) keep using this left coor in the following fraction calculation. 
+       // this trick also applies in the multiple grain coalesce
+       if ( (kt>0)&&(j>0)&&(frac[kt*num_grains+j]<1e-4)&&(frac[(kt-1)*num_grains+j]>1e-4) ) {
+           int left_nozero = j-1;
+           while(left_nozero>=0) { if (frac[kt*num_grains+left_nozero]>1e-4) {break;} else {left_nozero-=1;}}
+           if (left_nozero>=0){
+              if (aseq[left_nozero]==aseq[j]){
+                  // start the moves
+                  printf("find sudden merging\n");
+                  int pre_piece = left_coor[j] - left_coor[left_nozero]; // note the time is previous time - current time  
+                  int cur_piece = int(frac[kt*num_grains+left_nozero]*(fnx-2)) -pre_piece;
+                  frac[kt*num_grains+left_nozero] = pre_piece*1.0/(fnx-2);
+                  frac[kt*num_grains+j] = cur_piece*1.0/(fnx-2);
+                  printf("correction happens, %d grain frac %f, %d grain frac %f\n", left_nozero, frac[kt*num_grains+left_nozero],j,frac[kt*num_grains+j]);
+              }
+           }
+       }
+       else {
+           if (j>0){left_coor[j]=summa-counts;}
+       }
+
      }
      if (summa<fnx-2) {
         for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
@@ -861,7 +884,10 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   int* alpha_m;
   int* nucl_status;
   int* argmax;
-  
+  int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
+ 
+  for (int i=0; i<params.num_theta; i++){left_coor[i]=1;}
+ 
   float* PFs_old;
   float* PFs_new;
   // allocate x, y, phi, psi, U related params
@@ -1007,7 +1033,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
   //     printf("ntip %d \n", ntip[i]);
   // }
 
-   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq,ntip);
+   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);

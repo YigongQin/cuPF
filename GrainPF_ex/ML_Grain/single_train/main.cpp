@@ -462,6 +462,7 @@ int main(int argc, char** argv)
     std::default_random_engine generator;
     std::normal_distribution<float> distribution(grain_size,0.3*grain_size);
     for (int run=0;run<num_case;run++){
+   // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
     srand(atoi(argv[3])+run);
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
