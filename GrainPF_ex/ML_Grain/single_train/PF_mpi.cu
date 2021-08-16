@@ -847,8 +847,12 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
               if (aseq[left_nozero]==aseq[j]){
                   // start the moves
                   printf("find sudden merging\n");
+                  int all_piece = int(frac[kt*num_grains+left_nozero]*(fnx-2));
                   int pre_piece = left_coor[j] - left_coor[left_nozero]; // note the time is previous time - current time  
-                  int cur_piece = int(frac[kt*num_grains+left_nozero]*(fnx-2)) -pre_piece;
+                  // there is situation that previous or current one should go to zero
+                  if (pre_piece<0) {pre_piece=0;}
+                  if (pre_piece>all_piece) {pre_piece=all_piece;}
+                  int cur_piece = all_piece -pre_piece;
                   frac[kt*num_grains+left_nozero] = pre_piece*1.0/(fnx-2);
                   frac[kt*num_grains+j] = cur_piece*1.0/(fnx-2);
                   printf("correction happens, %d grain frac %f, %d grain frac %f\n", left_nozero, frac[kt*num_grains+left_nozero],j,frac[kt*num_grains+j]);
