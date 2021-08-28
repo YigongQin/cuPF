@@ -3,15 +3,17 @@ import scipy.io as sio
 import h5py
 import sys
 
-nx = 10
-ny = 41
+nx = 11
+ny = 11
 nt = 11
-
+Lx = 60
+Ly = 60
+top = 45
 BC = 1
 
-x = np.linspace(0-BC,40+BC,nx)
-y = np.linspace(0-BC,40+BC,ny)
-t = np.linspace(0,6e-5,nt)
+x = np.linspace(0-BC,Lx+BC,nx)
+y = np.linspace(0-BC,Ly+BC,ny)
+t = np.linspace(0,2*top*1e-6,nt)
 
 
 T = np.zeros(nx*ny*nt)
