@@ -139,10 +139,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 1100;
-    float grain_size= 5.0;
+    int num_case = 1; //1100;
+    float grain_size= 3.0;
     bool equal_len = false;
-    int valid_run = 100;
+    int valid_run = 1;//100;
     float G0;
     float Rmax;
     float nts;
@@ -460,7 +460,7 @@ int main(int argc, char** argv)
     float sum_frac = 0.0;
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
     std::default_random_engine generator;
-    std::normal_distribution<float> distribution(grain_size,0.3*grain_size);
+    std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
