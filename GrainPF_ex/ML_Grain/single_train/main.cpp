@@ -139,10 +139,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 1; //1100;
+    int num_case = 25; //1100;
     float grain_size= 3.0;
     bool equal_len = false;
-    int valid_run = 1;//100;
+    int valid_run = 25;//100;
     float G0;
     float Rmax;
     float nts;
@@ -425,6 +425,7 @@ int main(int argc, char** argv)
     float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
+    float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
@@ -449,23 +450,27 @@ int main(int argc, char** argv)
     mac.sint = new float[NUM_PF+1];
     //srand(atoi(argv[3]));
     mac.theta_arr[0] = 0.0f;
-    for (int i=0; i<NUM_PF; i++){
-        //mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
-        mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
-        mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
-        mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
-    }
 
     float* frac_ini = (float*) malloc(params.num_theta* sizeof(float));
     float sum_frac = 0.0;
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
     std::default_random_engine generator;
     std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
+
+    // start the region of gathering lots of runs
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
     srand(atoi(argv[3])+run);
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
+   // initialize the angles for every PF, while keep the liquid 0 
+    for (int i=0; i<NUM_PF; i++){
+        mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
+        //mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
+        mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
+        mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
+    }  
+   
     sum_frac = 0.0f;
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = rand()%NUM_PF +1;
@@ -564,6 +569,7 @@ int main(int argc, char** argv)
     memcpy(tip_y_asse+run*(params.nts+1),tip_y,sizeof(float)*(params.nts+1));  
     memcpy(frac_asse+run*(params.nts+1)*params.num_theta,frac,sizeof(float)*(params.nts+1)*params.num_theta); 
     memcpy(aseq_asse+run*params.num_theta,aseq,sizeof(int)*params.num_theta);
+    memcpy(angles_asse+run*(NUM_PF+1),mac.theta_arr,sizeof(float)*(NUM_PF+1));
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
@@ -597,10 +603,11 @@ int main(int argc, char** argv)
    // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );
 
     // claim file and dataset handles
-    hid_t  h5_file, alpha_o, yt_o, frac_o, seq_o, dataspace, xcoor, ycoor, dataspacex, dataspacey, dataspacet, dataspacefrac, dataspaceg;
-    hsize_t dimsf[2], dimx[1], dimy[1], dimf[1], dimg[1], dimfrac[1], dimnt[1];
+    hid_t  h5_file, alpha_o, yt_o, frac_o, seq_o, angle_o, dataspace, xcoor, ycoor, dataspacex, dataspacey, dataspacet, dataspacefrac, dataspaceg, dataspaceang;
+    hsize_t dimsf[2], dimx[1], dimy[1], dimf[1], dimg[1], dimfrac[1], dimnt[1], dimang[1];
     dimsf[0] = length; dimsf[1] = params.nts; dimx[0]=length_x; dimy[0]=length_y; dimf[0]=valid_run*length;
     dimg[0] = num_case*params.num_theta; dimfrac[0] = num_case*(params.nts+1)*params.num_theta; dimnt[0] = num_case*(params.nts+1);
+    dimang[0] = num_case*(NUM_PF+1);
     // claim file and dataset handles
     // create file, data spaces and datasets
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -610,6 +617,7 @@ int main(int argc, char** argv)
     dataspacet =  H5Screate_simple(1, dimnt, NULL);
     dataspacefrac = H5Screate_simple(1, dimfrac, NULL);
     dataspaceg =  H5Screate_simple(1, dimg, NULL);
+    dataspaceang = H5Screate_simple(1, dimang, NULL);
     xcoor = H5Dcreate2(h5_file, "x_coordinates", H5T_NATIVE_FLOAT_g, dataspacex,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ycoor = H5Dcreate2(h5_file, "y_coordinates", H5T_NATIVE_FLOAT_g, dataspacey,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     //phi_o = H5Dcreate2(h5_file, "phi", H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -618,6 +626,7 @@ int main(int argc, char** argv)
     yt_o = H5Dcreate2(h5_file, "y_t", H5T_NATIVE_FLOAT_g, dataspacet,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     frac_o = H5Dcreate2(h5_file, "fractions", H5T_NATIVE_FLOAT_g, dataspacefrac,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     seq_o = H5Dcreate2(h5_file, "sequence", H5T_NATIVE_INT, dataspaceg,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    angle_o = H5Dcreate2(h5_file, "angles", H5T_NATIVE_FLOAT_g, dataspaceang,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     // write the coordinates, temperature field and the true solution to the hdf5 file
    // status = H5Dwrite(phi_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, phi);
    // status = H5Dwrite(U_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, Uc);
@@ -627,6 +636,7 @@ int main(int argc, char** argv)
     status = H5Dwrite(frac_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, frac_asse);
     status = H5Dwrite(yt_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, tip_y_asse);
     status = H5Dwrite(seq_o, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, aseq_asse);
+    status = H5Dwrite(angle_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, angles_asse);
     // close all the hdf handles
     H5Sclose(dataspace);H5Sclose(dataspacex);
     //H5Dclose(phi_o);

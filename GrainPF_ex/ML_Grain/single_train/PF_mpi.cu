@@ -805,7 +805,7 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
              int C = fnx*cur_tip + i;
              //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
              if (alpha[C]==0) { zeros+=1;}
-             if (zeros>2) {contin_flag=false;break;}
+             if (zeros>5) {contin_flag=false;break;}
         }
      }
      cur_tip -=1;
