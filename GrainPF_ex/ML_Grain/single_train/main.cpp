@@ -238,8 +238,10 @@ int main(int argc, char** argv)
    // read_input(mac_folder+"/alpha.txt",mac.alpha_mac);
     read_input(mac_folder+"/psi.txt",mac.psi_mac);
     read_input(mac_folder+"/U.txt",mac.U_mac);
-    read_input(mac_folder+"/G.txt", &G0);
-    read_input(mac_folder+"/Rmax.txt", &Rmax);
+    //read_input(mac_folder+"/G.txt", &G0);
+    //read_input(mac_folder+"/Rmax.txt", &Rmax);
+    G0 = atof(argv[4]);
+    Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
 
 //    for (int pi = 0; pi<mac.Nt; pi++){
@@ -465,8 +467,8 @@ int main(int argc, char** argv)
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
-        mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
-        //mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
+       // mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
+        mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
         mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
     }  

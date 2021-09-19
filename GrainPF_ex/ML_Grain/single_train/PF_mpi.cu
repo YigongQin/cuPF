@@ -826,6 +826,8 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        //int aid = 1;
        
       // for (int i=1; i<fnx-1;i++){
+       if ( (kt>0) && (frac[(kt-1)*num_grains+j]<1e-4) ){counts=0;}
+       else{
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==0) ) {offset+=1;}
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==aseq[j]) ){
             // int C = fnx*cur_tip + i;
@@ -833,6 +835,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
              offset+=1;
              //if(offset>=fnx*cur_tip+fnx-1) {break;}
         }
+       }
        frac[kt*num_grains+j] = counts*1.0/(fnx-2);
        summa += counts;//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
@@ -843,6 +846,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        if ( (kt>0)&&(j>0)&&(frac[kt*num_grains+j]<1e-4)&&(frac[(kt-1)*num_grains+j]>1e-4) ) {
            int left_nozero = j-1;
            while(left_nozero>=0) { if (frac[kt*num_grains+left_nozero]>1e-4) {break;} else {left_nozero-=1;}}
+           printf("the left_non_zero %d of grain %d\n", left_nozero, j);
            if (left_nozero>=0){
               if (aseq[left_nozero]==aseq[j]){
                   // start the moves
@@ -1049,6 +1053,8 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
   cudaFree(nucl_status); 
   cudaFree(dStates); //cudaFree(random_nums);
   cudaFree(PFs_new); cudaFree(PFs_old);
+  cudaFree(alpha_m); cudaFree(argmax);
+  cudaFree(nucl_status);
 }
 
 
