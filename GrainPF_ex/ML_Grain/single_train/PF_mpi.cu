@@ -18,7 +18,7 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 10
+#define NUM_PF 8
 #define OMEGA 200
 
 void printCudaInfo(int rank, int i);
@@ -805,7 +805,7 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
              int C = fnx*cur_tip + i;
              //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
              if (alpha[C]==0) { zeros+=1;}
-             if (zeros>5) {contin_flag=false;break;}
+             if (zeros>2) {contin_flag=false;break;}
         }
      }
      cur_tip -=1;
@@ -826,7 +826,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        //int aid = 1;
        
       // for (int i=1; i<fnx-1;i++){
-       if ( (kt>0) && (frac[(kt-1)*num_grains+j]<1e-4) ){counts=0;}
+       if ( (kt>0) && (frac[(kt-1)*num_grains+j]<1e-4) ){counts=0;printf("skip because last time is 0\n");}
        else{
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==0) ) {offset+=1;}
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==aseq[j]) ){
@@ -839,34 +839,6 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        frac[kt*num_grains+j] = counts*1.0/(fnx-2);
        summa += counts;//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
-       // <1> find the odd cases (t>0,j>0) where the fraction suddenly goes to zero but <2> at this moment, the left non-zero
-       // grain is in the same phase field. Then you need to (1) retrieve the last left-coor, (2) devide the big grain base 
-       // on left_coor, change the j and j-1 grain fractions (3) keep using this left coor in the following fraction calculation. 
-       // this trick also applies in the multiple grain coalesce
-       if ( (kt>0)&&(j>0)&&(frac[kt*num_grains+j]<1e-4)&&(frac[(kt-1)*num_grains+j]>1e-4) ) {
-           int left_nozero = j-1;
-           while(left_nozero>=0) { if (frac[kt*num_grains+left_nozero]>1e-4) {break;} else {left_nozero-=1;}}
-           printf("the left_non_zero %d of grain %d\n", left_nozero, j);
-           if (left_nozero>=0){
-              if (aseq[left_nozero]==aseq[j]){
-                  // start the moves
-                  printf("find sudden merging\n");
-                  int all_piece = int(frac[kt*num_grains+left_nozero]*(fnx-2));
-                  int pre_piece = left_coor[j] - left_coor[left_nozero]; // note the time is previous time - current time  
-                  // there is situation that previous or current one should go to zero
-                  if (pre_piece<0) {pre_piece=0;}
-                  if (pre_piece>all_piece) {pre_piece=all_piece;}
-                  int cur_piece = all_piece -pre_piece;
-                  frac[kt*num_grains+left_nozero] = pre_piece*1.0/(fnx-2);
-                  frac[kt*num_grains+j] = cur_piece*1.0/(fnx-2);
-                  printf("correction happens, %d grain frac %f, %d grain frac %f\n", left_nozero, frac[kt*num_grains+left_nozero],j,frac[kt*num_grains+j]);
-              }
-           }
-       }
-       else {
-           if (j>0){left_coor[j]=summa-counts;}
-       }
-
      }
      if (summa<fnx-2) {
         for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
@@ -968,9 +940,9 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
 
    int num_block_c = (cnx*cny+blocksize_2d-1)/blocksize_2d;   
-   init_nucl_status<<< num_block_c, blocksize_2d >>>(phi_old, nucl_status, cnx, cny, fnx); 
+   //init_nucl_status<<< num_block_c, blocksize_2d >>>(phi_old, nucl_status, cnx, cny, fnx); 
    //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
-   init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
+   //init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
   // gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);

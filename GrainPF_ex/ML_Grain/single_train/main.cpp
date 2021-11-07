@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 10
+#define NUM_PF 8
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, float* tip_y, float* frac, int* aseq);
 
@@ -139,10 +139,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 25; //1100;
-    float grain_size= 3.0;
+    int num_case = 220; //1100;
+    float grain_size= 2.5;
     bool equal_len = false;
-    int valid_run = 25;//100;
+    int valid_run = 20;//100;
     float G0;
     float Rmax;
     float nts;
@@ -238,10 +238,10 @@ int main(int argc, char** argv)
    // read_input(mac_folder+"/alpha.txt",mac.alpha_mac);
     read_input(mac_folder+"/psi.txt",mac.psi_mac);
     read_input(mac_folder+"/U.txt",mac.U_mac);
-    //read_input(mac_folder+"/G.txt", &G0);
-    //read_input(mac_folder+"/Rmax.txt", &Rmax);
-    G0 = atof(argv[4]);
-    Rmax = atof(argv[5]); 
+    read_input(mac_folder+"/G.txt", &G0);
+    read_input(mac_folder+"/Rmax.txt", &Rmax);
+    //G0 = atof(argv[4]);
+    //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
 
 //    for (int pi = 0; pi<mac.Nt; pi++){
@@ -294,8 +294,8 @@ int main(int argc, char** argv)
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
     if (pM.rank==0){ 
-    std::cout<<"G = "<<params.G<<std::endl;
-    std::cout<<"R = "<<params.R<<std::endl;
+    std::cout<<"G0 = "<<G0<<std::endl;
+    std::cout<<"Rmax = "<<Rmax<<std::endl;
     std::cout<<"delta = "<<params.delta<<std::endl;
     std::cout<<"kinetic delta = "<<params.kin_delta<<std::endl;
     std::cout<<"beta0 = "<<params.beta0<<std::endl;
@@ -463,19 +463,19 @@ int main(int argc, char** argv)
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
-    srand(atoi(argv[3])+run);
+    srand(atoi(argv[3])*((int)G0)+run);
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
-       // mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
-        mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
+        mac.theta_arr[i+1] = 1.0f*(rand()%NUM_PF)/(NUM_PF-1)*(-M_PI/2.0);
+       // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
         mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
     }  
    
     sum_frac = 0.0f;
     for (int i=0; i<params.num_theta; i++){
-       aseq[i] = rand()%NUM_PF +1;
+       aseq[i] = i+1; //rand()%NUM_PF +1;
        frac_ini[i] = abs(distribution(generator)); 
        sum_frac += frac_ini[i];
     }
