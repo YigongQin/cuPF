@@ -20,6 +20,7 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 #define OMEGA 200
+#define ZERO 5
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -646,7 +647,7 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax){
     //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
    if (C<length){
    // for loop to find the argmax of the phase field
-     for (int PF_id=1; PF_id<NUM_PF; PF_id++){
+     for (int PF_id=0; PF_id<NUM_PF; PF_id++){
        int loc = C + length*PF_id; 
        int max_loc = C + length*argmax[C];
        if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
@@ -805,7 +806,7 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
              int C = fnx*cur_tip + i;
              //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
              if (alpha[C]==0) { zeros+=1;}
-             if (zeros>2) {contin_flag=false;break;}
+             if (zeros>ZERO) {contin_flag=false;break;}
         }
      }
      cur_tip -=1;
@@ -826,21 +827,22 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        //int aid = 1;
        
       // for (int i=1; i<fnx-1;i++){
+      //   if (alpha[offset+i]==aseq[j]){counts+=1};
+      // }
        if ( (kt>0) && (frac[(kt-1)*num_grains+j]<1e-4) ){counts=0;printf("skip because last time is 0\n");}
        else{
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==0) ) {offset+=1;}
        while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==aseq[j]) ){
-            // int C = fnx*cur_tip + i;
              counts+=1;
              offset+=1;
-             //if(offset>=fnx*cur_tip+fnx-1) {break;}
         }
        }
        frac[kt*num_grains+j] = counts*1.0/(fnx-2);
        summa += counts;//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
      }
-     if (summa<fnx-2) {
+     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
+     if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
         for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
      }
      printf("offset %d, summation %d\n", offset%fnx, summa);     

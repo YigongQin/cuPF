@@ -467,7 +467,7 @@ int main(int argc, char** argv)
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
-        mac.theta_arr[i+1] = 1.0f*(rand()%NUM_PF)/(NUM_PF-1)*(-M_PI/2.0);
+        mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
        // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
         mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
@@ -483,7 +483,7 @@ int main(int argc, char** argv)
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= sum_frac;
         grain_grid[i] = (int) (frac_ini[i]*pM.nx_loc);
-    printf("grain %d, PF %d, grid %d, frac %f\n",i,aseq[i],grain_grid[i],frac_ini[i]);
+    printf("grain %d, PF %d, angle %f, grid %d, frac %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i]);
     }
 
     for (int i=0; i<params.num_theta-1; i++){
@@ -540,6 +540,8 @@ int main(int argc, char** argv)
       }
       }
       alpha_i[id] = aseq[aid];
+      if ( (alpha_i[id]>=0) || (alpha_i[id]<=params.num_theta-1) ){}
+      else {printf("alpha is wrong \n");exit(1);}
       //printf("%d ", alpha_i[id]);
       //if (i==90) printf("%d ", alpha_i[id]);
      // if (alpha[id]<-1.1) printf("%f ",alpha[id]); 
