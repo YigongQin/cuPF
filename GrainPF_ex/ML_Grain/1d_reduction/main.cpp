@@ -84,13 +84,13 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
     
     dataspace = H5Screate_simple(1, dim, NULL);
 
-    if (dtype=="int"){
+    if (dtype.compare("int") ==0){
 
     	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     	status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
     }
-    else if (dtype=="float"){
+    else if (dtype.compare("float") ==0){
     	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     	status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
