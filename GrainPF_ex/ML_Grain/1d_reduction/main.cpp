@@ -607,14 +607,7 @@ int main(int argc, char** argv)
 
     // claim file and dataset handles
     hid_t  h5_file; 
-    /*alpha_o, yt_o, frac_o, seq_o, angle_o, dataspace, xcoor, ycoor, dataspacex, dataspacey, dataspacet, dataspacefrac, dataspaceg, dataspaceang;
-    hsize_t dimx[1], dimy[1], dimf[1], dimg[1], dimfrac[1], dimnt[1], dimang[1];
-    dimx[0]=length_x; dimy[0]=length_y; dimf[0]=valid_run*length;
-    dimg[0] = num_case*params.num_theta; 
-    dimfrac[0] = num_case*(params.nts+1)*params.num_theta; 
-    dimnt[0] = num_case*(params.nts+1);
-    dimang[0] = num_case*(NUM_PF+1);
-    */
+
 
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -630,36 +623,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
 
 
-    /*
-    dataspace = H5Screate_simple(1, dimf, NULL);
-    dataspacex = H5Screate_simple(1, dimx, NULL);
-    dataspacey = H5Screate_simple(1, dimy, NULL);
-    dataspacet =  H5Screate_simple(1, dimnt, NULL);
-    dataspacefrac = H5Screate_simple(1, dimfrac, NULL);
-    dataspaceg =  H5Screate_simple(1, dimg, NULL);
-    dataspaceang = H5Screate_simple(1, dimang, NULL);
 
-    xcoor = H5Dcreate2(h5_file, "x_coordinates", H5T_NATIVE_FLOAT_g, dataspacex,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    ycoor = H5Dcreate2(h5_file, "y_coordinates", H5T_NATIVE_FLOAT_g, dataspacey,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    alpha_o = H5Dcreate2(h5_file, "alpha", H5T_NATIVE_INT, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    yt_o = H5Dcreate2(h5_file, "y_t", H5T_NATIVE_FLOAT_g, dataspacet,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    frac_o = H5Dcreate2(h5_file, "fractions", H5T_NATIVE_FLOAT_g, dataspacefrac,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    seq_o = H5Dcreate2(h5_file, "sequence", H5T_NATIVE_INT, dataspaceg,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    angle_o = H5Dcreate2(h5_file, "angles", H5T_NATIVE_FLOAT_g, dataspaceang,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    status = H5Dwrite(alpha_o, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, alpha_asse);
-    status = H5Dwrite(xcoor, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, x);
-    status = H5Dwrite(ycoor, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, y);
-    status = H5Dwrite(frac_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, frac_asse);
-    status = H5Dwrite(yt_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, tip_y_asse);
-    status = H5Dwrite(seq_o, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, aseq_asse);
-    status = H5Dwrite(angle_o, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, angles_asse);
-    // close all the hdf handles
-    H5Sclose(dataspace);H5Sclose(dataspacex);
-    H5Dclose(alpha_o);
-    H5Dclose(xcoor);
-    H5Dclose(ycoor);H5Sclose(dataspacey);
-	*/
 
     H5Fclose(h5_file);
     H5Dclose(datasetT);
