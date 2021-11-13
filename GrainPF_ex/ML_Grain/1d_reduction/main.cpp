@@ -78,7 +78,7 @@ void read_input(std::string input, float* target){
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
 
 	herr_t  status;
-	hid_t dataspace, h5data;
+	hid_t dataspace, h5data=0;
 	hsize_t dim[1];
 	dim[0] = length;
     
