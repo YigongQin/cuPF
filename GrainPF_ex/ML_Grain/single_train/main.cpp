@@ -464,6 +464,7 @@ int main(int argc, char** argv)
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
     srand(atoi(argv[3])*((int)G0)+run);
+    generator.seed( atoi(argv[3])*((int)G0)+run );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
