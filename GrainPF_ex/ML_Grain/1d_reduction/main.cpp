@@ -75,12 +75,12 @@ void read_input(std::string input, float* target){
 }
 
 
-void h5write_1d(hid_t h5_file, std::string name, void* data, int length, std::string dtype){
+void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
 
 	herr_t  status;
 	hid_t dataspace, h5data;
 	hsize_t dim[1];
-	dim[1] = length;
+	dim[0] = length;
     
     dataspace = H5Screate_simple(1, dim, NULL);
 
