@@ -22,7 +22,7 @@ using namespace std;
 #define NUM_PF 8
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, \
-	int* alpha_i, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* Wv);
+	int* alpha_i, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* W_v);
 
 
 // add function for easy retrieving params
@@ -570,7 +570,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, mobility, C_temp, C_comp, Wv);
+    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, mobility, C_temp, C_comp, W_v);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
