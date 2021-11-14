@@ -21,7 +21,8 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, float* tip_y, float* frac, int* aseq);
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, \
+	int* alpha_i, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* Wv);
 
 
 // add function for easy retrieving params
@@ -438,6 +439,12 @@ int main(int argc, char** argv)
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
     float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
+
+    int sample_time = 101;
+    float* mobility =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
+    float* C_temp   =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
+    float* C_comp   =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
+    float* W_v      =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -563,7 +570,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq);
+    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, mobility, C_temp, C_comp, Wv);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
