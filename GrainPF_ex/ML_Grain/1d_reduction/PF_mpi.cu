@@ -913,7 +913,10 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   int length = fnx*fny;
   int length_c = cnx*cny;
 
-  float* d_mobility, d_C_temp, d_C_comp, d_W;
+  float* d_mobility;
+  float* d_C_temp;
+  float* d_C_comp;
+  float* d_W;
 
   int record_flag = params.Mt/(SAM_TIME-1);
 
