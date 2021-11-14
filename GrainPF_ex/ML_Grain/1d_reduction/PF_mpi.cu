@@ -24,7 +24,7 @@ using namespace std;
 
 #define TIPP 100
 #define BLANK 0.3
-#define SAM_TIME = 101
+#define SAM_TIME 101
 
 
 void printCudaInfo(int rank, int i);
