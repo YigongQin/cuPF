@@ -441,10 +441,11 @@ int main(int argc, char** argv)
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
 
     int sample_time = 101;
-    float* mobility =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
-    float* C_temp   =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
-    float* C_comp   =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
-    float* W_v      =(float*) malloc(sample_time*NUM_PF*length_y*sizeof(float));
+    int coeff_len = sample_time*NUM_PF*length_y;
+    float* mobility =(float*) malloc(coeff_len*sizeof(float));
+    float* C_temp   =(float*) malloc(coeff_len*sizeof(float));
+    float* C_comp   =(float*) malloc(coeff_len*sizeof(float));
+    float* W_v      =(float*) malloc(coeff_len*sizeof(float));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -629,8 +630,10 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
     h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
 
-
-
+    h5write_1d(h5_file, "mobility", mobility, coeff_len, "float");
+    h5write_1d(h5_file, "C_comp",   C_comp,   coeff_len, "float");
+    h5write_1d(h5_file, "C_temp",   C_temp,   coeff_len, "float");
+    h5write_1d(h5_file, "W_v",      W_v,   coeff_len, "float");
 
     H5Fclose(h5_file);
     H5Dclose(datasetT);
