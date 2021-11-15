@@ -70,6 +70,10 @@ struct GlobalConstants {
   float nuc_rad;
   int pts_cell; 
 
+  // moving-domain 
+  float moving_ratio;
+  int ny_full;
+
 };
 
 struct params_MPI{
@@ -82,6 +86,9 @@ struct params_MPI{
     int nprocy;
     int nx_loc;
     int ny_loc;
+
+    // moving-domain
+    int ny_full_loc;
 };
 
 struct Mac_input{

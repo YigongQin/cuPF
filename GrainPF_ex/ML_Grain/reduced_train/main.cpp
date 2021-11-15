@@ -299,7 +299,7 @@ int main(int argc, char** argv)
 
     params.nx = (int) (params.lxd/params.dx/params.W0);//global cells 
     params.ny = (int) (params.moving_ratio*params.nx);
-    params.ny_full = (int) (params.aspect_ratio*params.nx);
+    params.ny_full = (int) (params.asp_ratio*params.nx);
     params.lxd = params.nx*dxd;
     params.lyd = params.ny*dxd;
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
