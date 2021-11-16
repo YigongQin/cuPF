@@ -1106,6 +1106,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 cur_tip-=1;
+                printf("current tip location %d \n", cur_tip);
    //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
    //printf(" ymax %f \n",y[fny-3] );
 
