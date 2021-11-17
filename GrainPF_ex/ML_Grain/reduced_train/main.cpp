@@ -21,7 +21,7 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, 
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, 
     int* alpha_i_full, float* tip_y, float* frac, int* aseq);
 
 
@@ -572,7 +572,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq);
+    setup( pM, params, mac, length_x, length_y, length_y_full, x, y, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -631,7 +631,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
     h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
 
-
+    h5write_1d(h5_file, "alpha_full", alpha_i_full, sizeof(alpha_i_full), "float");
 
 
     H5Fclose(h5_file);

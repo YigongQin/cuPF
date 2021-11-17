@@ -855,7 +855,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 
 
 __global__ void 
-move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny){
+move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int move_count, int fnx, int fny){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny);
@@ -875,6 +875,15 @@ move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny)
     if ( (i>0) && (i<fnx-1) && (j==fny-2) && (PF_id<NUM_PF) ) {
 
         ph_buff[C] = 2*ph[C] - ph[C-fnx];}
+
+    // add last layer of alpha to alpha_full[move_count]
+    if ( (i<fnx) && (j==0) && (PF_id==0) ) {
+
+        alpha_full[move_count*fnx+C] = alpha[C];
+
+    }
+
+
 }
 
 __global__ void
@@ -933,7 +942,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, 
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, 
   int* alpha_i_full, float* tip_y, float* frac, int* aseq){
   // we should have already pass all the data structure in by this time
   // move those data onto device
@@ -950,6 +959,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   float* phi_old;// = NULL;
   float* phi_new;// = NULL;
   int* alpha_m;
+  int* d_alpha_full;
   int* nucl_status;
   int* argmax;
   int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
@@ -964,13 +974,16 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
 
   int length = fnx*fny;
   int length_c = cnx*cny;
+
+  int move_count = 0;
   cudaMalloc((void **)&x_device, sizeof(float) * fnx);
   cudaMalloc((void **)&y_device, sizeof(float) * fny);
   cudaMalloc((void **)&y_device2, sizeof(float) * fny);
 
   cudaMalloc((void **)&phi_old,  sizeof(float) * length);
   cudaMalloc((void **)&phi_new,  sizeof(float) * length);
-  cudaMalloc((void **)&alpha_m,    sizeof(int) * length);  
+  cudaMalloc((void **)&alpha_m,    sizeof(int) * length); 
+  cudaMalloc((void **)&d_alpha_full,   sizeof(int) * fnx*fny_f);  
   cudaMalloc((void **)&nucl_status,    sizeof(int) * length_c);
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&PFs_new,    sizeof(float) * length * NUM_PF);
@@ -985,6 +998,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaMemcpy(phi_new, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
 
   cudaMemcpy(alpha_m, alpha, sizeof(int) * length, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_alpha_full, alpha_i_full, sizeof(int) * fnx*fny_f, cudaMemcpyHostToDevice);
 
   // pass all the read-only params into global constant
   cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
@@ -1105,9 +1119,12 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&cur_tip, PFs_old, meanx, meanx_host, fnx,fny);
              while (cur_tip >=tip_thres){
-                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
+                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, move_count, fnx, fny);
                 copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
+                move_count +=1;
                 cur_tip-=1;
+                printf("moving count %d \n", move_count);
                // printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
    //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
    //printf(" ymax %f \n",y[fny-3] );
@@ -1144,6 +1161,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
   cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(nucl_status); 
