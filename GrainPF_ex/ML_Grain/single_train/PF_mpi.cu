@@ -794,24 +794,24 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 }
 
 
-void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
 
      bool contin_flag = true;
 
      while(contin_flag){
        // at this line
-        cur_tip += 1;
+        *cur_tip += 1;
         int zeros = 0;
         for (int i=1; i<fnx-1;i++){
-             int C = fnx*cur_tip + i;
+             int C = fnx*(*cur_tip) + i;
              //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
              if (alpha[C]==0) { zeros+=1;}
              if (zeros>ZERO) {contin_flag=false;break;}
         }
      }
-     cur_tip -=1;
-     tip_y[kt] = y[cur_tip];
-     ntip[kt] = cur_tip;
+     *cur_tip -=1;
+     tip_y[kt] = y[*cur_tip];
+     ntip[kt] = *cur_tip;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 }
 
@@ -967,7 +967,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -999,7 +999,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
           }
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
