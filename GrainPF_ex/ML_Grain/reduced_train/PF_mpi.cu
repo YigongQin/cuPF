@@ -22,7 +22,7 @@ using namespace std;
 #define OMEGA 200
 #define ZERO 5
 
-#define TIPP 10
+#define TIPP 20
 #define BLANK 0.3
 
 void printCudaInfo(int rank, int i);
@@ -1093,11 +1093,12 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
     
      if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
+             cudaMemset(alpha_m, 0, length * sizeof(int));
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
-             cudaMemcpy(y_device, y, fny * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+             calc_qois(0, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
           }
      
 
@@ -1107,14 +1108,16 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 cur_tip-=1;
-                printf("current tip location %d \n", cur_tip);
+               // printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
    //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
    //printf(" ymax %f \n",y[fny-3] );
 
              }
+          //cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost);
+          //printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
           set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
           set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-          if ((2*kt+2)%1000==0) printf("currrent tip %d \n", cur_tip);
+          //if ((2*kt+2)%1000==0) printf("currrent tip %d \n", cur_tip);
           } 
 
 

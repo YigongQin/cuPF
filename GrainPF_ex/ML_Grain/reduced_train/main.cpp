@@ -149,10 +149,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 220; //1100;
+    int num_case = 1; //1100;
     float grain_size= 2.5;
     bool equal_len = false;
-    int valid_run = 20;//100;
+    int valid_run = 1;//100;
     float G0;
     float Rmax;
     float nts;
