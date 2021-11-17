@@ -877,10 +877,10 @@ move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* 
         ph_buff[C] = 2*ph[C] - ph[C-fnx];}
 
     // add last layer of alpha to alpha_full[move_count]
-    if ( (i<fnx) && (j==0) && (PF_id==0) ) {
+    if ( (i<fnx) && (j==1) && (PF_id==0) ) {
 
         alpha_full[move_count*fnx+C] = alpha[C];
-
+        //printf("%d ", alpha[C]);
     }
 
 

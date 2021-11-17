@@ -631,7 +631,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
     h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
 
-    h5write_1d(h5_file, "alpha_full", alpha_i_full, sizeof(alpha_i_full), "float");
+    h5write_1d(h5_file, "alpha_full", alpha_i_full, full_length, "int");
 
 
     H5Fclose(h5_file);
