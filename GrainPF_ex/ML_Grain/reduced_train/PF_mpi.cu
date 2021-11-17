@@ -797,7 +797,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 }
 
 
-void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip, int move_count){
 
      bool contin_flag = true;
 
@@ -814,7 +814,7 @@ void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains
      }
      cur_tip -=1;
      tip_y[kt] = y[cur_tip];
-     ntip[kt] = cur_tip;
+     ntip[kt] = cur_tip+move_count;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 }
 
@@ -998,7 +998,6 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaMemcpy(phi_new, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
 
   cudaMemcpy(alpha_m, alpha, sizeof(int) * length, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_alpha_full, alpha_i_full, sizeof(int) * fnx*fny_f, cudaMemcpyHostToDevice);
 
   // pass all the read-only params into global constant
   cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
@@ -1112,7 +1111,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(0, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+             calc_qois(0, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq, ntip, move_count);
           }
      
 
@@ -1154,7 +1153,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
   //     printf("ntip %d \n", ntip[i]);
   // }
 
-   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+   
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
@@ -1162,6 +1161,9 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   calc_frac(alpha_i_full, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+
   cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(nucl_status); 
