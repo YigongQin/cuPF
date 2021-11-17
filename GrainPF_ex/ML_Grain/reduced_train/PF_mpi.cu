@@ -1077,7 +1077,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    float* meanx_host=(float*) malloc(fny* sizeof(float));
 
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
+   calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
