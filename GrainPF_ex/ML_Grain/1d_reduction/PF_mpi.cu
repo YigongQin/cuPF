@@ -467,7 +467,7 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, int* alpha_m, float* x, 
 __global__ void
 rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, \
        float t, float* X, float* Y, float* Tmac, float* u_3d, int Nx, int Ny, int Nt, curandState* states, float* cost, float* sint, \
-       float* mobility, float* C_temp, float* C_comp, float* W, int record_flag ){
+       float* mobility, float* C_temp, float* C_comp, float* C_comp_r, float* W, int record_flag ){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny);
@@ -515,7 +515,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
           A2 =  cP.a_s*( 1.0f + cP.epsilon*(ux2*ux2 + uz2*uz2) / MAG_sq2);}
        else {A2 = 1.0f;}        //float A2 = atheta(phxn,phzn,cosa,sina);
         //float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        if (MAG_sq>1e-12){
+        //if (MAG_sq>1e-12){
         float Ak2 = kine_ani(phxn,phzn,cosa,sina);
         A2 = A2*Ak2;
 
@@ -630,16 +630,18 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
 
           int time_now = nt/record_flag;
           int add_loc = time_now*NUM_PF*fny + j*NUM_PF + PF_id;
-          atomicAdd(C_temp + add_loc, 1.0f-ph[C]*ph[C]);
+          atomicAdd(C_temp + add_loc, (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) );
           atomicAdd(W + add_loc, ph[C]);
           atomicAdd(mobility + add_loc, rhs_psi);
+          atomicAdd(C_comp + add_loc, dphi);
+          atomicAdd(C_comp_r + add_loc, (1.0f-ph[C]*ph[C])*ph[C] ) ;
 
         }
 
         
         //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
         //if (C==1000){printf("%f ",ph_new[C]);}
-      }else{
+      /*}else{
         ph_new[C] = ph[C];
         if (nt%record_flag==0){
 
@@ -650,7 +652,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
           atomicAdd(mobility + add_loc, 0);
 
         }
-      }
+      }*/
      }
 } 
 
@@ -883,7 +885,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U,\
-  int* alpha, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* W){
+  int* alpha, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* C_comp_r, float* W){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -916,6 +918,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   float* d_mobility;
   float* d_C_temp;
   float* d_C_comp;
+  float* d_C_comp_r;
   float* d_W;
 
   int record_flag = params.Mt/(SAM_TIME-1);
@@ -930,6 +933,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaMemcpy(d_mobility, mobility, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
   cudaMemcpy(d_C_temp, C_temp, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
   cudaMemcpy(d_C_comp, C_comp, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_C_comp_r, C_comp_r, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
   cudaMemcpy(d_W, W, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
 
   cudaMalloc((void **)&x_device, sizeof(float) * fnx);
@@ -1014,7 +1018,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
    set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
    rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, fnx, fny, 0,\
-0, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, d_mobility, d_C_temp, d_C_comp, d_W, record_flag  );
+0, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, d_mobility, d_C_temp, d_C_comp, d_C_comp_r, d_W, record_flag  );
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
    int kts = params.Mt/params.nts;
@@ -1083,6 +1087,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(mobility, d_mobility, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(C_temp, d_C_temp, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(C_comp, d_C_comp, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
+   cudaMemcpy(C_comp_r, d_C_comp_r, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(W, d_W, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
 
   cudaFree(x_device); cudaFree(y_device);

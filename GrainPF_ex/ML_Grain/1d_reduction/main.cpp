@@ -22,7 +22,7 @@ using namespace std;
 #define NUM_PF 8
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, \
-	int* alpha_i, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* W_v);
+	int* alpha_i, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* C_comp_r, float* W_v);
 
 
 // add function for easy retrieving params
@@ -445,6 +445,7 @@ int main(int argc, char** argv)
     float* mobility =(float*) malloc(coeff_len*sizeof(float));
     float* C_temp   =(float*) malloc(coeff_len*sizeof(float));
     float* C_comp   =(float*) malloc(coeff_len*sizeof(float));
+    float* C_comp_r =(float*) malloc(coeff_len*sizeof(float));
     float* W_v      =(float*) malloc(coeff_len*sizeof(float));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
@@ -571,7 +572,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, mobility, C_temp, C_comp, W_v);
+    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, mobility, C_temp, C_comp, C_comp_r, W_v);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -632,6 +633,8 @@ int main(int argc, char** argv)
 
     h5write_1d(h5_file, "mobility", mobility, coeff_len, "float");
     h5write_1d(h5_file, "C_comp",   C_comp,   coeff_len, "float");
+    h5write_1d(h5_file, "C_comp_r", C_comp_r,   coeff_len, "float");
+
     h5write_1d(h5_file, "C_temp",   C_temp,   coeff_len, "float");
     h5write_1d(h5_file, "W_v",      W_v,   coeff_len, "float");
 
