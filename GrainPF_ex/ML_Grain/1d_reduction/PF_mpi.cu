@@ -928,6 +928,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaMalloc((void **)&d_mobility, coeff_len*sizeof(float));
   cudaMalloc((void **)&d_C_temp,   coeff_len*sizeof(float));
   cudaMalloc((void **)&d_C_comp,   coeff_len*sizeof(float));
+  cudaMalloc((void **)&d_C_comp_r,   coeff_len*sizeof(float));
   cudaMalloc((void **)&d_W,        coeff_len*sizeof(float));
 
   cudaMemcpy(d_mobility, mobility, sizeof(float) * coeff_len, cudaMemcpyHostToDevice);
