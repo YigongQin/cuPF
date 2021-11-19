@@ -885,7 +885,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U,\
-  int* alpha, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* C_comp_r, float* W){
+  int* alpha, float* tip_y, float* frac, int* aseq, float* mobility, float* C_temp, float* C_comp, float* C_comp_r, float* W, float* all_phi){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -1090,6 +1090,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(C_comp, d_C_comp, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(C_comp_r, d_C_comp_r, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(W, d_W, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
+   cudaMemcpy(all_phi, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
 
   cudaFree(x_device); cudaFree(y_device);
   cudaFree(phi_old); cudaFree(phi_new);
