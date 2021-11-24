@@ -1001,6 +1001,11 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              //QoIs based on alpha field
              calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
           }
+
+     if ( (2*kt+2)%(params.Mt/5)==0 ){
+      params.kin_delta += 0.00;
+      cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
+     }
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
