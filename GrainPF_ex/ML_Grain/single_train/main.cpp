@@ -148,10 +148,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 220; //1100;
+    int num_case = 25; //1100;
     float grain_size= 2.5;
     bool equal_len = false;
-    int valid_run = 20;//100;
+    int valid_run = 5;//100;
     float G0;
     float Rmax;
     float nts;
@@ -197,6 +197,7 @@ int main(int argc, char** argv)
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
         getParam(lineText, "kin_delta", params.kin_delta);
+        params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
         getParam(lineText, "beta0", params.beta0);
         // new multiple
         //getParam(lineText, "Ti", params.Ti);
@@ -472,12 +473,13 @@ int main(int argc, char** argv)
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
-    srand(atoi(argv[3])*((int)G0)+run);
-    generator.seed( atoi(argv[3])*((int)G0)+run );
+    srand(num_case*atoi(argv[3])*((int)G0)+run);
+    generator.seed( num_case*atoi(argv[3])*((int)G0)+run );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
-        mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
+        //mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
+        mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
        // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
         mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
