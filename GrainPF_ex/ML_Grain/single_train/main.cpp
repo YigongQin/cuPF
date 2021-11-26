@@ -21,7 +21,8 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, float* tip_y, float* frac, int* aseq);
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
+    float* tip_y, float* frac, int* aseq, int* extra_area, float* tip_final);
 
 
 // add function for easy retrieving params
@@ -433,12 +434,18 @@ int main(int argc, char** argv)
     int* alpha_i=(int*) malloc(length* sizeof(int));
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
+    float* tip_final =(float*) malloc(params.num_theta* sizeof(float));
+    int* extra_area  =(int*)   malloc((params.nts+1)*params.num_theta* sizeof(int));
     int* aseq=(int*) malloc(params.num_theta* sizeof(int));
+
     float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
     float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
+
+    int* extra_area_asse  = (int*)   malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
+    float* tip_final_asse = (float*) malloc(num_case*params.num_theta* sizeof(float));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -565,7 +572,7 @@ int main(int argc, char** argv)
     }
 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq);
+    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, extra_area, tip_final);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -575,6 +582,8 @@ int main(int argc, char** argv)
     memcpy(frac_asse+run*(params.nts+1)*params.num_theta,frac,sizeof(float)*(params.nts+1)*params.num_theta); 
     memcpy(aseq_asse+run*params.num_theta,aseq,sizeof(int)*params.num_theta);
     memcpy(angles_asse+run*(NUM_PF+1),mac.theta_arr,sizeof(float)*(NUM_PF+1));
+    memcpy(extra_area_asse+run*(params.nts+1)*params.num_theta, extra_area, sizeof(int)*(params.nts+1)*params.num_theta );
+    memcpy(tip_final_asse +run*params.num_theta, tip_final,  sizeof(float)*params.num_theta ); 
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
@@ -624,6 +633,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
     h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
 
+    h5write_1d(h5_file, "extra_area", extra_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
 
 
 

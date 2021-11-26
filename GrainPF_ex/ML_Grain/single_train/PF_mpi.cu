@@ -794,8 +794,10 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 }
 
 
-void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area){
 
+     // cur_tip here inludes the halo
      bool contin_flag = true;
 
      while(contin_flag){
@@ -813,6 +815,20 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+
+     for (int j = cur_tip+1; j<fny-1; j++){
+
+         for (int i=1; i<fnx-1;i++){
+
+            int C = fnx*(*cur_tip) + i;
+
+              if (alpha[C]>0){ extra_area[kt*num_grains+alpha[C]]+=1; }
+
+         }
+
+     }
+
+
 }
 
 void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* left_coor){
@@ -849,7 +865,8 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
      }
 }
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, float* tip_y, float* frac, int* aseq){
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
+  float* tip_y, float* frac, int* aseq, int* extra_area, float* tip_final){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -1023,11 +1040,14 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
   //     printf("ntip %d \n", ntip[i]);
   // }
 
-   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+
+   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor); // get fractions at all these lines
+
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); // the final frame
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
   cudaFree(x_device); cudaFree(y_device);
