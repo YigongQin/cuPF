@@ -493,11 +493,17 @@ int main(int argc, char** argv)
     }  
    
     sum_frac = 0.0f;
+    float temp_sum = 0.0f;
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = i+1; //rand()%NUM_PF +1;
        frac_ini[i] = abs(distribution(generator)); 
+       temp_sum = frac_ini[i] + sum_frac;
+
+       if (temp_sum>params.lxd){
+           frac_ini[i] -= temp_sum-params.lxd;}
        sum_frac += frac_ini[i];
     }
+    temp_sum = 0.0f;
    
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= sum_frac;
