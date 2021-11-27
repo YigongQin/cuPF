@@ -1020,7 +1020,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
           }
 
      if ( (2*kt+2)%(params.Mt/5)==0 ){
-      params.kin_delta += 0.01;
+      params.kin_delta += 0.00;
       cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
      }
      
@@ -1036,7 +1036,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
 
 
    }
-    params.kin_delta -= 0.05;
+   // params.kin_delta -= 0.05;
   // for (int i=0;i<params.nts+1;i++){
   //     printf("ntip %d \n", ntip[i]);
   // }
