@@ -816,7 +816,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      ntip[kt] = *cur_tip;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
-     for (int j = cur_tip+1; j<fny-1; j++){
+     for (int j = *cur_tip+1; j<fny-1; j++){
 
          for (int i=1; i<fnx-1;i++){
 
@@ -984,7 +984,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1016,7 +1016,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area);
           }
 
      if ( (2*kt+2)%(params.Mt/5)==0 ){
