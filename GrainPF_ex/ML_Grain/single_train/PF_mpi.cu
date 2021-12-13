@@ -817,7 +817,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
      bool* exist_y = (bool*) malloc(num_grains* sizeof(bool));
      for (int g=0; g<num_grains; g++){
-             tip_final[g] = *cur_tip;
+             tip_final[kt*num_grains+g] = *cur_tip;
          }
      for (int j = *cur_tip+1; j<fny-1; j++){ 
          for (int g=0; g<num_grains; g++){
@@ -830,7 +830,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
 
          }
          for (int g=0; g<num_grains; g++){
-             if (exist_y[g]==true){tip_final[g] =j ; }
+             if (exist_y[g]==true){tip_final[kt*num_grains+g] =j ; }
          }
      }
 
