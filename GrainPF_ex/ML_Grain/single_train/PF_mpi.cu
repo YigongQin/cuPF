@@ -20,7 +20,7 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 #define OMEGA 200
-#define ZERO 5
+#define ZERO 0
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -834,32 +834,26 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
      int counts=0;
      int cur_tip = ntip[kt];
      printf("cur_tip, %d\n",cur_tip);
-     int offset = fnx*cur_tip+1;  // pointer points at the first grid
+       // pointer points at the first grid
+     int* counts= (int*) malloc(num_grains);
      int summa=0;
+
+     for (int i=1; i<fnx-1;i++){
+            int C = fnx*cur_tip + i;
+            if (alpha[C]>0){counts[alpha[C]-1]+=1;}
+      }
+
      for (int j=0; j<num_grains;j++){
-       counts=0;
-       //int aid = 1;
-       
-      // for (int i=1; i<fnx-1;i++){
-      //   if (alpha[offset+i]==aseq[j]){counts+=1};
-      // }
-       if ( (kt>0) && (frac[(kt-1)*num_grains+j]<1e-4) ){counts=0;printf("skip because last time is 0\n");}
-       else{
-       while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==0) ) {offset+=1;}
-       while( (offset<fnx*cur_tip+fnx-1) && (alpha[offset]==aseq[j]) ){
-             counts+=1;
-             offset+=1;
-        }
-       }
-       frac[kt*num_grains+j] = counts*1.0/(fnx-2);
-       summa += counts;//frac[kt*num_grains+j];
+
+       frac[kt*num_grains+j] = counts[j]*1.0/(fnx-2);
+       summa += counts[j];//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
      }
-     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
+     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);exit(1)}
      if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
         for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
      }
-     printf("offset %d, summation %d\n", offset%fnx, summa);     
+     printf("summation %d\n", summa);     
      }
 }
 
