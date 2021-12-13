@@ -581,6 +581,8 @@ int main(int argc, char** argv)
     }
     }
 
+    memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
+    memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
     setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, extra_area, tip_final, total_area);
 
@@ -596,8 +598,7 @@ int main(int argc, char** argv)
     memcpy(total_area_asse+run*(params.nts+1)*params.num_theta, total_area, sizeof(int)*(params.nts+1)*params.num_theta );    
     memcpy(tip_final_asse +run*(params.nts+1)*params.num_theta, tip_final,  sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
-    memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
+
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
