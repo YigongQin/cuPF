@@ -871,7 +871,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 }
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
-  float* tip_y, float* frac, int* aseq, int* extra_area, float* tip_final){
+  float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -989,7 +989,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
