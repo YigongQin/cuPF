@@ -586,7 +586,7 @@ int main(int argc, char** argv)
     for (int j = 1; j<length_y-1; j++){
         for (int i = 1; i<length_x-1; i++){
             
-                C = length_x*j + i;
+                int C = length_x*j + i;
                 if (alpha_i[C]>0){total_area[alpha_i-1]+=1;}
         }
     }
