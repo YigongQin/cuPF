@@ -1008,6 +1008,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
     
      if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
+             cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
@@ -1042,7 +1043,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
 
    calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor); // get fractions at all these lines
-
+   cudaMemset(alpha_m, 0, sizeof(int) * length);
    collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); // the final frame
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
