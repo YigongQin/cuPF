@@ -587,7 +587,7 @@ int main(int argc, char** argv)
         for (int i = 1; i<length_x-1; i++){
             
                 int C = length_x*j + i;
-                if (alpha_i[C]>0){total_area[alpha_i-1]+=1;}
+                if (alpha_i[C]>0){total_area[alpha_i[C]-1]+=1;}
         }
     }
     // save the QoIs 
