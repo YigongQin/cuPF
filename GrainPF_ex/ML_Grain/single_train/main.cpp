@@ -444,8 +444,8 @@ int main(int argc, char** argv)
     float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
 
-    int* extra_area_asse  = (int*)   malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
-    float* tip_final_asse = (float*) malloc(num_case*params.num_theta* sizeof(float));
+    int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
+    int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
