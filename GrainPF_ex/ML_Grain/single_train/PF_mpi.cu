@@ -823,7 +823,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
 
          for (int i=1; i<fnx-1;i++){
 
-            int C = fnx*(*cur_tip) + i;
+            int C = fnx*j + i;
 
               if (alpha[C]>0){ extra_area[kt*num_grains+alpha[C]-1]+=1; exist_y[alpha[C]-1]=true;}
 

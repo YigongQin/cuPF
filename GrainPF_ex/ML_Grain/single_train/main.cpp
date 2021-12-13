@@ -506,7 +506,7 @@ int main(int argc, char** argv)
     temp_sum = 0.0f;
    
     for (int i=0; i<params.num_theta; i++){
-        frac_ini[i] /= sum_frac;
+        frac_ini[i] /= params.lxd;
         grain_grid[i] = (int) (frac_ini[i]*pM.nx_loc);
     printf("grain %d, PF %d, angle %f, grid %d, frac %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i]);
     }
