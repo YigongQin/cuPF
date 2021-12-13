@@ -436,6 +436,7 @@ int main(int argc, char** argv)
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
     int* extra_area  =(int*)   malloc((params.nts+1)*params.num_theta* sizeof(int));
+    int* total_area = (int*)   malloc(params.num_theta* sizeof(int));
     int* aseq=(int*) malloc(params.num_theta* sizeof(int));
 
     float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -445,6 +446,7 @@ int main(int argc, char** argv)
     int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
 
     int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
+    int* total_area_asse  = (int*) malloc(num_case*params.num_theta* sizeof(int));
     int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
@@ -580,6 +582,14 @@ int main(int argc, char** argv)
 
     setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, extra_area, tip_final);
 
+
+    for (int j = 1; j<length_y-1; j++){
+        for (int i = 1; i<length_x-1; i++){
+            
+                C = length_x*j + i;
+                if (alpha_i[C]>0){total_area[alpha_i-1]+=1;}
+        }
+    }
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     //float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
@@ -589,6 +599,7 @@ int main(int argc, char** argv)
     memcpy(aseq_asse+run*params.num_theta,aseq,sizeof(int)*params.num_theta);
     memcpy(angles_asse+run*(NUM_PF+1),mac.theta_arr,sizeof(float)*(NUM_PF+1));
     memcpy(extra_area_asse+run*(params.nts+1)*params.num_theta, extra_area, sizeof(int)*(params.nts+1)*params.num_theta );
+    memcpy(total_area_asse+run*params.num_theta, total_area, sizeof(int)*params.num_theta );    
     memcpy(tip_final_asse +run*(params.nts+1)*params.num_theta, tip_final,  sizeof(int)*(params.nts+1)*params.num_theta ); 
 
     if (run>=num_case-valid_run){
