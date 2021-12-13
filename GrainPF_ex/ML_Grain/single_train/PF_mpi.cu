@@ -795,7 +795,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
-  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final){
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -815,17 +815,13 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
-     bool* exist_y = (bool*) malloc(num_grains* sizeof(bool));
 
      for (int j = 1; j<fny-1; j++){ 
-         for (int g=0; g<num_grains; g++){
-             exist_y[g] = false;}
          for (int i=1; i<fnx-1;i++){
             int C = fnx*j + i;
-              if (alpha[C]>0){ exist_y[alpha[C]-1]=true;}
-         }
-         for (int g=0; g<num_grains; g++){
-             if (exist_y[g]==true){tip_final[kt*num_grains+g] =j ; }
+              if (alpha[C]>0){ 
+                tip_final[kt*num_grains+alpha[C]-1] = j; 
+                total_area[kt*num_grains+alpha[C]-1]+=1;}
          }
      }
 
@@ -879,7 +875,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 }
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
-  float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final){
+  float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -997,7 +993,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1029,7 +1025,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area);
           }
 
      if ( (2*kt+2)%(params.Mt/5)==0 ){
