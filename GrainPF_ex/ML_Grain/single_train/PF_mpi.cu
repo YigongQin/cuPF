@@ -509,7 +509,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
           A2 =  cP.a_s*( 1.0f + cP.epsilon*(ux2*ux2 + uz2*uz2) / MAG_sq2);}
        else {A2 = 1.0f;}        //float A2 = atheta(phxn,phzn,cosa,sina);
         //float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        if (MAG_sq>1e-12){
+
         float Ak2 = kine_ani(phxn,phzn,cosa,sina);
         A2 = A2*Ak2;
 
@@ -620,7 +620,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
         //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
         //if (C==1000){printf("%f ",ph_new[C]);}
-      }else{ph_new[C] = ph[C];}
+
      }
 } 
 
