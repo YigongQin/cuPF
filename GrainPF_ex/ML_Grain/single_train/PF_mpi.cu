@@ -818,10 +818,10 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      bool* exist_y = (bool*) malloc(num_grains* sizeof(bool));
      for (int g=0; g<num_grains; g++){
              tip_final[g] = *cur_tip;
-             exist_y[g] = false;
          }
-     for (int j = *cur_tip+1; j<fny-1; j++){
-
+     for (int j = *cur_tip+1; j<fny-1; j++){ 
+         for (int g=0; g<num_grains; g++){
+             exist_y[g] = false;}
          for (int i=1; i<fnx-1;i++){
 
             int C = fnx*j + i;
@@ -830,7 +830,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
 
          }
          for (int g=0; g<num_grains; g++){
-             if (exist_y[g]==true){tip_final[g] +=1; }
+             if (exist_y[g]==true){tip_final[g] =j ; }
          }
      }
 
