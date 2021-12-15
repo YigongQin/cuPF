@@ -1075,6 +1075,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int kts = params.Mt/params.nts;
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
+   int tip_front = 1;
    int tip_thres = (int) ((1-BLANK)*fny);
    printf("max tip can go: %d\n", tip_thres); 
    float* meanx;
@@ -1122,13 +1123,13 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
           }
 
      if ( (2*kt+2)%TIPP==0) {
-             tip_mvf(&cur_tip, PFs_old, meanx, meanx_host, fnx,fny);
-             while (cur_tip >=tip_thres){
+             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
+             while (tip_front >=tip_thres){
                 collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, move_count, fnx, fny);
                 copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 move_count +=1;
-                cur_tip-=1;
+                tip_front-=1;
                 printf("moving count %d \n", move_count);
                // printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
    //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
