@@ -22,6 +22,9 @@ using namespace std;
 #define OMEGA 200
 #define ZERO 0
 
+#define TIPP 20
+#define BLANK 0.3
+
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
 
@@ -795,7 +798,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
-  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area){
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int move_count){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -813,7 +816,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      }
      *cur_tip -=1;
      tip_y[kt] = y[*cur_tip];
-     ntip[kt] = *cur_tip;
+     ntip[kt] = *cur_tip+move_count;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
      for (int j = 1; j<fny-1; j++){ 
@@ -860,7 +863,94 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
      }
 }
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
+__global__ void 
+move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int move_count, int fnx, int fny){
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+
+    if ( (i==0) && (j>0) && (j<fny-2) && (PF_id==0) ) {
+        y_buff[j] = y[j+1];}
+
+    if ( (i==0) &&  (j==fny-2) && (PF_id==0) ) {        
+        y_buff[j] = 2*y[fny-2] - y[fny-3];}
+
+    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-2) && (PF_id<NUM_PF) ) {     
+        ph_buff[C] = ph[C+fnx];}
+
+    if ( (i>0) && (i<fnx-1) && (j==fny-2) && (PF_id<NUM_PF) ) {
+
+        ph_buff[C] = 2*ph[C] - ph[C-fnx];}
+
+    // add last layer of alpha to alpha_full[move_count]
+    if ( (i<fnx) && (j==1) && (PF_id==0) ) {
+
+        alpha_full[move_count*fnx+C] = alpha[C];
+        //printf("%d ", alpha[C]);
+    }
+
+
+}
+
+__global__ void
+copy_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny){
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+
+  if ( (i == 0) && (j>0) && (j < fny-1) && (PF_id==0) ){
+        y[j] = y_buff[j];}
+
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (PF_id<NUM_PF) ) { 
+        ph[C] = ph_buff[C];}
+
+
+}
+
+
+__global__ void
+ave_x(float* phi, float* meanx, int fnx, int fny){
+
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+ 
+   if (C<fnx*fny*NUM_PF){
+      atomicAdd(meanx+j,phi[C]);
+
+   } 
+
+}
+
+
+
+void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny){
+
+     int length = fnx*fny;
+     int blocksize_2d = 128; 
+     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+
+     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny);
+
+     cudaMemcpy(meanx_host, meanx, fny * sizeof(float),cudaMemcpyDeviceToHost);
+     while( (meanx_host[*cur_tip]/(NUM_PF*fnx)>LS) && (*cur_tip<fny-1) ) {*cur_tip+=1;}
+    // for (int ww=0; ww<fny; ww++){ printf("avex %f \n",meanx_host[ww]/fnx);}
+//      printf("currrent tip %d \n", *cur_tip);   
+     cudaMemset(meanx,0,fny * sizeof(float));
+
+}
+
+
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
   float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
   // we should have already pass all the data structure in by this time
   // move those data onto device
@@ -872,10 +962,12 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   
   float* x_device;// = NULL;
   float* y_device;// = NULL;
+  float* y_device2;
 
   float* phi_old;// = NULL;
   float* phi_new;// = NULL;
   int* alpha_m;
+  int* d_alpha_full;
   int* nucl_status;
   int* argmax;
   int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
@@ -890,12 +982,16 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
 
   int length = fnx*fny;
   int length_c = cnx*cny;
+
+  int move_count = 0;
   cudaMalloc((void **)&x_device, sizeof(float) * fnx);
   cudaMalloc((void **)&y_device, sizeof(float) * fny);
+  cudaMalloc((void **)&y_device2, sizeof(float) * fny);
 
   cudaMalloc((void **)&phi_old,  sizeof(float) * length);
   cudaMalloc((void **)&phi_new,  sizeof(float) * length);
   cudaMalloc((void **)&alpha_m,    sizeof(int) * length);  
+  cudaMalloc((void **)&d_alpha_full,   sizeof(int) * fnx*fny_f);  
   cudaMalloc((void **)&nucl_status,    sizeof(int) * length_c);
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&PFs_new,    sizeof(float) * length * NUM_PF);
@@ -904,6 +1000,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
 
   cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
   cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
+  cudaMemcpy(y_device2, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_old, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_new, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
 
@@ -978,8 +1075,16 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int kts = params.Mt/params.nts;
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
+   int tip_thres = (int) ((1-BLANK)*fny);
+   printf("max tip can go: %d\n", tip_thres); 
+   float* meanx;
+   cudaMalloc((void **)&meanx, sizeof(float) * fny);
+   cudaMemset(meanx,0, sizeof(float) * fny);
+  // printf(" ymax %f \n",y[fny-2] ); 
+   float* meanx_host=(float*) malloc(fny* sizeof(float));
+
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1011,14 +1116,31 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, move_count);
           }
 
-     if ( (2*kt+2)%(params.Mt/5)==0 ){
-      params.kin_delta += 0.00;
-      cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
-     }
+     if ( (2*kt+2)%TIPP==0) {
+             tip_mvf(&cur_tip, PFs_old, meanx, meanx_host, fnx,fny);
+             while (cur_tip >=tip_thres){
+                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, move_count, fnx, fny);
+                copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
+                move_count +=1;
+                cur_tip-=1;
+                printf("moving count %d \n", move_count);
+               // printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
+   //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
+   //printf(" ymax %f \n",y[fny-3] );
+
+             }
+          //cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost);
+          //printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
+          set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+          set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+          //if ((2*kt+2)%1000==0) printf("currrent tip %d \n", cur_tip);
+          }
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
@@ -1042,12 +1164,16 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
 
-   calc_frac(alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor); // get fractions at all these lines
+   
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); // the final frame
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-  cudaFree(x_device); cudaFree(y_device);
+   cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   calc_frac(alpha_i_full, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+
+  cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(nucl_status); 
   cudaFree(dStates); //cudaFree(random_nums);

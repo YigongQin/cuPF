@@ -21,8 +21,8 @@ using namespace std;
 #define NBW 1
 #define NUM_PF 8
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
-    float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
+    int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
 
 
 // add function for easy retrieving params
@@ -218,6 +218,8 @@ int main(int argc, char** argv)
         getParam(lineText, "undcool_std", params.undcool_std);
         getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
         getParam(lineText, "nuc_rad", params.nuc_rad);
+
+        getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
     float dxd = params.dx*params.W0;
@@ -297,7 +299,8 @@ int main(int argc, char** argv)
     params.dt_sqrt = sqrt(params.dt);
 
     params.nx = (int) (params.lxd/params.dx/params.W0);//global cells 
-    params.ny = (int) (params.asp_ratio*params.nx);
+    params.ny = (int) (params.moving_ratio*params.nx);
+    params.ny_full = (int) (params.asp_ratio*params.nx);
     params.lxd = params.nx*dxd;
     params.lyd = params.ny*dxd;
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
@@ -327,6 +330,7 @@ int main(int argc, char** argv)
     std::cout<<"asp_ratio = "<<params.asp_ratio<<std::endl;
     std::cout<<"nx = "<<params.nx<<std::endl;
     std::cout<<"ny = "<<params.ny<<std::endl;
+    std::cout<<"full ny = "<<params.ny_full<<std::endl;
     //std::cout<<"cfl_coeff = "<<params.cfl<<std::endl;
     std::cout<<"Mt = "<<params.Mt<<std::endl;
     std::cout<<"eta = "<<params.eta<<std::endl;
@@ -381,6 +385,7 @@ int main(int argc, char** argv)
     // parameters depend on MPI
     pM.nx_loc = params.nx/pM.nprocx;
     pM.ny_loc = params.ny/pM.nprocy;
+    pM.ny_full_loc = params.ny_full/pM.nprocy;
     
     float len_blockx = pM.nx_loc*dxd; //params.lxd/pM.nprocx;
     float len_blocky = pM.ny_loc*dxd; //params.lyd/pM.nprocy;
@@ -396,6 +401,7 @@ int main(int argc, char** argv)
 
     int length_x = pM.nx_loc+2*params.ha_wd;
     int length_y = pM.ny_loc+2*params.ha_wd;
+    int length_y_full = pM.ny_full_loc+2*params.ha_wd;
     float* x=(float*) malloc(length_x* sizeof(float));
     float* y=(float*) malloc(length_y* sizeof(float));
 
@@ -426,6 +432,7 @@ int main(int argc, char** argv)
         std::cout<< "rank "<< pM.rank<< " ymin "<< y[0] << " ymax "<<y[length_y-1]<<std::endl;
 
     int length=length_x*length_y;
+    int full_length = length_x*length_y_full;
     std::cout<<"x length of psi, phi, U="<<length_x<<std::endl;
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
     std::cout<<"length of psi, phi, U="<<length<<std::endl;
@@ -434,6 +441,7 @@ int main(int argc, char** argv)
     float* Uc=(float*) malloc(length* sizeof(float));
     float* alpha=(float*) malloc(length* sizeof(float));    
     int* alpha_i=(int*) malloc(length* sizeof(int));
+    int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
@@ -445,7 +453,7 @@ int main(int argc, char** argv)
     float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
     float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
-    int* alpha_asse=(int*) malloc(valid_run*length* sizeof(int));
+    int* alpha_asse=(int*) malloc(valid_run*full_length* sizeof(int));
 
     int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
@@ -584,7 +592,7 @@ int main(int argc, char** argv)
     memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    setup( pM, params, mac, length_x, length_y, x, y, phi, psi, Uc, alpha_i, tip_y, frac, aseq, extra_area, tip_final, total_area);
+    setup( pM, params, mac, length_x, length_y, length_y_full, x, y, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
 
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -602,7 +610,7 @@ int main(int argc, char** argv)
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
-           memcpy(alpha_asse+loca_case*length,alpha_i,sizeof(int)*length);
+           memcpy(alpha_asse+loca_case*full_length,alpha_i_full,sizeof(int)*full_length);
 
     }   
 
@@ -638,7 +646,7 @@ int main(int argc, char** argv)
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 
-    h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*length, "int");
+    h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
     h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");

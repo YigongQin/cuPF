@@ -82,6 +82,9 @@ struct params_MPI{
     int nprocy;
     int nx_loc;
     int ny_loc;
+
+    // moving-domain
+    int ny_full_loc;
 };
 
 struct Mac_input{
@@ -99,3 +102,23 @@ struct Mac_input{
   float* cost;
   float* sint;
 };
+
+
+struct QoIs{
+
+  float* tip_x;
+  float* tip_y;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
