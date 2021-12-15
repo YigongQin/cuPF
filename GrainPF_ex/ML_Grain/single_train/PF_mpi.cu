@@ -1119,7 +1119,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             cur_tip=0
+             cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, move_count);
           }
 
