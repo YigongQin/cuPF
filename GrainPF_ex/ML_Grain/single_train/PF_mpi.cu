@@ -951,7 +951,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
-  float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
+  int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
