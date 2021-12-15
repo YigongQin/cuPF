@@ -70,6 +70,8 @@ struct GlobalConstants {
   float nuc_rad;
   int pts_cell; 
 
+  float moving_ratio;
+  int ny_full;
 };
 
 struct params_MPI{
@@ -104,12 +106,6 @@ struct Mac_input{
 };
 
 
-struct QoIs{
-
-  float* tip_x;
-  float* tip_y;
-
-}
 
 
 
