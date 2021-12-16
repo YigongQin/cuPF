@@ -798,7 +798,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
-  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int move_count){
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int*, loss_area, int move_count){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -823,8 +823,8 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
          for (int i=1; i<fnx-1;i++){
             int C = fnx*j + i;
               if (alpha[C]>0){ 
-                tip_final[kt*num_grains+alpha[C]-1] = j; 
-                total_area[kt*num_grains+alpha[C]-1]+=1;
+                tip_final[kt*num_grains+alpha[C]-1] = j+move_count; 
+                total_area[kt*num_grains+alpha[C]-1]+=1+loss_area[alpha[C]-1];
                 if (j > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
          }
      }
@@ -864,7 +864,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 }
 
 __global__ void 
-move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int move_count, int fnx, int fny){
+move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny);
@@ -889,6 +889,7 @@ move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* 
     if ( (i<fnx) && (j==1) && (PF_id==0) ) {
 
         alpha_full[move_count*fnx+C] = alpha[C];
+        atomicAdd(loss_area+alpha[C]-1,1);
         //printf("%d ", alpha[C]);
     }
 
@@ -1085,7 +1086,11 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    float* meanx_host=(float*) malloc(fny* sizeof(float));
 
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, move_count);
+   int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
+   int* d_loss_area;
+   cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
+   cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta) 
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1117,17 +1122,18 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, move_count);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count);
           }
 
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
              while (tip_front >=tip_thres){
                 collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
-                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, move_count, fnx, fny);
+                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny);
                 copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
                 move_count +=1;
                 tip_front-=1;
