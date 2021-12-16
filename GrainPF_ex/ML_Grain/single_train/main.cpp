@@ -591,12 +591,12 @@ int main(int argc, char** argv)
 
     memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
+
+
+    setup( pM, params, mac, length_x, length_y, length_y_full, x, y, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
     for(int i=0; i<length_y; i++){
         y[i]=(i-params.ha_wd)*dxd + ymin_loc;
     }
-
-    setup( pM, params, mac, length_x, length_y, length_y_full, x, y, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
-
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     //float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
