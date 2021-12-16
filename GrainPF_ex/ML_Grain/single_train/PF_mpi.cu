@@ -798,7 +798,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
-  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int*, loss_area, int move_count){
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
