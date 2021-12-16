@@ -798,7 +798,7 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
-  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count){
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -823,7 +823,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
          for (int i=1; i<fnx-1;i++){
             int C = fnx*j + i;
               if (alpha[C]>0){ 
-                tip_final[kt*num_grains+alpha[C]-1] = j+move_count; 
+                for (int time = kt; time<all_time; time++){tip_final[time*num_grains+alpha[C]-1] = j+move_count;} 
                 total_area[kt*num_grains+alpha[C]-1]+=1;
                 if (j > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
          }
@@ -1092,7 +1092,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count);
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1128,7 +1128,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count);
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
           }
 
      if ( (2*kt+2)%TIPP==0) {
