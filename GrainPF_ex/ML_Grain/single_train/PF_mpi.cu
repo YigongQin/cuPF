@@ -1089,6 +1089,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
    int* d_loss_area;
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
+   memset(loss_area,0,sizeof(int) * params.num_theta)
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
    calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count);
    cudaDeviceSynchronize();
