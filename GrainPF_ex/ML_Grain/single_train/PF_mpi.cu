@@ -824,11 +824,12 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
             int C = fnx*j + i;
               if (alpha[C]>0){ 
                 tip_final[kt*num_grains+alpha[C]-1] = j+move_count; 
-                total_area[kt*num_grains+alpha[C]-1]+=1+loss_area[alpha[C]-1];
+                total_area[kt*num_grains+alpha[C]-1]+=1;
                 if (j > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
          }
      }
-
+     for (int j = 0; j<num_grains; j++){ 
+     total_area[kt*num_grains+j]+=loss_area[j];}
 
 }
 
