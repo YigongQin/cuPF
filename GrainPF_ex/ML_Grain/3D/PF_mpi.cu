@@ -138,7 +138,7 @@ set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area){
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int pf = index/max_area;
-  int bc_idx = index- PF_id*max_area;     
+  int bc_idx = index- pf*max_area;     
 
   int area_z = fnx*fny;
   if ( (bc_idx<area_z) && (PF_id<NUM_PF) ){
@@ -241,7 +241,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
        int U=C+fnx*fny;
        int D=C-fnx*fny;
        //float alpha = theta_arr[PF_id+1];
-       float cosa, sina;
+       float cosa, sina, cosb, sinb;
        if (ph[C]>LS){
        sina = sint[PF_id+1];
        cosa = cost[PF_id+1];
@@ -250,6 +250,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
        }else{
        sina = 0.0f;
        cosa = 1.0f;
+       sinb = 0.0f;
+       cosb = 1.0f;
        }
        // first checkout the anisotropy 
         float phxn = ( ph[R] - ph[L] ) * 0.5f;
@@ -267,7 +269,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
 
 
 
-        float diff =  ph[R] + ph[L] + ph[T] + ph[B] + ph[U] + ph[D] - 6*ph[C]
+        float diff =  ph[R] + ph[L] + ph[T] + ph[B] + ph[U] + ph[D] - 6*ph[C];
         
 
 
@@ -301,7 +303,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
              ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
                +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
        */
-        Tinterp = 920 + y[j] - t*1e6 - 2;
+        float Tinterp = 920 + y[j] - t*1e6 - 2;
         float Up = (Tinterp-cP.Tmelt)/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
        // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
         float repul=0.0f;
@@ -673,8 +675,8 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   // commu_BC(comm, SR_buffs, pM, params.Mt+2, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
   // commu_BC(comm, SR_buffs, pM, params.Mt+3, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-   set_BC_3D(PFs_new, fnx, fny, fnz, max_area);
-   set_BC_3D(PFs_old, fnx, fny, fnz, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area);
 
    rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, z_device, fnx, fny, fnz, 0,\
 0, Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
@@ -708,7 +710,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
 
      //if ( params.ha_wd==1 ) commu_BC(comm, SR_buffs, pM, 2*kt, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-     set_BC_3D(PFs_new, fnx, fny, fnz, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area);
      //cudaDeviceSynchronize();
    //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
 
@@ -720,7 +722,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
  
 //     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
-     set_BC_3D(PFs_old, fnx, fny, fnz, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area);
 
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
