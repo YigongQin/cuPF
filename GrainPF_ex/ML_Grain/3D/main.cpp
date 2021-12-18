@@ -531,8 +531,9 @@ int main(int argc, char** argv)
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    
     for(int id=0; id<length; id++){
       int k = id/(length_x*length_y);
-      int j = id/length_x;
-      int i = id%length_x; 
+      int k_r = id - k*length_x*length_y;
+      int j = k_r/length_x;
+      int i = k_r%length_x; 
       
       if ( (i>params.ha_wd-1) && (i<length_x-params.ha_wd) && (j>params.ha_wd-1) && (j<length_y-params.ha_wd) && (k>params.ha_wd-1) && (k<length_z-params.ha_wd)){
       int kx = (int) (( x[i] - mac.X_mac[0] )/Dx);
@@ -631,7 +632,7 @@ int main(int argc, char** argv)
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
     int phs = NUM_PF;
-    string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
+    string out_format = "ML3D_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
