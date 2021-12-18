@@ -452,6 +452,7 @@ int main(int argc, char** argv)
     int full_length = length_x*length_y*length_z_full;
     std::cout<<"x length of psi, phi, U="<<length_x<<std::endl;
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
+    std::cout<<"y length of psi, phi, U="<<length_z<<std::endl;   
     std::cout<<"length of psi, phi, U="<<length<<std::endl;
     float* psi=(float*) malloc(length* sizeof(float));
     float* phi=(float*) malloc(length* sizeof(float));
