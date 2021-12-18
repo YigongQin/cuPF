@@ -141,7 +141,7 @@ set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area){
   int bc_idx = index- pf*max_area;     
 
   int area_z = fnx*fny;
-  if ( (bc_idx<area_z) && (PF_id<NUM_PF) ){
+  if ( (bc_idx<area_z) && (pf<NUM_PF) ){
      int zj = bc_idx/fnx;
      int zi = bc_idx - zj*fnx;
 
@@ -155,7 +155,7 @@ set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area){
   }
 
   int area_y = fnx*fnz;
-  if ( (bc_idx<area_y) && (PF_id<NUM_PF) ){
+  if ( (bc_idx<area_y) && (pf<NUM_PF) ){
      int zk = bc_idx/fnx;
      int zi = bc_idx - zk*fnx;
 
@@ -169,7 +169,7 @@ set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area){
   }
 
   int area_x = fny*fnz;
-  if ( (bc_idx<area_x) && (PF_id<NUM_PF) ){
+  if ( (bc_idx<area_x) && (pf<NUM_PF) ){
 
      int zk = bc_idx/fny;
      int zj = bc_idx - zk*fny;
@@ -219,7 +219,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
   int k=pf_C/(fnx*fny);
   int pf_C_z=pf_C-k*fnx*fny; 
   int j=pf_C_z/fnx;
-  int i=pf_C/z-j*fnx;
+  int i=pf_C_z-j*fnx;
   // macros
    float Dt = Tmac[1]-Tmac[0];
    int kt = (int) ((t-Tmac[0])/Dt);
