@@ -544,8 +544,8 @@ int main(int argc, char** argv)
       int ky = (int) (( y[j] - mac.Y_mac[0] )/Dy);
       float delta_y = ( y[j] - mac.Y_mac[0] )/Dy - ky;
 
-      int kz = (int) (( z[j] - mac.Z_mac[0] )/Dz);
-      float delta_z = ( z[j] - mac.Z_mac[0] )/Dz - kz;
+      int kz = (int) (( z[k] - mac.Z_mac[0] )/Dz);
+      float delta_z = ( z[k] - mac.Z_mac[0] )/Dz - kz;
 
       if (kx==mac.Nx-1) {kx = mac.Nx-2; delta_x =1.0f;}
       if (ky==mac.Ny-1) {ky = mac.Ny-2; delta_y =1.0f;}
