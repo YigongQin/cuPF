@@ -413,6 +413,7 @@ int main(int argc, char** argv)
     else{ymin_loc+=dxd;}//params.lyd/params.ny;}
 
     pM.nz_loc+=1;
+    pM.nz_full_loc+=1;
 
     int length_x = pM.nx_loc+2*params.ha_wd;
     int length_y = pM.ny_loc+2*params.ha_wd;
@@ -591,7 +592,7 @@ int main(int argc, char** argv)
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
     memset(tip_final,  0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    setup( pM, params, mac, length_x, length_y, length_z, length_z_full, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
+    //setup( pM, params, mac, length_x, length_y, length_z, length_z_full, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
     for(int i=0; i<length_z; i++){
         z[i]=(i-params.ha_wd)*dxd + zmin_loc;
     }
@@ -653,6 +654,7 @@ int main(int argc, char** argv)
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");
     h5write_1d(h5_file, "y_coordinates", y, length_y, "float");
+    h5write_1d(h5_file, "z_coordinates", z, length_z, "float");
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
