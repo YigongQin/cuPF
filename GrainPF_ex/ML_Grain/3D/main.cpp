@@ -524,7 +524,8 @@ int main(int argc, char** argv)
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
     }  
    
-
+    for (int i=0; i<params.num_theta; i++){
+       aseq[i] = i+1;} //rand()%NUM_PF +1;
     
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
