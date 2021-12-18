@@ -75,7 +75,7 @@ struct GlobalConstants {
   int pts_cell; 
 
   float moving_ratio;
-  int ny_full;
+  int nz_full;
 };
 
 struct params_MPI{
@@ -88,9 +88,10 @@ struct params_MPI{
     int nprocy;
     int nx_loc;
     int ny_loc;
+    int nz_loc;
 
     // moving-domain
-    int ny_full_loc;
+    int nz_full_loc;
 };
 
 struct Mac_input{
