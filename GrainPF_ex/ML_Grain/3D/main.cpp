@@ -148,7 +148,7 @@ int main(int argc, char** argv)
    // float nx;
    // float Mt;
     int num_case = 25; //1100;
-    float grain_size= 2.5;
+    float grain_size= 5;
     bool equal_len = false;
     int valid_run = 5;//100;
     float G0;
@@ -274,6 +274,7 @@ int main(int argc, char** argv)
     printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nz*mac.Nt-1]); 
 
     // calculate the parameters
+    int grain_dim = (int) sqrt(params.num_theta);
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
     params.Tsol = params.Tmelt - params.c_infm/params.k;
@@ -291,7 +292,7 @@ int main(int argc, char** argv)
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = params.num_theta*grain_size; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.lxd = grain_dim*grain_size; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -521,7 +522,7 @@ int main(int argc, char** argv)
     }  
    
 
-    int grain_dim = (int) sqrt(params.num_theta);
+    
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    
