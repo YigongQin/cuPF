@@ -147,10 +147,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 25; //1100;
+    int num_case = 1; //1100;
     float grain_size= 5;
     bool equal_len = false;
-    int valid_run = 5;//100;
+    int valid_run = 1;//100;
     float G0;
     float Rmax;
     float nts;
@@ -305,7 +305,7 @@ int main(int argc, char** argv)
 
     params.nx = (int) (params.lxd/params.dx/params.W0);//global cells 
     params.ny = (int) (params.asp_ratio_yx*params.nx);
-    params.ny = (int) (params.moving_ratio*params.nx);
+    params.nz = (int) (params.moving_ratio*params.nx);
     params.nz_full = (int) (params.asp_ratio_zx*params.nx);
     params.lxd = params.nx*dxd;
     params.lyd = params.ny*dxd;
