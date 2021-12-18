@@ -339,7 +339,7 @@ int main(int argc, char** argv)
     std::cout<<"nx = "<<params.nx<<std::endl;
     std::cout<<"ny = "<<params.ny<<std::endl;
     std::cout<<"nz = "<<params.nz<<std::endl;
-    std::cout<<"full nz = "<<params.ny_full<<std::endl;
+    std::cout<<"full nz = "<<params.nz_full<<std::endl;
     //std::cout<<"cfl_coeff = "<<params.cfl<<std::endl;
     std::cout<<"Mt = "<<params.Mt<<std::endl;
     std::cout<<"eta = "<<params.eta<<std::endl;
