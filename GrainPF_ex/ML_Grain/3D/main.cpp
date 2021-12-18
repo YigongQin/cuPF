@@ -412,6 +412,8 @@ int main(int argc, char** argv)
     if (pM.py==0){pM.ny_loc+=1;}
     else{ymin_loc+=dxd;}//params.lyd/params.ny;}
 
+    pM.nz_loc+=1;
+
     int length_x = pM.nx_loc+2*params.ha_wd;
     int length_y = pM.ny_loc+2*params.ha_wd;
     int length_z = pM.nz_loc+2*params.ha_wd;
