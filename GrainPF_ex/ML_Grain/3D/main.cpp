@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 4
+#define NUM_PF 16
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
@@ -148,7 +148,7 @@ int main(int argc, char** argv)
    // float nx;
    // float Mt;
     int num_case = 1; //1100;
-    float grain_size= 5;
+    float grain_size= 2.5;
     bool equal_len = false;
     int valid_run = 1;//100;
     float G0;
