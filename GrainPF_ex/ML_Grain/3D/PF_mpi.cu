@@ -295,8 +295,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
       if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
       int offset    = L2G_4D(kx, ky, kz, kt, Nx, Ny, Nz);
       int offset_z  = L2G_4D(kx, ky, kz+1, kt, Nx, Ny, Nz);
-      int offest_t  = L2G_4D(kx, ky, kz, kt+1, Nx, Ny, Nz);
-      int offest_zt = L2G_4D(kx, ky, kz+1, kt+1, Nx, Ny, Nz);
+      int offset_t  = L2G_4D(kx, ky, kz, kt+1, Nx, Ny, Nz);
+      int offset_zt = L2G_4D(kx, ky, kz+1, kt+1, Nx, Ny, Nz);
       //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
      // printf("%d ", Nx);
       float Tinterp= ( ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
