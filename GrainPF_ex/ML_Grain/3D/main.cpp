@@ -568,8 +568,8 @@ int main(int argc, char** argv)
       phi[id]=tanhf(psi[id]/params.sqrt2);
      //   Uc[id]=0.0;
       if (phi[id]>LS){
-      int xid = (int) x[i]/(params.lxd/grain_dim);
-      int yid = (int) y[j]/(params.lyd/grain_dim);
+      int xid = (int) (x[i]/(params.lxd/grain_dim));
+      int yid = (int) (y[j]/(params.lyd/grain_dim));
       if (xid==grain_dim) {xid=grain_dim-1; }
       if (yid==grain_dim) {yid=grain_dim-1; }
       int aid = xid+yid*grain_dim;
