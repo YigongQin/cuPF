@@ -316,7 +316,7 @@ int main(int argc, char** argv)
     params.Mt = kts*params.nts;
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
-    param.G = G0;
+    params.G = G0;
     params.R = Rmax;
     params.tmax = params.tau0*params.dt*params.Mt;
     if (pM.rank==0){ 
