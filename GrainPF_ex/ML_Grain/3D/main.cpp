@@ -163,8 +163,8 @@ int main(int argc, char** argv)
     while (parseFile.good()){
         std::getline (parseFile, lineText);
         // Output the text from the file
-        getParam(lineText, "G", params.G);
-        getParam(lineText, "R", params.R); 
+        //getParam(lineText, "G", params.G);
+        //getParam(lineText, "R", params.R); 
         getParam(lineText, "delta", params.delta); 
         getParam(lineText, "k", params.k); 
         //getParam(lineText, "c_infm", params.c_infm); 
@@ -316,6 +316,9 @@ int main(int argc, char** argv)
     params.Mt = kts*params.nts;
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
+    param.G = G0;
+    params.R = Rmax;
+    params.tmax = params.tau0*params.dt*params.Mt;
     if (pM.rank==0){ 
     std::cout<<"G0 = "<<G0<<std::endl;
     std::cout<<"Rmax = "<<Rmax<<std::endl;

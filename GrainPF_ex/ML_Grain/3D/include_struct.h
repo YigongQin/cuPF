@@ -76,6 +76,7 @@ struct GlobalConstants {
 
   float moving_ratio;
   int nz_full;
+  float tmax;
 };
 
 struct params_MPI{

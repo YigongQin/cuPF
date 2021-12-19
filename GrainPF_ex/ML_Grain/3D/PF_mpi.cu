@@ -221,6 +221,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
   int j=pf_C_z/fnx;
   int i=pf_C_z-j*fnx;
   // macros
+  /*
    float Dt = Tmac[1]-Tmac[0];
    int kt = (int) ((t-Tmac[0])/Dt);
   // printf("%d ",kt);
@@ -229,6 +230,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
    float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
    float Dy = Y[1]-Y[0];
    float Dz = Z[1]-Z[0];
+   */
   // if the points are at boundary, return
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) &&(PF_id<NUM_PF) ) {
        // find the indices of the 8 neighbors for center
@@ -279,7 +281,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
         #
         # =============================================================*/
         //float Up = (y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-        
+      /*  
       int kx = (int) (( x[i] - X[0] )/Dx);
       float delta_x = ( x[i] - X[0] )/Dx - kx;
          //printf("%f ",delta_x);
@@ -308,8 +310,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
                +delta_x*(1.0f-delta_y)*u_3d[ offset_t+1 ] +   delta_x*delta_y*u_3d[ offset_t+Nx+1 ] )*(1.0f-delta_z) + \
              ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_zt ] + (1.0f-delta_x)*delta_y*u_3d[ offset_zt+Nx ] \
                +delta_x*(1.0f-delta_y)*u_3d[ offset_zt+1 ] +   delta_x*delta_y*u_3d[ offset_zt+Nx+1 ] )*delta_z )*delta_t;
-
-       // float Tinterp = 920 + z[k] - t*1e6 - 2;
+       */
+        float Tinterp = 920 + cP.G*(z[k] - t*cP.R*1e6 - 2);
         float Up = (Tinterp-cP.Tmelt)/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
        // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
         float repul=0.0f;
