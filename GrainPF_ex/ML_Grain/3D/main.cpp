@@ -476,7 +476,7 @@ int main(int argc, char** argv)
     float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
-    float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
+    float* angles_asse=(float*) malloc(num_case*(2*NUM_PF+1)* sizeof(float));
     int* alpha_asse=(int*) malloc(valid_run*full_length* sizeof(int));
 
     int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
@@ -606,7 +606,7 @@ int main(int argc, char** argv)
     memcpy(tip_y_asse+run*(params.nts+1),tip_y,sizeof(float)*(params.nts+1));  
     memcpy(frac_asse+run*(params.nts+1)*params.num_theta,frac,sizeof(float)*(params.nts+1)*params.num_theta); 
     memcpy(aseq_asse+run*params.num_theta,aseq,sizeof(int)*params.num_theta);
-    memcpy(angles_asse+run*(NUM_PF+1),mac.theta_arr,sizeof(float)*(NUM_PF+1));
+    memcpy(angles_asse+run*(2*NUM_PF+1),mac.theta_arr,sizeof(float)*(2*NUM_PF+1));
     memcpy(extra_area_asse+run*(params.nts+1)*params.num_theta, extra_area, sizeof(int)*(params.nts+1)*params.num_theta );
     memcpy(total_area_asse+run*(params.nts+1)*params.num_theta, total_area, sizeof(int)*(params.nts+1)*params.num_theta );    
     memcpy(tip_final_asse +run*(params.nts+1)*params.num_theta, tip_final,  sizeof(int)*(params.nts+1)*params.num_theta ); 
@@ -661,7 +661,7 @@ int main(int argc, char** argv)
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    angles_asse, num_case*(NUM_PF+1), "float");
+    h5write_1d(h5_file, "angles",    angles_asse, num_case*(2*NUM_PF+1), "float");
 
     h5write_1d(h5_file, "extra_area", extra_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", total_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
