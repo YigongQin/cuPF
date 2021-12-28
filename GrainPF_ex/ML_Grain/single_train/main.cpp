@@ -493,8 +493,10 @@ int main(int argc, char** argv)
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
-    srand(num_case*atoi(argv[3])*((int)G0)+run);
-    generator.seed( num_case*atoi(argv[3])*((int)G0)+run );
+    int loc_seed = atoi(argv[3]) + 20*((int)G0) + (int) (10000*Rmax);
+    loc_seed = loc_seed*num_case + run;
+    srand(loc_seed);
+    generator.seed( loc_seed );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
