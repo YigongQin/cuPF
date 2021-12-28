@@ -306,6 +306,7 @@ int main(int argc, char** argv)
     params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
     params.Mt = (params.Mt/2)*2; 
     int kts = params.Mt/params.nts;
+    kts = (kts/2)*2;
     params.Mt = kts*params.nts;
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
