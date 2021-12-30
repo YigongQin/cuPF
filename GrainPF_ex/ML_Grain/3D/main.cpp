@@ -664,7 +664,7 @@ int main(int argc, char** argv)
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");
     h5write_1d(h5_file, "y_coordinates", y, length_y, "float");
-    h5write_1d(h5_file, "z_coordinates", z, length_z_full, "float");
+    h5write_1d(h5_file, "z_coordinates", z_full, length_z_full, "float");
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
