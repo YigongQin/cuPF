@@ -405,7 +405,7 @@ int main(int argc, char** argv)
     int length_y_full = pM.ny_full_loc+2*params.ha_wd;
     float* x=(float*) malloc(length_x* sizeof(float));
     float* y=(float*) malloc(length_y* sizeof(float));
-
+    float* y_full=(float*) malloc(length_y_full* sizeof(float));
 
     for(int i=0; i<length_x; i++){
         x[i]=(i-params.ha_wd)*dxd + xmin_loc; 
@@ -415,7 +415,9 @@ int main(int argc, char** argv)
         y[i]=(i-params.ha_wd)*dxd + ymin_loc;
     }
 
-
+    for(int i=0; i<length_y_full; i++){
+        y_full[i]=(i-params.ha_wd)*dxd + ymin_loc;
+    }
 
 //===================================
 
@@ -656,7 +658,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");
-    h5write_1d(h5_file, "y_coordinates", y, length_y, "float");
+    h5write_1d(h5_file, "y_coordinates", y_full, length_y_full, "float");
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");

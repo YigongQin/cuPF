@@ -426,6 +426,7 @@ int main(int argc, char** argv)
     float* x=(float*) malloc(length_x* sizeof(float));
     float* y=(float*) malloc(length_y* sizeof(float));
     float* z=(float*) malloc(length_z* sizeof(float));
+    float* z_full=(float*) malloc(length_z_full* sizeof(float));
 
     for(int i=0; i<length_x; i++){
         x[i]=(i-params.ha_wd)*dxd + xmin_loc; 
@@ -439,6 +440,9 @@ int main(int argc, char** argv)
         z[i]=(i-params.ha_wd)*dxd + zmin_loc;
     }
 
+    for(int i=0; i<length_z_full; i++){
+        z_full[i]=(i-params.ha_wd)*dxd + zmin_loc;
+    }
 //===================================
 
   //  std::cout<<"x= ";
@@ -660,7 +664,7 @@ int main(int argc, char** argv)
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");
     h5write_1d(h5_file, "y_coordinates", y, length_y, "float");
-    h5write_1d(h5_file, "z_coordinates", z, length_z, "float");
+    h5write_1d(h5_file, "z_coordinates", z, length_z_full, "float");
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
