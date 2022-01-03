@@ -397,7 +397,7 @@ int main(int argc, char** argv)
     if (pM.px==0){pM.nx_loc+=1;}
     else{xmin_loc+=dxd;} //params.lxd/params.nx;}
     
-    if (pM.py==0){pM.ny_loc+=1;}
+    if (pM.py==0){pM.ny_loc+=1;pM.ny_full_loc+=1;}
     else{ymin_loc+=dxd;}//params.lyd/params.ny;}
 
     int length_x = pM.nx_loc+2*params.ha_wd;
