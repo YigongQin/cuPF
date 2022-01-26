@@ -447,7 +447,7 @@ int main(int argc, char** argv)
     float* C_comp   =(float*) malloc(coeff_len*sizeof(float));
     float* C_comp_r =(float*) malloc(coeff_len*sizeof(float));
     float* W_v      =(float*) malloc(coeff_len*sizeof(float));
-    float* all_phi  =(float*) malloc(length*NUM_PF*sizeof(float));
+    float* all_phi  =(float*) malloc(length*NUM_PF*(params.nts+1)*sizeof(float));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -639,7 +639,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "C_temp",   C_temp,   coeff_len, "float");
     h5write_1d(h5_file, "W_v",      W_v,   coeff_len, "float");
 
-    h5write_1d(h5_file, "all_phi", all_phi, NUM_PF*length, "float");
+    h5write_1d(h5_file, "all_phi", all_phi, NUM_PF*length*(params.nts+1), "float");
 
     H5Fclose(h5_file);
     H5Dclose(datasetT);

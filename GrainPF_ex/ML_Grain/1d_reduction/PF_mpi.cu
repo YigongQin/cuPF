@@ -1027,6 +1027,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int cur_tip=1;
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
    calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
+   cudaMemcpy(all_phi, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -1056,6 +1057,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(all_phi + (2*kt+2)/kts*NUM_PF*length, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
              //QoIs based on alpha field
              calc_qois(cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
           }
@@ -1090,7 +1092,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(C_comp, d_C_comp, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(C_comp_r, d_C_comp_r, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
    cudaMemcpy(W, d_W, sizeof(float) * coeff_len, cudaMemcpyDeviceToHost);
-   cudaMemcpy(all_phi, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
+   //cudaMemcpy(all_phi, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
 
   cudaFree(x_device); cudaFree(y_device);
   cudaFree(phi_old); cudaFree(phi_new);
