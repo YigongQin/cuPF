@@ -11,4 +11,4 @@ seed: 1-inf
 
 
 ## output ##
-phi: num_alpha * nx * ny * nt(frames)
+phi: nt(frames) * num_alpha * nx * ny 
