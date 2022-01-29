@@ -198,7 +198,7 @@ int main(int argc, char** argv)
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
         getParam(lineText, "kin_delta", params.kin_delta);
-        params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
+        params.kin_delta = 0.05 + atoi(argv[3])/100.0*0.25;
         getParam(lineText, "beta0", params.beta0);
         // new multiple
         //getParam(lineText, "Ti", params.Ti);

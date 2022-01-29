@@ -12,7 +12,7 @@ BC = 1
 top = 45
 
 
-G = float(sys.argv[1]);
+G = 0.1*float(sys.argv[1]);
 Rmax = 1e4*float(sys.argv[2]);
 y0 = 2
 
