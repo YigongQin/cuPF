@@ -149,10 +149,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 25; //1100;
-    float grain_size= 2.5;
+    int num_case = 1; //1100;
+    float grain_size= 5;
     bool equal_len = false;
-    int valid_run = 5;//100;
+    int valid_run = 1;//100;
     float G0;
     float Rmax;
     float nts;
@@ -641,7 +641,7 @@ int main(int argc, char** argv)
     // step 3 (time marching): call the kernels Mt times
     int phs = NUM_PF;
     string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
-    string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
+    string out_file = out_format+ "_rank"+to_string(pM.rank)+"_grainsize"+to_stringp(grain_size,3)+".h5";
     out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
    // out.precision(5);
