@@ -23,7 +23,7 @@ using namespace std;
 #define ZERO 0
 
 #define TIPP 20
-#define BLANK 0.2
+#define BLANK 0.1
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -856,7 +856,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
        summa += counts[j];//frac[kt*num_grains+j];
        printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
      }
-     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);exit(1);}
+     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
      if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
         for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
      }
