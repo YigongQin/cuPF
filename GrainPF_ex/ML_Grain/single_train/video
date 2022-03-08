@@ -1,0 +1,2 @@
+./phase_field Nucl_input line_AM/ 0
+./phase_field Nucl_input line_AM/ 10
