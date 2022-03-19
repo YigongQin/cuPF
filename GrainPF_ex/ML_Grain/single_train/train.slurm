@@ -17,10 +17,10 @@
 #SBATCH -J final           # Job name
 #SBATCH -o myjob.o%j       # Name of stdout output file
 #SBATCH -e myjob.e%j       # Name of stderr error file
-#SBATCH -p v100-lm            # Queue (partition) name
+#SBATCH -p rtx            # Queue (partition) name
 #SBATCH -N 1               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 4               # Total # of mpi tasks (should be 1 for serial)
-#SBATCH -t 01:00:00        # Run time (hh:mm:ss)
+#SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
 #SBATCH --mail-user=ygqin@utexas.edu
 #SBATCH -A ASC21002       # Allocation name (req'd if you have more than 1)
@@ -41,10 +41,13 @@ export LAUNCHER_JOB_FILE=qoi_conv
 
 #for G in 10 20 30 40 50 60 80 100 150 200 250 300 350 400 500
 #do
-#for R in 10 20 30 40 50 60 70 80 85 90 92 94 96 98 100
-#do
-for G in 11 12 13 15 
+
+#for G in 10 11 12 14 16 18 20 25 30 35 40 45 50 
+for G in 60 80 100 120 140 
+
+#170 200 
 do
+
 for R in 10 20 30 40 50 60 70 80 85 90 92 94 96 98 100
 do
        #python3 _oldmulti_phase.py ${G} ${R}

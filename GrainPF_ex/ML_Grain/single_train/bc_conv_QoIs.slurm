@@ -14,13 +14,13 @@
 #        A serial code ignores the value of lower case n,
 #        but slurm needs a plausible value to schedule the job.
 #----------------------------------------------------
-#SBATCH -J final           # Job name
-#SBATCH -o myjob.o%j       # Name of stdout output file
+#SBATCH -J myjob           # Job name
+#SBATCH -o conv_qoisasp3.o%j       # Name of stdout output file
 #SBATCH -e myjob.e%j       # Name of stderr error file
-#SBATCH -p rtx-dev            # Queue (partition) name
+#SBATCH -p rtx            # Queue (partition) name
 #SBATCH -N 1               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 4               # Total # of mpi tasks (should be 1 for serial)
-#SBATCH -t 01:00:00        # Run time (hh:mm:ss)
+#SBATCH -t 24:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
 #SBATCH --mail-user=ygqin@utexas.edu
 #SBATCH -A ASC21002       # Allocation name (req'd if you have more than 1)
@@ -36,21 +36,20 @@ date
 
 export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins
 export LAUNCHER_RMI=SLURM
-export LAUNCHER_JOB_FILE=valid
+export LAUNCHER_JOB_FILE=2aniso
 #export LAUNCHER_JOB_FILE=video
 
 #for G in 1 3 9 25 50
-for G in 18 62 102 155 190 
-#for G in 50
-do
-for R in 12 28 48 76 94
-do
-       #python3 _oldmulti_phase.py ${G} ${R}
-       #python3 gen_input.py ${j}
-       python3 ger.py ${G} ${R} 
-       $LAUNCHER_DIR/paramrun
-       #ibrun -n 1 ./phase_field Nucl_input line_AM/ ${j} 
-done
-done
+#for G in 1 50
+#do
+python3 ger.py 10 100 1
+python3 ger.py 200 100 2
+python3 ger.py 10 10 3
+python3 ger.py 200 10 4
+$LAUNCHER_DIR/paramrun
+
+
+
+#done
 #./phase_field Nucl_input line_AM/ 2
 #$LAUNCHER_DIR/paramrun

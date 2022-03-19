@@ -817,7 +817,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      *cur_tip -=1;
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
-     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+     //printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
      for (int j = 1; j<fny-1; j++){ 
          for (int i=1; i<fnx-1;i++){
@@ -840,7 +840,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
      for (int kt=0; kt<nts+1;kt++){
      memset(counts, 0, num_grains*sizeof(int));
      int cur_tip = ntip[kt];
-     printf("cur_tip, %d\n",cur_tip);
+  //   printf("cur_tip, %d\n",cur_tip);
        // pointer points at the first grid
 
      int summa=0;
@@ -854,13 +854,13 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 
        frac[kt*num_grains+j] = counts[j]*1.0/(fnx-2);
        summa += counts[j];//frac[kt*num_grains+j];
-       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
+  //     printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
      }
      if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
      if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
-        for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
+        for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa;}// printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
      }
-     printf("summation %d\n", summa);     
+     //printf("summation %d\n", summa);     
      }
 }
 

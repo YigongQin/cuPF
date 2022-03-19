@@ -142,17 +142,17 @@ int main(int argc, char** argv)
 
     char* fileName=argv[1]; 
     std::string mac_folder = argv[2];
-    std::string out_direc = "ML_dataset";//argv[2];
+    std::string out_direc = "ROM_grain";//argv[2];
 
     std::string lineText;
 
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 1; //1100;
+    int num_case = 1010;
     float grain_size= 2.5;
     bool equal_len = false;
-    int valid_run = 1;//100;
+    int valid_run = 10;
     float G0;
     float Rmax;
     float nts;
@@ -490,15 +490,20 @@ int main(int argc, char** argv)
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
     std::default_random_engine generator;
     std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
-
+    //int loc_seed = 37;
+    int loc_seed = atoi(argv[3]); // + 200*((int)G0) + (int) (10000*Rmax);
+    loc_seed = rand();
+    srand(loc_seed+(int)(1000*G0));
+    loc_seed = (rand()+(int) (1000*Rmax))%10000000;
     // start the region of gathering lots of runs
-    for (int run=0;run<num_case;run++){
-   // for (int run=1005;run<1006;run++){
-    printf("case %d\n",run);
-    int loc_seed = atoi(argv[3]) + 20*((int)G0) + (int) (10000*Rmax);
-    loc_seed = loc_seed*num_case + run;
     srand(loc_seed);
     generator.seed( loc_seed );
+    for (int run=0;run<num_case;run++){
+   // for (int run=1005;run<1006;run++){
+    printf("case %d seed %d \n",run,loc_seed);
+    //loc_seed = loc_seed*num_case + run;
+   // srand(loc_seed);
+   // generator.seed( loc_seed );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
@@ -640,9 +645,9 @@ int main(int argc, char** argv)
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
     int phs = NUM_PF;
-    string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
+    string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(loc_seed);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+"_grainsize"+to_stringp(grain_size,3)+".h5";
-    out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
+    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
    // out.precision(5);
    // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );
