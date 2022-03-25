@@ -149,10 +149,10 @@ int main(int argc, char** argv)
     std::ifstream parseFile(fileName);
    // float nx;
    // float Mt;
-    int num_case = 1010;
+    int num_case = 1;
     float grain_size= 2.5;
     bool equal_len = false;
-    int valid_run = 10;
+    int valid_run = 1;
     float G0;
     float Rmax;
     float nts;
@@ -492,6 +492,7 @@ int main(int argc, char** argv)
     std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
     //int loc_seed = 37;
     int loc_seed = atoi(argv[3]); // + 200*((int)G0) + (int) (10000*Rmax);
+    srand(loc_seed);
     loc_seed = rand();
     srand(loc_seed+(int)(1000*G0));
     loc_seed = (rand()+(int) (1000*Rmax))%10000000;

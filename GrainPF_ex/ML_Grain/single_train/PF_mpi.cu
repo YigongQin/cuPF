@@ -840,6 +840,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
      for (int kt=0; kt<nts+1;kt++){
      memset(counts, 0, num_grains*sizeof(int));
      int cur_tip = ntip[kt];
+     if (kt==0) {cur_tip=5;}
   //   printf("cur_tip, %d\n",cur_tip);
        // pointer points at the first grid
 
