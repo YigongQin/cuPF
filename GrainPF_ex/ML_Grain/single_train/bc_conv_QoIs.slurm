@@ -20,7 +20,7 @@
 #SBATCH -p rtx            # Queue (partition) name
 #SBATCH -N 1               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 4               # Total # of mpi tasks (should be 1 for serial)
-#SBATCH -t 24:00:00        # Run time (hh:mm:ss)
+#SBATCH -t 02:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
 #SBATCH --mail-user=ygqin@utexas.edu
 #SBATCH -A ASC21002       # Allocation name (req'd if you have more than 1)

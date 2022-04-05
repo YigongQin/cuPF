@@ -17,10 +17,10 @@
 #SBATCH -J myjob           # Job name
 #SBATCH -o conv_qoisasp3.o%j       # Name of stdout output file
 #SBATCH -e myjob.e%j       # Name of stderr error file
-#SBATCH -p v100-lm            # Queue (partition) name
+#SBATCH -p rtx            # Queue (partition) name
 #SBATCH -N 1               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 4               # Total # of mpi tasks (should be 1 for serial)
-#SBATCH -t 05:00:00        # Run time (hh:mm:ss)
+#SBATCH -t 01:00:00        # Run time (hh:mm:ss)
 #SBATCH --mail-type=all    # Send email at begin and end of job
 #SBATCH --mail-user=ygqin@utexas.edu
 #SBATCH -A ASC21002       # Allocation name (req'd if you have more than 1)
@@ -42,12 +42,14 @@ export LAUNCHER_JOB_FILE=1aniso
 #for G in 1 3 9 25 50
 #for G in 1 50
 #do
-python3 ger.py 110  66 1
-python3 ger.py 240 89 2
-python3 ger.py 380 25 3
-python3 ger.py 35  45 4
+./phase_field x4_Nucl_input 1line_AM/ 12
 
-$LAUNCHER_DIR/paramrun
+python3 ger.py 48  76 1
+python3 ger.py 95 91 2
+python3 ger.py 130 35 3
+python3 ger.py 15  55 4
+
+#$LAUNCHER_DIR/paramrun
 #done
 #./phase_field Nucl_input line_AM/ 2
 #$LAUNCHER_DIR/paramrun
