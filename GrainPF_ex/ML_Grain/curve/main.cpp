@@ -539,8 +539,9 @@ int main(int argc, char** argv)
     
     }
 
+    grain_grid[params.num_theta-1] = curve_n; 
     for (int i=0; i<params.num_theta-1; i++){
-        grain_grid[params.num_theta-1] = curve_n - grain_grid[i];
+        grain_grid[params.num_theta-1] -= grain_grid[i];
     }
 
 
