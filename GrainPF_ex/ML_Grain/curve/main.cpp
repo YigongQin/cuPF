@@ -548,7 +548,7 @@ int main(int argc, char** argv)
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
-    printf("Dy%f Ymax%f \n", Dy , ac.Y_mac[mac.Ny-1]);
+    printf("Dy%f Ymax%f \n", Dy , mac.Y_mac[mac.Ny-1]);
     for(int id=0; id<length; id++){
 
       int j = id/length_x;
