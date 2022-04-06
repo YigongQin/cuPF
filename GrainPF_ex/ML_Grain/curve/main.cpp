@@ -517,30 +517,33 @@ int main(int argc, char** argv)
     }  
    
     sum_frac = 0.0f;
+    float curve = params.num_theta*grain_size;
+    int curve_n = (int) (curve/params.dx/params.W0);
+    float radius = curve*2/M_PI;
+    int radius_n = (int) (radius/params.dx/params.W0);
     float temp_sum = 0.0f;
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = i+1; //rand()%NUM_PF +1;
        frac_ini[i] = abs(distribution(generator)); 
        temp_sum = frac_ini[i] + sum_frac;
 
-       if (temp_sum>params.lxd){
-           frac_ini[i] -= temp_sum-params.lxd;}
+       if (temp_sum>curve){
+           frac_ini[i] -= temp_sum-curve;}
        sum_frac += frac_ini[i];
     }
     temp_sum = 0.0f;
    
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= params.lxd;
-        grain_grid[i] = (int) (frac_ini[i]*pM.nx_loc);
+        grain_grid[i] = (int) (frac_ini[i]*curve_n);
     printf("grain %d, PF %d, angle %f, grid %d, frac %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i]);
     }
 
     for (int i=0; i<params.num_theta-1; i++){
-        grain_grid[params.num_theta-1] = pM.nx_loc - grain_grid[i];
+        grain_grid[params.num_theta-1] = curve_n - grain_grid[i];
     }
 
-    float radius = params.num_theta*grain_size*2/M_PI;
-    int radius_n = (int) (radius/params.dx/params.W0);
+
 
     for (int i=0; i<params.num_theta; i++){
         grain_angle[i] = grain_grid[i]/radius_n;
