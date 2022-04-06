@@ -536,7 +536,7 @@ int main(int argc, char** argv)
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= curve;
         grain_grid[i] = (int) (frac_ini[i]*curve_n);
-    printf("grain %d, PF %d, angle %f, grid %d, frac %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i]);
+    
     }
 
     for (int i=0; i<params.num_theta-1; i++){
@@ -547,7 +547,7 @@ int main(int argc, char** argv)
 
     for (int i=0; i<params.num_theta; i++){
         grain_angle[i] = grain_grid[i]/radius_n;
-    }
+        printf("grain %d, PF %d, angle %f, grid %d, frac %f, arc %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i], grain_angle[i] );
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
