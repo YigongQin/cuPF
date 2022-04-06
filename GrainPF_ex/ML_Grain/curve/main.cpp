@@ -587,7 +587,7 @@ int main(int argc, char** argv)
       float left_bc = 0; 
       float right_bc = grain_angle[0]; 
       for (int gr_id=0;gr_id<params.num_theta;gr_id++){
-           float angle_i = atan(abs(length_y-params.ha_wd-j)/abs(length_x-params.ha_wd-i)) 
+           float angle_i = atan(abs(length_y-params.ha_wd-j)/abs(length_x-params.ha_wd-i)) ;
            if ( (left_bc<angle_i) && (angle_i<=right_bc) ) {aid=gr_id;break;}
            else {left_bc+=grain_angle[gr_id];right_bc+=grain_angle[gr_id+1];}
       }
