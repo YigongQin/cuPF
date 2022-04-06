@@ -548,7 +548,7 @@ int main(int argc, char** argv)
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
-    printf("Dy%f Ymax%f \n", Dy , mac.Y_mac[mac.Ny-1]);
+    printf("Dy%f Ymax%f ymax%f \n", Dy , mac.Y_mac[mac.Ny-1], y[length_y--1]);
     for(int id=0; id<length; id++){
 
       int j = id/length_x;
@@ -566,7 +566,7 @@ int main(int argc, char** argv)
       if (ky==mac.Ny-1) {ky = mac.Ny-2; delta_y =1.0f;}
       int offset = kx + ky*mac.Nx;
       int roffset = rkx + rky*mac.Nx;
-      if (ky>mac.Ny) printf("ky %d", ky);
+      //if (ky>mac.Ny) printf("ky %d", ky);
       //if (offset>mac.Nx*mac.Ny-1-1-mac.Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
       psi[id] =  (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset+mac.Nx ]+\
                delta_x*(1.0f-delta_y)*mac.psi_mac[ offset+1 ] +   delta_x*delta_y*mac.psi_mac[ offset+mac.Nx+1 ];
