@@ -15,7 +15,7 @@ Created on Fri May 29 11:10:53 2020
     c_infty = 3
     L_cp = 438.9
     # Al-Cu 
-    delta = 0.0                    # strength of the surface tension anisotropy         
+    delta = 0.01                    # strength of the surface tension anisotropy         
     kin_delta = 0.13
     beta0 = 1e-7                    # linear coefficient
     k = 0.14                        # interface solute partition coefficient
@@ -24,7 +24,7 @@ Created on Fri May 29 11:10:53 2020
    # d0 = 0.005                    # capillary length -- associated with GT coefficient   um
     m_slope = 2.6                   # liquidus slope K/wt    
     GT = 0.24                       # Gibbs-Thompson coefficient K*um
-    Tmelt = 0
+    Tmelt = 933.3
     mu_k = 0.34e6                        #um/s/K
 
     # simulation parameters 
