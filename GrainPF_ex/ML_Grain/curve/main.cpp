@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 8
+#define NUM_PF 32
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
@@ -287,7 +287,7 @@ int main(int argc, char** argv)
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = params.num_theta*grain_size; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.lxd = 60; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -548,7 +548,7 @@ int main(int argc, char** argv)
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
-    printf("Dy%f Ymax%f ymax%f \n", Dy , mac.Y_mac[mac.Ny-1], y[length_y--1]);
+    printf("Dy%f Ymax%f ymax%f \n", Dy , mac.Y_mac[mac.Ny-1], y[length_y-1]);
     for(int id=0; id<length; id++){
 
       int j = id/length_x;
@@ -567,7 +567,7 @@ int main(int argc, char** argv)
       int offset = kx + ky*mac.Nx;
       int roffset = rkx + rky*mac.Nx;
       //if (ky>mac.Ny) printf("ky %d", ky);
-      //if (offset>mac.Nx*mac.Ny-1-1-mac.Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
+      if (offset>mac.Nx*mac.Ny-1-1-mac.Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
       psi[id] =  (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset+mac.Nx ]+\
                delta_x*(1.0f-delta_y)*mac.psi_mac[ offset+1 ] +   delta_x*delta_y*mac.psi_mac[ offset+mac.Nx+1 ];
 
