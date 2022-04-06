@@ -550,6 +550,13 @@ int main(int argc, char** argv)
         grain_angle[i] = (float) grain_grid[i]/radius_n;
         printf("grain %d, PF %d, angle %f, grid %d, frac %f, arc %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i], grain_angle[i] );
     }
+
+    float sum_a = 0.0f;
+    for (int i=0; i<params.num_theta; i++){
+        sum_a += grain_angle[i];
+    }    
+    printf("%f total arc \n", sum_a);
+
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     printf("Dy%f Ymax%f ymax%f \n", Dy , mac.Y_mac[mac.Ny-1], y[length_y-1]);
