@@ -18,7 +18,7 @@ y0 = 2
 
 x = np.linspace(0-BC,Lx+BC,nx)
 y = np.linspace(0-BC,Ly+BC,ny)
-t = np.linspace(0,2*top/Rmax,nt)
+t = np.linspace(0,top/Rmax,nt)
 tmax = t[-1]
 
 T = np.zeros(nx*ny*nt)
@@ -33,7 +33,7 @@ for i in range(nx*ny*nt):
     yi = int( (i%(nx*ny))/nx )
     ti = int(i/(nx*ny))
     
-    T[i] = 920 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
+    T[i] = 933.3 + G*( y[yi] - Rmax*(t[ti]) - y0)
     
     if ti==0:
        psi[i] = y0 - y[yi]      
