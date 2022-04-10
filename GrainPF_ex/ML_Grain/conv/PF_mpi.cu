@@ -18,7 +18,7 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 8
+#define NUM_PF 1
 #define OMEGA 200
 #define ZERO 0
 

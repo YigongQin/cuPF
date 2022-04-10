@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 8
+#define NUM_PF 1
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
@@ -520,24 +520,16 @@ int main(int argc, char** argv)
     float temp_sum = 0.0f;
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = i+1; //rand()%NUM_PF +1;
-       frac_ini[i] = abs(distribution(generator)); 
-       temp_sum = frac_ini[i] + sum_frac;
-
-       if (temp_sum>params.lxd){
-           frac_ini[i] -= temp_sum-params.lxd;}
-       sum_frac += frac_ini[i];
+       frac_ini[i] = params.lxd;
     }
     temp_sum = 0.0f;
    
     for (int i=0; i<params.num_theta; i++){
         frac_ini[i] /= params.lxd;
-        grain_grid[i] = (int) (frac_ini[i]*pM.nx_loc);
+        grain_grid[i] = pM.nx_loc;
     printf("grain %d, PF %d, angle %f, grid %d, frac %f\n",i,aseq[i],mac.theta_arr[i+1]/M_PI*180,grain_grid[i],frac_ini[i]);
     }
 
-    for (int i=0; i<params.num_theta-1; i++){
-        grain_grid[params.num_theta-1] = pM.nx_loc - grain_grid[i];
-    }
 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
