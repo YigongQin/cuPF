@@ -19,7 +19,7 @@ using namespace std;
 #define ACR 1e-5
 #define NBW 1
 #define NUM_PF 8
-#define OMEGA 200
+#define OMEGA 12
 #define ZERO 0
 
 #define TIPP 20
@@ -472,13 +472,6 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
   int j=pf_C/fnx; 
   int i=pf_C-j*fnx;
   // macros
-   float Dt = Tmac[1]-Tmac[0];
-   int kt = (int) ((t-Tmac[0])/Dt);
-  // printf("%d ",kt);
-   float delta_t = (t-Tmac[0])/Dt-kt;
-   //printf("%f ",Dt);
-   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
-   float Dy = Y[1]-Y[0];
   // if the points are at boundary, return
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) &&(PF_id<NUM_PF) ) {
        // find the indices of the 8 neighbors for center
@@ -501,71 +494,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         float phxn = ( ph[R] - ph[L] ) * 0.5f;
         float phzn = ( ph[T] - ph[B] ) * 0.5f;
 
-       float A2;
-       float ux2 = cosa*phxn + sina*phzn;
-         ux2 = ux2*ux2;
-       float uz2 = -sina*phxn + cosa*phzn;
-         uz2 = uz2*uz2;
-       float MAG_sq = (ux2 + uz2);
-       float MAG_sq2= MAG_sq*MAG_sq;
-       if (MAG_sq > cP.eps){
-          A2 =  cP.a_s*( 1.0f + cP.epsilon*(ux2*ux2 + uz2*uz2) / MAG_sq2);}
-       else {A2 = 1.0f;}        //float A2 = atheta(phxn,phzn,cosa,sina);
-        //float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-
-        float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        A2 = A2*Ak2;
-
-        // =============================================================
-        // 1. ANISOTROPIC DIFFUSION
-        // =============================================================
-
-
-        float phipjp=( ph[C] + ph[R] + ph[T] + ph[T+1] ) * 0.25f;
-        float phipjm=( ph[C] + ph[R] + ph[B] + ph[B+1] ) * 0.25f;
-        float phimjp=( ph[C] + ph[L] + ph[T-1] + ph[T] ) * 0.25f;
-        float phimjm=( ph[C] + ph[L] + ph[B-1] + ph[B] ) * 0.25f;
-        
-        // ============================
-        // right edge flux
-        // ============================
-        float phx = ph[R]-ph[C];
-        float phz = phipjp - phipjm;
-
-        float A  = atheta( phx,phz,cosa,sina);
-        float Ap = aptheta(phx,phz,cosa,sina);
-        float JR = A * ( A*phx - Ap*phz );
-        
-        // ============================
-        // left edge flux
-        // ============================
-        phx = ph[C]-ph[L];
-        phz = phimjp - phimjm; 
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JL = A * ( A*phx - Ap*phz );
-        
-        // ============================
-        // top edge flux
-        // ============================
-        phx = phipjp - phimjp;
-        phz = ph[T]-ph[C];
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JT = A * ( A*phz + Ap*phx );
-
-        // ============================
-        // bottom edge flux
-        // ============================
-        phx = phipjm - phimjm;
-        phz = ph[C]-ph[B];
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JB = A * ( A*phz + Ap*phx );
-
+       float A2= kine_ani(phxn,phzn,cosa,sina);
+       float diff =  ph[R] + ph[L] + ph[T] + ph[B] - 4*ph[C];
 
         /*# =============================================================
         #
@@ -573,25 +503,12 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         #
         # =============================================================*/
         //float Up = (y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-      int kx = (int) (( x[i] - X[0] )/Dx);
-      float delta_x = ( x[i] - X[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[j] - Y[0] )/Dy);
-      float delta_y = ( y[j] - Y[0] )/Dy - ky;
-      //printf("%d ",kx);
-      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
-      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
-      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
-      int offset =  kx + ky*Nx + kt*Nx*Ny;
-      int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
+
       //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
      // printf("%d ", Nx);
-      float Tinterp= ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
+      float Tinterp = cP.G*(y[j] - cP.R*1e6 *t -2);
 
-        float Up = (Tinterp-cP.Tmelt)/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
+        float Up = Tinterp/cP.L_cp;  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
        // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
         float repul=0.0f;
         for (int pf_id=0; pf_id<NUM_PF; pf_id++){
@@ -601,28 +518,22 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
                repul += 0.25f*(ph[overlap_id]+1.0f)*(ph[overlap_id]+1.0f);
            }
         }
-        float rhs_psi = ((JR-JL) + (JT-JB) ) * cP.hi*cP.hi + \
-                  (1.0f-ph[C]*ph[C])*( ph[C] - cP.lamd*(1.0f-ph[C]*ph[C])*( Up) )  - 0.5f*OMEGA*(ph[C]+1.0f)*repul;
+
+        //float omega = OMEGA*cP.R;
+        //if ((omega<50.0f)&&(cP.G>6.0f)) {omega=50.0f;}
+        float rhs_psi = diff * cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
+              - cP.lamd*Up* ( (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) - 0.5f*OMEGA*(ph[C]+1.0f)*repul);
 
       //# =============================================================
         //#
         //# 4. dpsi/dt term
        // #
         //# =============================================================
-        //float tp = (1.0f-(1.0f-cP.k)*Up);
-        //float tau_psi;
-        //if (tp >= cP.k){tau_psi = tp*A2;}
-              // else {tau_psi = cP.k*A2;}
-        
-        //dpsi[C] = rhs_psi / tau_psi; 
+
         float dphi = rhs_psi / A2; //tau_psi;
-        //float rand;
-        //if ( ( ph[C]>-0.995 ) && ( ph[C]<0.995 ) ) {rand= cP.dt_sqrt*cP.hi*cP.eta*(curand_uniform(states+C)-0.5);}
-        //else {rand = 0.0f;}      //  ps_new[C] = ps[C] +  cP.dt * dpsi[C];
-        //int new_noi_loc = nt%cP.noi_period;*cP.seed_val)%(fnx*fny);
+  
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
-        //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
-        //if (C==1000){printf("%f ",ph_new[C]);}
+
 
      }
 } 
@@ -817,7 +728,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      *cur_tip -=1;
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
-     //printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
      for (int j = 1; j<fny-1; j++){ 
          for (int i=1; i<fnx-1;i++){
@@ -855,7 +766,7 @@ void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* ti
 
        frac[kt*num_grains+j] = counts[j]*1.0/(fnx-2);
        summa += counts[j];//frac[kt*num_grains+j];
-  //     printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
+       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
      }
      if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
      if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){

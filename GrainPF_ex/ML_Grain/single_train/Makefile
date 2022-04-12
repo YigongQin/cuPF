@@ -13,11 +13,11 @@ ARCH=$(shell uname | sed -e 's/-.*//g')
 CUDA_PATH=$(TACC_CUDA_DIR)
 OBJDIR=objs
 INC_FLAGS=-I../common -I$(TACC_HDF5_INC) 
-MPI_INC=-I/opt/intel/impi/2019.9.304/intel64/include/
-CXX=icpc 
+MPI_INC=-I/opt/ibm/spectrum_mpi/include/
+CXX=xlc++ 
 CXXFLAGS=-O3 -Wall $(INC_FLAGS) $(MPI_INC) -std=c++11
 HDF5_FLAGS=-Wl,-rpath,$(TACC_HDF5_LIB) -L$(TACC_HDF5_LIB) -lhdf5 -lz
-MPICXX=/opt/intel/impi/2019.9.304/intel64/bin/mpicxx
+MPICXX=mpic++
 ################################################################################
 # When compiling with NVCC, the arch flag (-arch) specifies the name of 
 # the NVIDIA GPU architecture that the CUDA files will be compiled for.

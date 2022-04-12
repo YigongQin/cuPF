@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May 29 11:10:53 2020
+
+@author: yigongqin
+"""
+
+## NOTE: this is copied from python input, be careful when write C++ code
+
+    # heat/processing parameters
+    Dh = 8.43e7                     # heat diffusion
+    G = 0.02                        # thermal gradient        K/um
+    R = 50                          # pulling speed           um/s
+    c_infty = 3
+    L_cp = 229
+    # Al-Cu 
+    delta = 0.01                    # strength of the surface tension anisotropy         
+    kin_delta = 0.13
+    beta0 = 1e-7                    # linear coefficient
+    k = 0.14                        # interface solute partition coefficient
+    #c_infm = 7.8                  # shift in melting temperature     K
+    Dl = 3000                       # liquid diffusion coefficient      um**2/s
+   # d0 = 0.005                    # capillary length -- associated with GT coefficient   um
+    m_slope = 2.6                   # liquidus slope K/wt    
+    GT = 0.347                       # Gibbs-Thompson coefficient K*um
+    Tmelt = 933.3
+    mu_k = 0.217e6                        #um/s/K
+
+    # simulation parameters 
+    eps = 1e-8                      	# divide-by-zero treatment
+    alpha0 = 0                    	# misorientation angle in degree
+    
+    dx = 0.8                            # mesh width
+    W0 = 0.02                    # interface thickness      um
+    asp_ratio = 4                  	# aspect ratio
+    moving_ratio = 0.5
+   # nx = 128            		# number of cells in x, number of grids is nx+1
+    #Mt = 100000                      	# total  number of time steps
+    eta = 0.0  
+    seed_val = 3              		# magnitude of noise
+    noi_period = 200
+    U0 = -1                		# initial value for U, -1 < U0 < 0
+    nts = 20 #600#24				# number snapshots to save, Mt/nts must be int
+    ictype = 0                   	# initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
+    
+    ha_wd = 1;
+    xmin = 0
+    ymin = 0
+   # Ti = 877.6
+    num_theta = 8
+    Nx = 11
+    Ny = 11
+    Nt = 11
+    cfl = 0.3
+ 
+    # nuleation parameters
+    undcool_mean = 0.75   # Kelvin  nuleantion barrier
+    undcool_std = 0.1   # Kelvin fixed
+    nuc_Nmax = 0      # 1/um^2 density; 0 to very big number 
+    nuc_rad = 0.3      # 0.2 um radius of a nucleai
+
