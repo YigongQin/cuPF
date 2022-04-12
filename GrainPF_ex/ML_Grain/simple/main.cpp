@@ -499,7 +499,7 @@ int main(int argc, char** argv)
     srand(loc_seed+(int)(1000*G0));
     loc_seed = (rand()+(int) (1000*Rmax))%10000000;
     // start the region of gathering lots of runs
-    loc_seed = 38;
+    //loc_seed = 38;
     srand(loc_seed);
     generator.seed( loc_seed );
     for (int run=0;run<num_case;run++){
