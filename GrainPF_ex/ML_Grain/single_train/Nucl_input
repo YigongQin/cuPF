@@ -13,7 +13,7 @@ Created on Fri May 29 11:10:53 2020
     G = 0.02                        # thermal gradient        K/um
     R = 50                          # pulling speed           um/s
     c_infty = 3
-    L_cp = 438.9
+    L_cp = 229
     # Al-Cu 
     delta = 0.01                    # strength of the surface tension anisotropy         
     kin_delta = 0.13
@@ -23,16 +23,16 @@ Created on Fri May 29 11:10:53 2020
     Dl = 3000                       # liquid diffusion coefficient      um**2/s
    # d0 = 0.005                    # capillary length -- associated with GT coefficient   um
     m_slope = 2.6                   # liquidus slope K/wt    
-    GT = 0.24                       # Gibbs-Thompson coefficient K*um
+    GT = 0.347                       # Gibbs-Thompson coefficient K*um
     Tmelt = 933.3
-    mu_k = 0.34e6                        #um/s/K
+    mu_k = 0.217e6                        #um/s/K
 
     # simulation parameters 
     eps = 1e-8                      	# divide-by-zero treatment
     alpha0 = 0                    	# misorientation angle in degree
     
     dx = 0.8                            # mesh width
-    W0 = 0.064                    # interface thickness      um
+    W0 = 0.04                    # interface thickness      um
     asp_ratio = 4                  	# aspect ratio
     moving_ratio = 0.5
    # nx = 128            		# number of cells in x, number of grids is nx+1
@@ -41,7 +41,7 @@ Created on Fri May 29 11:10:53 2020
     seed_val = 3              		# magnitude of noise
     noi_period = 200
     U0 = -1                		# initial value for U, -1 < U0 < 0
-    nts = 600#24				# number snapshots to save, Mt/nts must be int
+    nts = 10 #600#24				# number snapshots to save, Mt/nts must be int
     ictype = 0                   	# initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
     
     ha_wd = 1;
@@ -52,7 +52,7 @@ Created on Fri May 29 11:10:53 2020
     Nx = 11
     Ny = 11
     Nt = 11
-    cfl = 1.2
+    cfl = 0.6
  
     # nuleation parameters
     undcool_mean = 0.75   # Kelvin  nuleantion barrier
