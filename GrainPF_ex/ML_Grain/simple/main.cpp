@@ -253,8 +253,8 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/U.txt",mac.U_mac);
     read_input(mac_folder+"/G.txt", &G0);
     read_input(mac_folder+"/Rmax.txt", &Rmax);
-    read_input(mac_folder+"/G.txt", &params.G);
-    read_input(mac_folder+"/Rmax.txt", &params.R);
+    params.G = G0;
+    params.R = Rmax;
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
