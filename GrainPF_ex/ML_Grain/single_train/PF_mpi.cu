@@ -19,7 +19,7 @@ using namespace std;
 #define ACR 1e-5
 #define NBW 1
 #define NUM_PF 8
-#define OMEGA 12
+#define OMEGA 12.8
 #define ZERO 0
 
 #define TIPP 20
