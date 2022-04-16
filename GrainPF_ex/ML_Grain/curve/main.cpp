@@ -308,6 +308,7 @@ int main(int argc, char** argv)
     int kts = params.Mt/params.nts;
     kts = (kts/2)*2;
     params.Mt = kts*params.nts;
+    params.Mt = 71100;
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
     if (pM.rank==0){ 
@@ -662,7 +663,7 @@ int main(int argc, char** argv)
       else {alpha[id]=0.0f;} 
     }
 
-
+    memcpy(frac_asse, grain_angle,sizeof(float)*params.num_theta);
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<Uc[i]<<" ";

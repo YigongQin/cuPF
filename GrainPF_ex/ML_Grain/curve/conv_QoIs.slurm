@@ -42,12 +42,12 @@ export LAUNCHER_JOB_FILE=1aniso
 #for G in 1 3 9 25 50
 #for G in 1 50
 #do
-./phase_field x4_Nucl_input 1line_AM/ 12
 
-python3 ger.py 48  76 1
-python3 ger.py 95 91 2
-python3 ger.py 130 35 3
-python3 ger.py 15  55 4
+python3 ger.py 48 76 
+./phase_field Nucl_input line_AM/ 12
+#python3 ger.py 95 91 2
+#python3 ger.py 130 35 3
+#python3 ger.py 15  55 4
 
 #$LAUNCHER_DIR/paramrun
 #done

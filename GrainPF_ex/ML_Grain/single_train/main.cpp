@@ -253,8 +253,6 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/U.txt",mac.U_mac);
     read_input(mac_folder+"/G.txt", &G0);
     read_input(mac_folder+"/Rmax.txt", &Rmax);
-    read_input(mac_folder+"/G.txt", &params.G);
-    read_input(mac_folder+"/Rmax.txt", &params.R);
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
@@ -499,7 +497,6 @@ int main(int argc, char** argv)
     srand(loc_seed+(int)(1000*G0));
     loc_seed = (rand()+(int) (1000*Rmax))%10000000;
     // start the region of gathering lots of runs
-    //loc_seed = 38;
     srand(loc_seed);
     generator.seed( loc_seed );
     for (int run=0;run<num_case;run++){
@@ -649,9 +646,9 @@ int main(int argc, char** argv)
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
     int phs = NUM_PF;
-    string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(loc_seed);
-    string out_file = out_format+ "_rank"+to_string(pM.rank)+"_grainsize"+to_stringp(grain_size,3)+"_Mt"+to_string(params.Mt)+".h5";
-    out_file = "/scratch/07428/ygqin/" + out_direc + "/" +out_file;
+    string out_format = "ML_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(loc_seed);
+    string out_file = out_format+ "_rank"+to_string(pM.rank)+"_grainsize"+to_stringp(grain_size,3)+".h5";
+    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
    // out.precision(5);
    // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );

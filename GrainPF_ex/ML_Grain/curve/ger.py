@@ -4,8 +4,8 @@ import h5py
 import sys
 from math import pi
 
-nx = 1001
-ny = 1001
+nx = 101
+ny = 101
 nt = 11
 Lx = 60
 Ly = 60

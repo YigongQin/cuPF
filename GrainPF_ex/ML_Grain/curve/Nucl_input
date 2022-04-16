@@ -41,16 +41,16 @@ Created on Fri May 29 11:10:53 2020
     seed_val = 3              		# magnitude of noise
     noi_period = 200
     U0 = -1                		# initial value for U, -1 < U0 < 0
-    nts = 600#24				# number snapshots to save, Mt/nts must be int
+    nts = 15#24				# number snapshots to save, Mt/nts must be int
     ictype = 0                   	# initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
     
     ha_wd = 1;
     xmin = 0
     ymin = 0
    # Ti = 877.6
-    num_theta = 8
-    Nx = 11
-    Ny = 11
+    num_theta = 32
+    Nx = 101
+    Ny = 101
     Nt = 11
     cfl = 1.2
  
