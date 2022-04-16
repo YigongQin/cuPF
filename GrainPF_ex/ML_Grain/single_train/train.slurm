@@ -17,7 +17,7 @@
 #SBATCH -J final           # Job name
 #SBATCH -o myjob.o%j       # Name of stdout output file
 #SBATCH -e myjob.e%j       # Name of stderr error file
-#SBATCH -p rtx            # Queue (partition) name
+#SBATCH -p v100            # Queue (partition) name
 #SBATCH -N 1               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 4               # Total # of mpi tasks (should be 1 for serial)
 #SBATCH -t 04:00:00        # Run time (hh:mm:ss)
@@ -36,21 +36,22 @@ date
 
 export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins
 export LAUNCHER_RMI=SLURM
-export LAUNCHER_JOB_FILE=qoi_conv
+export LAUNCHER_JOB_FILE=qoi_conv3
 #export LAUNCHER_JOB_FILE=video
 
 #for G in 10 20 30 40 50 60 80 100 150 200 250 300 350 400 500
 #do
-
-#for G in 10 11 12 14 16 18 20 25 30 35 40 45 50 60 80 100 
-for G in 40 45 50 60 80 100 120 140 170 200 
+#for G in 10 11 12 14 16 
+#for G in 18 20 25 30 35 
+#for G in 40 45 50 60 80 
+for G in 100 120 140 170 200 
 do
 
 for R in 10 20 30 40 50 60 70 80 85 90 92 94 96 98 100
 do
        #python3 _oldmulti_phase.py ${G} ${R}
        #python3 gen_input.py ${j}
-       python3 ger.py ${G} ${R} 
+       python3 ger.py ${G} ${R} 3
        $LAUNCHER_DIR/paramrun
        #ibrun -n 1 ./phase_field Nucl_input line_AM/ ${j} 
 done
