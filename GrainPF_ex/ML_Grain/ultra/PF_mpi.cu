@@ -7,6 +7,8 @@
 #include <curand_kernel.h>
 #include <mpi.h>
 #include <hdf5.h>
+#include <string>
+#include <cstring>
 #include "CycleTimer.h"
 #include "include_struct.h"
 using namespace std;
@@ -1079,9 +1081,9 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
              hid_t  h5_file; 
-             out_file = "/scratch/07428/ygqin/ROM_grain/128grains" + to_string((2*kt+2)%kts)+".h5";;
+             string out_file = "/scratch/07428/ygqin/ROM_grain/128grains" + to_string((2*kt+2)%kts)+".h5";;
              h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-             h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
+             h5write_1d(h5_file, "alpha",  alpha_i_full, fnx*fny_f, "int");
              H5Fclose(h5_file);
 
           }
