@@ -898,7 +898,14 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 
 }
 
-
+template <typename T>
+std::string to_stringp(const T a_value, int n )
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return out.str();
+}
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
   int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
