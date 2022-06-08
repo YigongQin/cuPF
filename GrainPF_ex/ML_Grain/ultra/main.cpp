@@ -446,7 +446,7 @@ int main(int argc, char** argv)
     float* Uc=(float*) malloc(length* sizeof(float));
     float* alpha=(float*) malloc(length* sizeof(float));    
     int* alpha_i=(int*) malloc(length* sizeof(int));
-    int* alpha_i_full = (int*) malloc((params.nts+1)*full_length* sizeof(int));
+    int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
     printf("%d\n",full_length);
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
@@ -459,7 +459,7 @@ int main(int argc, char** argv)
     float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
     int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
     float* angles_asse=(float*) malloc(num_case*(NUM_PF+1)* sizeof(float));
-    int* alpha_asse=(int*) malloc(valid_run*(params.nts+1)*full_length* sizeof(int));
+    int* alpha_asse=(int*) malloc(valid_run*full_length* sizeof(int));
 
     int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
@@ -628,7 +628,7 @@ int main(int argc, char** argv)
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
-           memcpy(alpha_asse+loca_case*(params.nts+1)*full_length,alpha_i_full,sizeof(int)*(params.nts+1)*full_length);
+           memcpy(alpha_asse+loca_case*full_length,alpha_i_full,sizeof(int)*full_length);
 
     }   
 
@@ -664,7 +664,7 @@ int main(int argc, char** argv)
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 
-    h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length*(params.nts+1), "int");
+    h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
     h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
 
     h5write_1d(h5_file, "x_coordinates", x, length_x, "float");

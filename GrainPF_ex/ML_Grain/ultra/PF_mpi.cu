@@ -6,6 +6,7 @@
 #include <curand.h>
 #include <curand_kernel.h>
 #include <mpi.h>
+#include <hdf5.h>
 #include "CycleTimer.h"
 #include "include_struct.h"
 using namespace std;
@@ -863,6 +864,39 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 }
 
+void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
+
+    herr_t  status;
+    hid_t dataspace, h5data=0;
+    hsize_t dim[1];
+    dim[0] = length;
+    
+    dataspace = H5Screate_simple(1, dim, NULL);
+
+    if (dtype.compare("int") ==0){
+
+        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+    }
+    else if (dtype.compare("float") ==0){
+        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+    }
+    else {
+
+        printf("the data type not specifed");
+        status = 1;
+    }
+
+    H5Sclose(dataspace);
+    H5Dclose(h5data);
+
+
+}
+
+
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
   int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
@@ -1038,12 +1072,18 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
-             printf("%d\n",(2*kt+2)/kts*fnx*fny_f); 
-             cudaMemcpy(alpha_i_full+ (2*kt+2)/kts*fnx*fny_f, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
-             cudaMemcpy(alpha_i_full+move_count*fnx+ (2*kt+2)/kts*fnx*fny_f, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+           //  printf("%d\n",(2*kt+2)/kts*fnx*fny_f); 
+             cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
+             cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
              //QoIs based on alpha field
              cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             hid_t  h5_file; 
+             out_file = "/scratch/07428/ygqin/ROM_grain/128grains" + to_string((2*kt+2)%kts)+".h5";;
+             h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+             h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
+             H5Fclose(h5_file);
+
           }
 
      if ( (2*kt+2)%TIPP==0) {
