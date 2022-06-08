@@ -728,7 +728,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      *cur_tip -=1;
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
-     //printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
      for (int j = 1; j<fny-1; j++){ 
          for (int i=1; i<fnx-1;i++){
@@ -1096,7 +1096,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
   // cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
  //  cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   calc_frac(alpha_i_full, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+   calc_frac(alpha_i_full+params.nts*fnx*fny_f, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
 
   cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);
