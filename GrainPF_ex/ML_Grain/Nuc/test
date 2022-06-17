@@ -1,0 +1,4 @@
+./phase_field Nucl_input line_AM/ 7
+./phase_field Nucl_input line_AM/ 32
+./phase_field Nucl_input line_AM/ 57
+./phase_field Nucl_input line_AM/ 82
