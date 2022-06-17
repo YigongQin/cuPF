@@ -405,7 +405,7 @@ add_nucl(int* nucl_status, int cnx, int cny, float* ph, int* alpha_m, float* x, 
      for (int pf_id=0; pf_id<NUM_PF; pf_id++) { if (ph[glob_C+pf_id*fnx*fny]>LS) {nucl_status[C]=1;} }
      if (nucl_status[C]==0) {  
 
-      float delT = -cP.G*(y[j] - cP.R*1e6 *t -2);
+      float delT = -cP.G*(y[glob_j] - cP.R*1e6 *t -2);
       float d_delT = cP.G*cP.R*1e6*dt;
       if (delT>cP.undcool_mean){
         float nuc_posb = nuncl_possibility(delT, d_delT);
