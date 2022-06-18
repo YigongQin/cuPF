@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 8
+#define NUM_PF 16
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
@@ -479,7 +479,7 @@ int main(int argc, char** argv)
    */
 
     // initialize the angles:
-    float grain_gap = M_PI/2.0/(NUM_PF-1);     
+    float grain_gap = M_PI/2.0/NUM_PF;     
     //printf("grain gap %f \n", grain_gap);
     mac.theta_arr = new float[NUM_PF+1];
     mac.cost = new float[NUM_PF+1];
@@ -512,8 +512,8 @@ int main(int argc, char** argv)
    // initialize the angles for every PF, while keep the liquid 0 
     for (int i=0; i<NUM_PF; i++){
         //mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
-        mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
-       // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
+       // mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
+        mac.theta_arr[i+1] = (i+1)*grain_gap- M_PI/2.0;
         mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
         mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
     }  

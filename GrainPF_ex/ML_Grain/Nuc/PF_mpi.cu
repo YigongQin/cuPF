@@ -18,7 +18,7 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 8
+#define NUM_PF 16
 #define OMEGA 12.8
 #define ZERO 0
 
@@ -978,6 +978,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
  //  calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
+   cudaMemcpy(alpha_i_full, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
