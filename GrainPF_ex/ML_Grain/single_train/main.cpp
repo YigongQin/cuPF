@@ -150,7 +150,7 @@ int main(int argc, char** argv)
    // float nx;
    // float Mt;
     int num_case = 1;
-    float grain_size= 2.5;
+    float grain_size;
     bool equal_len = false;
     int valid_run = 1;
     float G0;
@@ -206,8 +206,8 @@ int main(int argc, char** argv)
         params.ha_wd = (int)ha_wd;
         getParam(lineText, "xmin", params.xmin);
         getParam(lineText, "ymin", params.ymin);
-        getParam(lineText, "num_theta", num_thetaf);
-        params.num_theta = (int) num_thetaf;
+       // getParam(lineText, "num_theta", num_thetaf);
+       // params.num_theta = (int) num_thetaf;
         getParam(lineText, "Nx", temp_Nx);
         getParam(lineText, "Ny", temp_Ny);
         getParam(lineText, "Nt", temp_Nt);
@@ -255,6 +255,9 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/Rmax.txt", &Rmax);
     read_input(mac_folder+"/G.txt", &params.G);
     read_input(mac_folder+"/Rmax.txt", &params.R);
+    read_input(mac_folder+"/w0.txt", &grain_size);
+    read_input(mac_folder+"/Ng.txt", &num_thetaf);
+    params.num_theta = (int) num_thetaf;
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
