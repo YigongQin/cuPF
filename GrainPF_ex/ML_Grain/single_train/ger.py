@@ -6,7 +6,9 @@ import sys
 nx = 11
 ny = 11
 nt = 11
-Lx = 20
+w0=2.5
+Ng=8
+Lx = w0*Ng
 Ly = 80
 BC = 1
 top = 60
@@ -48,6 +50,8 @@ np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'w0.txt', w0, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'Ng.txt', Ng, fmt='%1.4e',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()
