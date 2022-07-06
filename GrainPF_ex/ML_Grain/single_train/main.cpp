@@ -182,7 +182,7 @@ int main(int argc, char** argv)
         getParam(lineText, "eps", params.eps);
         getParam(lineText, "alpha0", params.alpha0);
         getParam(lineText, "dx", params.dx);
-        getParam(lineText, "asp_ratio", params.asp_ratio);
+      //  getParam(lineText, "asp_ratio", params.asp_ratio);
       //  getParam(lineText, "nx", nx);
       //  params.nx = (int)nx;
       //  getParam(lineText, "Mt", Mt);
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
         getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
         getParam(lineText, "nuc_rad", params.nuc_rad);
 
-        getParam(lineText, "moving_ratio", params.moving_ratio);
+       // getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
     float dxd = params.dx*params.W0;
@@ -258,6 +258,7 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/w0.txt", &grain_size);
     read_input(mac_folder+"/Ng.txt", &num_thetaf);
     params.num_theta = (int) num_thetaf;
+    read_input(mac_folder+"/asp.txt", &params.asp_ratio);
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
@@ -293,6 +294,7 @@ int main(int argc, char** argv)
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
     params.lxd = params.num_theta*grain_size; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.moving_ratio = 10.f/params.moving_ratio;
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -334,6 +336,7 @@ int main(int argc, char** argv)
     std::cout<<"dx = "<<params.lxd/params.nx/params.W0<<std::endl;
     std::cout<<"dy = "<<params.lyd/params.ny/params.W0<<std::endl;    
     std::cout<<"asp_ratio = "<<params.asp_ratio<<std::endl;
+    std::cout<<"moving_ratio = "<<params.moving_ratio<<std::endl;
     std::cout<<"nx = "<<params.nx<<std::endl;
     std::cout<<"ny = "<<params.ny<<std::endl;
     std::cout<<"full ny = "<<params.ny_full<<std::endl;

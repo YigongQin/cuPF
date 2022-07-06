@@ -8,8 +8,9 @@ ny = 11
 nt = 11
 w0=2.5
 Ng=8
+asp = 4
 Lx = w0*Ng
-Ly = 80
+Ly = Lx*asp
 BC = 1
 top = 60
 
@@ -51,6 +52,7 @@ np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'w0.txt', np.asarray([w0]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Ng.txt', np.asarray([Ng]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'asp.txt', np.asarray([asp]), fmt='%1.4e',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()
