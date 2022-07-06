@@ -6,7 +6,7 @@ import sys
 nx = 11
 ny = 11
 nt = 11
-w0=2.5
+w0=float(sys.argv[3]);
 Ng=8
 asp = 4
 Lx = w0*Ng
