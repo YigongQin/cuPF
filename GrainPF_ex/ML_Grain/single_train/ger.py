@@ -41,8 +41,7 @@ for i in range(nx*ny*nt):
     if ti==0:
        psi[i] = y0 - y[yi]      
         
-if len(sys.argv) == 4: mac_folder = str(sys.argv[3]) + 'line_AM/'    
-else: mac_folder = 'line_AM/'
+mac_folder = str(sys.argv[-1]) + 'line_AM/'    
 np.savetxt(mac_folder+'x.txt', x, fmt='%1.4e',delimiter='\n') 
 np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
