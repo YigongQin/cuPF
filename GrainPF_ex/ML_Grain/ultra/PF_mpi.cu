@@ -7,8 +7,8 @@
 #include <curand_kernel.h>
 #include <mpi.h>
 #include <hdf5.h>
+#include <sstream>
 #include <string>
-#include <cstring>
 #include "CycleTimer.h"
 #include "include_struct.h"
 using namespace std;
@@ -21,7 +21,7 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 32
+#define NUM_PF 128
 #define OMEGA 12.8
 #define ZERO 0
 
@@ -1088,7 +1088,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
              hid_t  h5_file; 
-             string out_file = "/scratch/07428/ygqin/ROM_grain/128grains" + to_string((2*kt+2)%kts)+".h5";;
+             string out_file = "/scratch/07428/ygqin/ROM_grain/128grains" + to_stringp((2*kt+2)/kts,3)+".h5";;
              h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
              h5write_1d(h5_file, "alpha",  alpha_i_full, fnx*fny_f, "int");
              H5Fclose(h5_file);
@@ -1145,7 +1145,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
   // cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
  //  cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   calc_frac(alpha_i_full+params.nts*fnx*fny_f, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+   //calc_frac(alpha_i_full, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
 
   cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);

@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 32
+#define NUM_PF 128
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha_i, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
@@ -75,38 +75,7 @@ void read_input(std::string input, float* target){
 
 }
 
-
-void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
-
-	herr_t  status;
-	hid_t dataspace, h5data=0;
-	hsize_t dim[1];
-	dim[0] = length;
-    
-    dataspace = H5Screate_simple(1, dim, NULL);
-
-    if (dtype.compare("int") ==0){
-
-    	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    	status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else if (dtype.compare("float") ==0){
-    	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    	status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else {
-
-    	printf("the data type not specifed");
-    	status = 1;
-    }
-
-    H5Sclose(dataspace);
-    H5Dclose(h5data);
-
-
-}
+void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype);
 
 
 int main(int argc, char** argv)
@@ -498,7 +467,7 @@ int main(int argc, char** argv)
     srand(loc_seed);
     loc_seed = rand();
     srand(loc_seed+(int)(1000*G0));
-    loc_seed = 2 + (rand()+(int) (1000*Rmax))%10000000;
+    loc_seed = (rand()+(int) (1000*Rmax))%10000000;
     // start the region of gathering lots of runs
     //loc_seed = 38;
     srand(loc_seed);
@@ -522,8 +491,9 @@ int main(int argc, char** argv)
     sum_frac = 0.0f;
     float temp_sum = 0.0f;
     for (int i=0; i<params.num_theta; i++){
-       aseq[i] = rand()%NUM_PF +1;
-       frac_ini[i] = abs(distribution(generator)); 
+       aseq[i] = i+1; //rand()%NUM_PF +1;
+       frac_ini[i] = abs(distribution(generator));
+       if (frac_ini[i]<0.32){frac_ini[i]=0.32;} 
        temp_sum = frac_ini[i] + sum_frac;
 
        if (temp_sum>params.lxd){
@@ -624,7 +594,7 @@ int main(int argc, char** argv)
     memcpy(total_area_asse+run*(params.nts+1)*params.num_theta, total_area, sizeof(int)*(params.nts+1)*params.num_theta );    
     memcpy(tip_final_asse +run*(params.nts+1)*params.num_theta, tip_final,  sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-
+    memcpy(frac_asse, frac_ini, sizeof(int)*params.num_theta);
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
