@@ -19,7 +19,7 @@ Gmax = 0.5*0.1*float(sys.argv[1]);
 Rmax = 2*1e4*float(sys.argv[2]);
 
 Gmin = 2
-Rmin = 0.2
+Rmin = 0.2*1e6
 
 G_list = np.linspace(Gmin, Gmax, num = nt)
 R_list = np.linspace(Rmin, Rmax, num = nt)
