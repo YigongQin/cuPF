@@ -15,8 +15,17 @@ BC = 1
 top = 60
 
 
-G = 0.5*0.1*float(sys.argv[1]);
+Gmax = 0.5*0.1*float(sys.argv[1]);
 Rmax = 2*1e4*float(sys.argv[2]);
+
+Gmin = 2
+Rmin = 0.2*1e6
+
+G_list = np.linspace(Gmin, Gmax, num = nt)
+R_list = np.linspace(Rmin, Rmax, num = nt)
+
+
+
 y0 = 2
 
 x = np.linspace(0-BC,Lx+BC,nx)
@@ -24,6 +33,7 @@ y = np.linspace(0-BC,Ly+BC,ny)
 #t = np.linspace(0,2*top/Rmax,nt)
 t = np.linspace(0,top/Rmax,nt)
 tmax = t[-1]
+dt = t[1] - t[0]
 
 T = np.zeros(nx*ny*nt)
 alpha = np.zeros(nx*ny)
@@ -38,7 +48,7 @@ for i in range(nx*ny*nt):
     ti = int(i/(nx*ny))
     
 #    T[i] = 933.3 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
-    T[i] = G*( y[yi] - Rmax*(t[ti]) - y0) 
+    T[i] = G_list[ti]*( y[yi] - sum(R_list[:ti+1])*dt - y0) 
     if ti==0:
        psi[i] = y0 - y[yi]      
         
@@ -48,8 +58,8 @@ np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
-np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
-np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'G.txt', G_list, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'Rmax.txt', R_list*1e-6, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'w0.txt', np.asarray([w0]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Ng.txt', np.asarray([Ng]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'asp.txt', np.asarray([asp]), fmt='%1.4e',delimiter='\n')

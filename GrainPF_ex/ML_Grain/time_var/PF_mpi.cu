@@ -18,8 +18,12 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 10
-#define OMEGA 200
+#define NUM_PF 8
+#define OMEGA 12.8
+#define ZERO 0
+
+#define TIPP 20
+#define BLANK 0.1
 
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
@@ -468,13 +472,6 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
   int j=pf_C/fnx; 
   int i=pf_C-j*fnx;
   // macros
-   float Dt = Tmac[1]-Tmac[0];
-   int kt = (int) ((t-Tmac[0])/Dt);
-  // printf("%d ",kt);
-   float delta_t = (t-Tmac[0])/Dt-kt;
-   //printf("%f ",Dt);
-   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
-   float Dy = Y[1]-Y[0];
   // if the points are at boundary, return
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) &&(PF_id<NUM_PF) ) {
        // find the indices of the 8 neighbors for center
@@ -497,71 +494,8 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         float phxn = ( ph[R] - ph[L] ) * 0.5f;
         float phzn = ( ph[T] - ph[B] ) * 0.5f;
 
-       float A2;
-       float ux2 = cosa*phxn + sina*phzn;
-         ux2 = ux2*ux2;
-       float uz2 = -sina*phxn + cosa*phzn;
-         uz2 = uz2*uz2;
-       float MAG_sq = (ux2 + uz2);
-       float MAG_sq2= MAG_sq*MAG_sq;
-       if (MAG_sq > cP.eps){
-          A2 =  cP.a_s*( 1.0f + cP.epsilon*(ux2*ux2 + uz2*uz2) / MAG_sq2);}
-       else {A2 = 1.0f;}        //float A2 = atheta(phxn,phzn,cosa,sina);
-        //float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        if (MAG_sq>1e-12){
-        float Ak2 = kine_ani(phxn,phzn,cosa,sina);
-        A2 = A2*Ak2;
-
-        // =============================================================
-        // 1. ANISOTROPIC DIFFUSION
-        // =============================================================
-
-
-        float phipjp=( ph[C] + ph[R] + ph[T] + ph[T+1] ) * 0.25f;
-        float phipjm=( ph[C] + ph[R] + ph[B] + ph[B+1] ) * 0.25f;
-        float phimjp=( ph[C] + ph[L] + ph[T-1] + ph[T] ) * 0.25f;
-        float phimjm=( ph[C] + ph[L] + ph[B-1] + ph[B] ) * 0.25f;
-        
-        // ============================
-        // right edge flux
-        // ============================
-        float phx = ph[R]-ph[C];
-        float phz = phipjp - phipjm;
-
-        float A  = atheta( phx,phz,cosa,sina);
-        float Ap = aptheta(phx,phz,cosa,sina);
-        float JR = A * ( A*phx - Ap*phz );
-        
-        // ============================
-        // left edge flux
-        // ============================
-        phx = ph[C]-ph[L];
-        phz = phimjp - phimjm; 
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JL = A * ( A*phx - Ap*phz );
-        
-        // ============================
-        // top edge flux
-        // ============================
-        phx = phipjp - phimjp;
-        phz = ph[T]-ph[C];
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JT = A * ( A*phz + Ap*phx );
-
-        // ============================
-        // bottom edge flux
-        // ============================
-        phx = phipjm - phimjm;
-        phz = ph[C]-ph[B];
-
-        A  = atheta( phx,phz,cosa,sina);
-        Ap = aptheta(phx,phz,cosa,sina);
-        float JB = A * ( A*phz + Ap*phx );
-
+       float A2= kine_ani(phxn,phzn,cosa,sina);
+       float diff =  ph[R] + ph[L] + ph[T] + ph[B] - 4*ph[C];
 
         /*# =============================================================
         #
@@ -569,25 +503,12 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
         #
         # =============================================================*/
         //float Up = (y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-      int kx = (int) (( x[i] - X[0] )/Dx);
-      float delta_x = ( x[i] - X[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[j] - Y[0] )/Dy);
-      float delta_y = ( y[j] - Y[0] )/Dy - ky;
-      //printf("%d ",kx);
-      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
-      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
-      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
-      int offset =  kx + ky*Nx + kt*Nx*Ny;
-      int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
+
       //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
      // printf("%d ", Nx);
-      float Tinterp= ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
+      float Tinterp = cP.G*(y[j] - cP.R*1e6 *t -2);
 
-        float Up = (Tinterp-cP.Tmelt)/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
+        float Up = Tinterp/cP.L_cp;  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
        // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
         float repul=0.0f;
         for (int pf_id=0; pf_id<NUM_PF; pf_id++){
@@ -597,29 +518,23 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
                repul += 0.25f*(ph[overlap_id]+1.0f)*(ph[overlap_id]+1.0f);
            }
         }
-        float rhs_psi = ((JR-JL) + (JT-JB) ) * cP.hi*cP.hi + \
-                  (1.0f-ph[C]*ph[C])*( ph[C] - cP.lamd*(1.0f-ph[C]*ph[C])*( Up) )  - 0.5f*OMEGA*(ph[C]+1.0f)*repul;
+
+        //float omega = OMEGA*cP.R;
+        //if ((omega<50.0f)&&(cP.G>6.0f)) {omega=50.0f;}
+        float rhs_psi = diff * cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
+              - cP.lamd*Up* ( (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) - 0.5f*OMEGA*(ph[C]+1.0f)*repul);
 
       //# =============================================================
         //#
         //# 4. dpsi/dt term
        // #
         //# =============================================================
-        //float tp = (1.0f-(1.0f-cP.k)*Up);
-        //float tau_psi;
-        //if (tp >= cP.k){tau_psi = tp*A2;}
-              // else {tau_psi = cP.k*A2;}
-        
-        //dpsi[C] = rhs_psi / tau_psi; 
+
         float dphi = rhs_psi / A2; //tau_psi;
-        //float rand;
-        //if ( ( ph[C]>-0.995 ) && ( ph[C]<0.995 ) ) {rand= cP.dt_sqrt*cP.hi*cP.eta*(curand_uniform(states+C)-0.5);}
-        //else {rand = 0.0f;}      //  ps_new[C] = ps[C] +  cP.dt * dpsi[C];
-        //int new_noi_loc = nt%cP.noi_period;*cP.seed_val)%(fnx*fny);
+  
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
-        //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
-        //if (C==1000){printf("%f ",ph_new[C]);}
-      }else{ph_new[C] = ph[C];}
+
+
      }
 } 
 
@@ -635,19 +550,34 @@ set_minus1(float* u, int size){
 
 
 __global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int length){
+collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax){
 
-   int index = blockIdx.x * blockDim.x + threadIdx.x;
-   int PF_id = index/(length);
-   int C = index - PF_id*length;
+   int C = blockIdx.x * blockDim.x + threadIdx.x;
+ //  int PF_id = index/(length);
+ //  int C = index - PF_id*length;
    
-  if ( (C<length) && (PF_id<NUM_PF) ) {
-    if (PFs[index]>LS){
-      phi[C] = PFs[index]; 
-      alpha_m[C] = PF_id +1;
+  //if ( (C<length) && (PF_id<NUM_PF) ) {
+
+    //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
+   if (C<length){
+   // for loop to find the argmax of the phase field
+     for (int PF_id=0; PF_id<NUM_PF; PF_id++){
+       int loc = C + length*PF_id; 
+       int max_loc = C + length*argmax[C];
+       if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
+     }
+    
+   int max_loc_f = C + length*argmax[C]; 
+   if (PFs[max_loc_f]>LS){
+      phi[C] = PFs[max_loc_f]; 
+      alpha_m[C] = argmax[C] +1;
     }
-  }
+   }
+
+
+
 }
+
 
 __global__ void
 ini_PF(float* PFs, float* phi, int* alpha_m, int length){
@@ -778,51 +708,164 @@ void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx
 }
 
 
-void calc_qois(int cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip){
+void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
+  float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
 
+     // cur_tip here inludes the halo
      bool contin_flag = true;
 
      while(contin_flag){
        // at this line
-        cur_tip += 1;
+        *cur_tip += 1;
+        int zeros = 0;
         for (int i=1; i<fnx-1;i++){
-             int C = fnx*cur_tip + i;
-             if (alpha[C]==0){contin_flag=false;}
+             int C = fnx*(*cur_tip) + i;
+             //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
+             if (alpha[C]==0) { zeros+=1;}
+             if (zeros>ZERO) {contin_flag=false;break;}
         }
      }
-     cur_tip -=1;
-     tip_y[kt] = y[cur_tip];
-     ntip[kt] = cur_tip;
-     printf("frame %d, tip %f\n", kt, tip_y[kt]);
+     *cur_tip -=1;
+     tip_y[kt] = y[*cur_tip];
+     ntip[kt] = *cur_tip+move_count;
+     //printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+
+     for (int j = 1; j<fny-1; j++){ 
+         for (int i=1; i<fnx-1;i++){
+            int C = fnx*j + i;
+              if (alpha[C]>0){ 
+                for (int time = kt; time<all_time; time++){tip_final[time*num_grains+alpha[C]-1] = j+move_count;} 
+                total_area[kt*num_grains+alpha[C]-1]+=1;
+                if (j > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
+         }
+     }
+     for (int j = 0; j<num_grains; j++){ 
+     total_area[kt*num_grains+j]+=loss_area[j];}
+
 }
 
-void calc_frac(int cur_tip, int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int*ntip){
+void calc_frac( int* alpha, int fnx, int fny, int nts, int num_grains, float* tip_y, float* frac, float* y, int* aseq, int* ntip, int* left_coor){
+     
+     int* counts= (int*) malloc(num_grains* sizeof(int));
+
      for (int kt=0; kt<nts+1;kt++){
-     int counts=0;
-     cur_tip = ntip[kt];
-     printf("cur_tip, %d\n",cur_tip);
-     int offset = fnx*cur_tip+1;
+     memset(counts, 0, num_grains*sizeof(int));
+     int cur_tip = ntip[kt];
+     if (kt==0) {cur_tip=5;}
+  //   printf("cur_tip, %d\n",cur_tip);
+       // pointer points at the first grid
+
      int summa=0;
+
+     for (int i=1; i<fnx-1;i++){
+            int C = fnx*cur_tip + i;
+            if (alpha[C]>0){counts[alpha[C]-1]+=1;}
+      }
+
      for (int j=0; j<num_grains;j++){
-       counts=0;
-       //int aid = 1;
-       
-      // for (int i=1; i<fnx-1;i++){
-       while(alpha[offset]==aseq[j]){
-            // int C = fnx*cur_tip + i;
-             offset+=1;
-             counts+=1;
-             if(offset==fnx*cur_tip+fnx-1) {break;}
-        }
-       frac[kt*num_grains+j] = counts*1.0/(fnx-2);
-       summa += counts;//frac[kt*num_grains+j];
-       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts, frac[kt*num_grains+j]);
+
+       frac[kt*num_grains+j] = counts[j]*1.0/(fnx-2);
+       summa += counts[j];//frac[kt*num_grains+j];
+      // printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
      }
-     printf("offset %d, summation %d\n", offset%fnx, summa);     
+     if (summa<fnx-2-ZERO) {printf("the summation %d is off\n", summa);}
+     if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
+        for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa;}// printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
+     }
+     //printf("summation %d\n", summa);     
      }
 }
 
-void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, float* x, float* y, float* phi, float* psi,float* U, int* alpha, float* tip_y, float* frac, int* aseq){
+__global__ void 
+move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny){
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+
+    if ( (i==0) && (j>0) && (j<fny-2) && (PF_id==0) ) {
+        y_buff[j] = y[j+1];}
+
+    if ( (i==0) &&  (j==fny-2) && (PF_id==0) ) {        
+        y_buff[j] = 2*y[fny-2] - y[fny-3];}
+
+    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-2) && (PF_id<NUM_PF) ) {     
+        ph_buff[C] = ph[C+fnx];}
+
+    if ( (i>0) && (i<fnx-1) && (j==fny-2) && (PF_id<NUM_PF) ) {
+
+        ph_buff[C] = 2*ph[C] - ph[C-fnx];}
+
+    // add last layer of alpha to alpha_full[move_count]
+    if ( (i<fnx) && (j==1) && (PF_id==0) ) {
+
+        alpha_full[move_count*fnx+C] = alpha[C];
+        atomicAdd(loss_area+alpha[C]-1,1);
+        //printf("%d ", alpha[C]);
+    }
+
+
+}
+
+__global__ void
+copy_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny){
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+
+  if ( (i == 0) && (j>0) && (j < fny-1) && (PF_id==0) ){
+        y[j] = y_buff[j];}
+
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (PF_id<NUM_PF) ) { 
+        ph[C] = ph_buff[C];}
+
+
+}
+
+
+__global__ void
+ave_x(float* phi, float* meanx, int fnx, int fny){
+
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int PF_id = C/(fnx*fny);
+  int pf_C = C - PF_id*fnx*fny;  // local C in every PF
+  int j=pf_C/fnx; 
+  int i=pf_C-j*fnx;
+ 
+   if (C<fnx*fny*NUM_PF){
+      atomicAdd(meanx+j,phi[C]);
+
+   } 
+
+}
+
+
+
+void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny){
+
+     int length = fnx*fny;
+     int blocksize_2d = 128; 
+     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+
+     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny);
+
+     cudaMemcpy(meanx_host, meanx, fny * sizeof(float),cudaMemcpyDeviceToHost);
+     while( (meanx_host[*cur_tip]/(NUM_PF*fnx)>LS) && (*cur_tip<fny-1) ) {*cur_tip+=1;}
+    // for (int ww=0; ww<fny; ww++){ printf("avex %f \n",meanx_host[ww]/fnx);}
+//      printf("currrent tip %d \n", *cur_tip);   
+     cudaMemset(meanx,0,fny * sizeof(float));
+
+}
+
+
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
+  int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -833,12 +876,18 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
   
   float* x_device;// = NULL;
   float* y_device;// = NULL;
+  float* y_device2;
 
   float* phi_old;// = NULL;
   float* phi_new;// = NULL;
   int* alpha_m;
+  int* d_alpha_full;
   int* nucl_status;
-  
+  int* argmax;
+  int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
+ 
+  for (int i=0; i<params.num_theta; i++){left_coor[i]=1;}
+ 
   float* PFs_old;
   float* PFs_new;
   // allocate x, y, phi, psi, U related params
@@ -847,18 +896,25 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
 
   int length = fnx*fny;
   int length_c = cnx*cny;
+
+  int move_count = 0;
   cudaMalloc((void **)&x_device, sizeof(float) * fnx);
   cudaMalloc((void **)&y_device, sizeof(float) * fny);
+  cudaMalloc((void **)&y_device2, sizeof(float) * fny);
 
   cudaMalloc((void **)&phi_old,  sizeof(float) * length);
   cudaMalloc((void **)&phi_new,  sizeof(float) * length);
   cudaMalloc((void **)&alpha_m,    sizeof(int) * length);  
+  cudaMalloc((void **)&d_alpha_full,   sizeof(int) * fnx*fny_f);  
   cudaMalloc((void **)&nucl_status,    sizeof(int) * length_c);
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&PFs_new,    sizeof(float) * length * NUM_PF);
+  cudaMalloc((void **)&argmax,    sizeof(int) * length);
+  cudaMemset(argmax,0,sizeof(int) * length);
 
   cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
   cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
+  cudaMemcpy(y_device2, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_old, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
   cudaMemcpy(phi_new, phi, sizeof(float) * length, cudaMemcpyHostToDevice);
 
@@ -909,9 +965,9 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
 
    int num_block_c = (cnx*cny+blocksize_2d-1)/blocksize_2d;   
-   init_nucl_status<<< num_block_c, blocksize_2d >>>(phi_old, nucl_status, cnx, cny, fnx); 
+   //init_nucl_status<<< num_block_c, blocksize_2d >>>(phi_old, nucl_status, cnx, cny, fnx); 
    //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
-   init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
+   //init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
   // gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
@@ -931,9 +987,24 @@ void setup(MPI_Comm comm,  params_MPI pM, GlobalConstants params, Mac_input mac,
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
    int kts = params.Mt/params.nts;
+   printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
+   int tip_front = 1;
+   int tip_thres = (int) ((1-BLANK)*fny);
+   printf("max tip can go: %d\n", tip_thres); 
+   float* meanx;
+   cudaMalloc((void **)&meanx, sizeof(float) * fny);
+   cudaMemset(meanx,0, sizeof(float) * fny);
+  // printf(" ymax %f \n",y[fny-2] ); 
+   float* meanx_host=(float*) malloc(fny* sizeof(float));
+
    int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
-   calc_qois(cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip);
+   int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
+   int* d_loss_area;
+   cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
+   memset(loss_area,0,sizeof(int) * params.num_theta);
+   cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
+   calc_qois(&cur_tip, alpha, fnx, fny, 0, params.num_theta, tip_y, frac, y, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -956,18 +1027,46 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
  
 //     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
+     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+
+    
      if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
-             collect_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
+             cudaMemset(alpha_m, 0, sizeof(int) * length);
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
+             cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             calc_qois(cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip);
+             cur_tip=0;
+             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+          }
+
+     if ( (2*kt+2)%TIPP==0) {
+             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
+             while (tip_front >=tip_thres){
+                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny);
+                copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, fnx, fny);
+                move_count +=1;
+                tip_front-=1;
+                //printf("moving count %d \n", move_count);
+               // printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
+   //cudaMemcpy(y, y_device2, fny * sizeof(float),cudaMemcpyDeviceToHost);
+   //printf(" ymax %f \n",y[fny-3] );
+
+             }
+          //cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost);
+          //printf("current tip location %d, y %3.2f \n", cur_tip, y[cur_tip]);
+          set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+          set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+          //if ((2*kt+2)%1000==0) printf("currrent tip %d \n", cur_tip);
           }
      
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-     set_BC_mpi_x<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
-     set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
+
      //cudaDeviceSynchronize();
    //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_new, U_old, phi_old, dpsi, fnx, fny);
      //cudaDeviceSynchronize();*/
@@ -977,18 +1076,32 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
 
 
    }
-   calc_frac(cur_tip, alpha, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq,ntip);
+   // params.kin_delta -= 0.05;
+  // for (int i=0;i<params.nts+1;i++){
+  //     printf("ntip %d \n", ntip[i]);
+  // }
+
+
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
-   collect_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
+
+   
+   cudaMemset(alpha_m, 0, sizeof(int) * length);
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-  cudaFree(x_device); cudaFree(y_device);
+   cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny_f * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full+move_count*fnx, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   calc_frac(alpha_i_full, fnx, fny, params.nts, params.num_theta, tip_y, frac, y, aseq, ntip, left_coor);
+
+  cudaFree(x_device); cudaFree(y_device); cudaFree(y_device2);
   cudaFree(phi_old); cudaFree(phi_new);
   cudaFree(nucl_status); 
   cudaFree(dStates); //cudaFree(random_nums);
   cudaFree(PFs_new); cudaFree(PFs_old);
+  cudaFree(alpha_m); cudaFree(argmax);
+  cudaFree(nucl_status);
 }
 
 
