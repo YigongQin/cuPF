@@ -471,6 +471,13 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
   int pf_C = C - PF_id*fnx*fny;  // local C in every PF
   int j=pf_C/fnx; 
   int i=pf_C-j*fnx;
+   float Dt = Tmac[1]-Tmac[0];
+   int kt = (int) ((t-Tmac[0])/Dt);
+  // printf("%d ",kt);
+   float delta_t = (t-Tmac[0])/Dt-kt;
+   //printf("%f ",Dt);
+   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
+   float Dy = Y[1]-Y[0];
   // macros
   // if the points are at boundary, return
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) &&(PF_id<NUM_PF) ) {
