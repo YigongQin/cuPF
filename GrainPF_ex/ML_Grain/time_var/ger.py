@@ -15,7 +15,7 @@ BC = 1
 top = 60
 
 
-G = 0.5*0.1*float(sys.argv[1]);
+Gmax = 0.5*0.1*float(sys.argv[1]);
 Rmax = 2*1e4*float(sys.argv[2]);
 
 Gmin = 2
