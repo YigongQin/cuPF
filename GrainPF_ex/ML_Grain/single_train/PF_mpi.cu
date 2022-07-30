@@ -506,7 +506,23 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, int fnx, int fny, int nt, 
 
       //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
      // printf("%d ", Nx);
-      float Tinterp = cP.G*(y[j] - cP.R*1e6 *t -2);
+      int kx = (int) (( x[i] - X[0] )/Dx);
+      float delta_x = ( x[i] - X[0] )/Dx - kx;
+         //printf("%f ",delta_x);
+      int ky = (int) (( y[j] - Y[0] )/Dy);
+      float delta_y = ( y[j] - Y[0] )/Dy - ky;
+      //printf("%d ",kx);
+      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
+      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
+      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
+      int offset =  kx + ky*Nx + kt*Nx*Ny;
+      int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
+      //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
+     // printf("%d ", Nx);
+      float Tinterp= ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
+             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
 
         float Up = Tinterp/cP.L_cp;  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
        // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;

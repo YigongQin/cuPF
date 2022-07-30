@@ -38,7 +38,7 @@ for i in range(nx*ny*nt):
     ti = int(i/(nx*ny))
     
 #    T[i] = 933.3 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
-    T[i] = 933.3 + G*( y[yi] - Rmax*(t[ti]) - y0) 
+    T[i] = G*( y[yi] - Rmax*(t[ti]) - y0) 
     if ti==0:
        psi[i] = y0 - y[yi]      
         
