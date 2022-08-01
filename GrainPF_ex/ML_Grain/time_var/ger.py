@@ -4,8 +4,8 @@ import h5py
 import sys
 
 nx = 11
-ny = 11
-nt = 11
+ny = 101
+nt = 101
 w0=float(sys.argv[3]);
 Ng=8
 asp = 4
@@ -18,8 +18,13 @@ top = 60
 Gmax = 0.5*0.1*float(sys.argv[1]);
 Rmax = 2*1e4*float(sys.argv[2]);
 
-Gmin = 9
-Rmin = 1.86*1e6
+if constGR:
+
+    Gmin = Gmax
+    Rmin = Rmax
+else:
+    Gmin = 2
+    Rmin = 0.2*1e6    
 
 G_list = np.linspace(Gmin, Gmax, num = nt)
 R_list = np.linspace(Rmin, Rmax, num = nt)
@@ -40,6 +45,10 @@ alpha = np.zeros(nx*ny)
 psi = np.zeros(nx*ny)
 U = np.zeros(nx*ny)
 
+y_acc = np.zeros(nt)
+y_acc[1:] = 0.5*(R_list[:-1]+R_list[1:])*dt
+y_acc = np.cumsum(y_acc)
+print(y_acc)
 
 for i in range(nx*ny*nt):
     
@@ -48,7 +57,7 @@ for i in range(nx*ny*nt):
     ti = int(i/(nx*ny))
     
 #    T[i] = 933.3 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
-    T[i] = G_list[ti]*( y[yi] - sum(R_list[:ti])*dt - y0) 
+    T[i] = G_list[ti]*( y[yi] - y_acc[ti] - y0) 
     if ti==0:
        psi[i] = y0 - y[yi]      
         
