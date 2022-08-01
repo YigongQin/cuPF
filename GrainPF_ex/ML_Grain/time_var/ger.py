@@ -13,7 +13,7 @@ Lx = w0*Ng
 Ly = Lx*asp
 BC = 1
 top = 60
-
+constGR = True
 
 Gmax = 0.5*0.1*float(sys.argv[1]);
 Rmax = 2*1e4*float(sys.argv[2]);
