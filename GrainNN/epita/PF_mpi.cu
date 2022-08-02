@@ -687,9 +687,9 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   // cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
 
   // MPI send/recv buffers
-  BC_buffs SR_buffs;
-  BC_buffs *buff_pointer = &SR_buffs; 
-  allocate_mpi_buffs(params, buff_pointer, fnx, fny);
+ // BC_buffs SR_buffs;
+ // BC_buffs *buff_pointer = &SR_buffs; 
+ // allocate_mpi_buffs(params, buff_pointer, fnx, fny);
   //static int max_var = 5;
 
   //---macrodata for interpolation
@@ -748,7 +748,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int cur_tip=1;
    int tip_front = 1;
    int lowsl = 1;
-   int sam_height = params.ini_h;
+   int sams = 0;
    int tip_thres = (int) ((1-BLANK)*fny);
    printf("max tip can go: %d\n", tip_thres); 
    float* meanx;
