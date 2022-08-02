@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.io as sio
 import h5py
-import sys, os
+import sys
 
 nx = 11
 ny = 101
@@ -13,6 +13,7 @@ Lx = w0*Ng
 Ly = Lx*asp
 BC = 1
 top = 60
+temp_top = top + 20
 constGR = True
 
 Gmax = 0.5*0.1*float(sys.argv[1]);
@@ -61,9 +62,7 @@ for i in range(nx*ny*nt):
     if ti==0:
        psi[i] = y0 - y[yi]      
         
-mac_folder = str(sys.argv[-1]) + 'line_AM/'  
-if not os.path.exists(mac_folder):
-    os.makedirs(mac_folder)  
+mac_folder = str(sys.argv[-1]) + 'line_AM/'    
 np.savetxt(mac_folder+'x.txt', x, fmt='%1.4e',delimiter='\n') 
 np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
@@ -74,6 +73,7 @@ np.savetxt(mac_folder+'Rmax.txt', R_list[-1:]*1e-6, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'w0.txt', np.asarray([w0]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Ng.txt', np.asarray([Ng]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'asp.txt', np.asarray([asp]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'top.txt', np.asarray([asp]), fmt='%1.4e',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()
