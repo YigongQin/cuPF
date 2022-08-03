@@ -603,7 +603,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 }
 
-void sampleh(int *lowsl, float* alpha, int fnx, int fny){
+void sampleh(int *lowsl, int* alpha, int fnx, int fny){
 
      bool contin_flag = true;
 
