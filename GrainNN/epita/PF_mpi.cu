@@ -603,20 +603,22 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 }
 
-void sampleh(int *lowsl, float* phi, float* meanx, float* meanx_host, int fnx, int fny){
+void sampleh(int *lowsl, float* alpha, int fnx, int fny){
 
-     int length = fnx*fny;
-     int blocksize_2d = 128; 
-     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+     bool contin_flag = true;
 
-     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny);
-
-     cudaMemcpy(meanx_host, meanx, fny * sizeof(float),cudaMemcpyDeviceToHost);
-     while( (meanx_host[*lowsl]/(NUM_PF*fnx)>0.9999f) && (*lowsl<fny-1) ) {*lowsl+=1;}
-     *lowsl-=1;
-    // for (int ww=0; ww<fny; ww++){ printf("avex %f \n",meanx_host[ww]/fnx);}
-//      printf("currrent tip %d \n", *cur_tip);   
-     cudaMemset(meanx,0,fny * sizeof(float));
+     while(contin_flag){
+       // at this line
+        *lowsl += 1;
+        int zeros = 0;
+        for (int i=1; i<fnx-1;i++){
+             int C = fnx*(*lowsl) + i;
+             //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
+             if (alpha[C]==0) { zeros+=1;}
+             if (zeros>ZERO) {contin_flag=false;break;}
+        }
+     }
+     *lowsl -=1;
 
 }
 
@@ -790,7 +792,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
 
     
-     if ( move_count + lowsl == params.ini_h+sams*params.delta_h) {
+     if ( move_count + lowsl > params.ini_h+sams*params.delta_h) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
@@ -799,14 +801,14 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             calc_qois(&cur_tip, alpha, fnx, fny, sams+1, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
              sams+=1;
              if (sams==params.nts){printf("sample all heights\n");break;}
           }
 
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
-             sampleh(&lowsl, PFs_old, meanx, meanx_host, fnx,fny);
+             sampleh(&lowsl, alpha, fnx,fny);
              while (tip_front >=tip_thres){
                 collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny);
