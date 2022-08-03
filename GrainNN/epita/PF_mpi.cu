@@ -792,7 +792,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
 
     
-     if ( move_count + lowsl > params.ini_h+sams*params.delta_h) {
+     if ( move_count + lowsl > params.ini_h+(sams+1)*params.delta_h) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
@@ -808,7 +808,11 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
 
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
+             lowsl = 1;
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
              sampleh(&lowsl, alpha, fnx,fny);
+             //printf("lowsl %d\n", lowsl);
              while (tip_front >=tip_thres){
                 collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny);

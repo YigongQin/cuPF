@@ -13,7 +13,7 @@ Lx = w0*Ng
 Ly = Lx*asp
 BC = 1
 top = 60
-temp_top = top + 20
+temp_top = top + 50
 constGR = True
 
 Gmax = 0.5*0.1*float(sys.argv[1]);
@@ -37,7 +37,7 @@ y0 = 2
 x = np.linspace(0-BC,Lx+BC,nx)
 y = np.linspace(0-BC,Ly+BC,ny)
 #t = np.linspace(0,2*top/Rmax,nt)
-t = np.linspace(0,top/Rmax,nt)
+t = np.linspace(0,temp_top/Rmax,nt)
 tmax = t[-1]
 dt = t[1] - t[0]
 
