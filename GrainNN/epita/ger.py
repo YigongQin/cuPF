@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.io as sio
 import h5py
-import sys
+import sys, os
 
 nx = 11
 ny = 101
@@ -63,6 +63,9 @@ for i in range(nx*ny*nt):
        psi[i] = y0 - y[yi]      
         
 mac_folder = str(sys.argv[-1]) + 'line_AM/'    
+if not os.path.exists(mac_folder):
+    os.makedirs(mac_folder)
+
 np.savetxt(mac_folder+'x.txt', x, fmt='%1.4e',delimiter='\n') 
 np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
