@@ -194,7 +194,7 @@ class graph:
 #g1 = graph(size = (1000, 1000), density = 0.2, noise=0.001)   
 #g1.show_data_struct()     
 
-
+'''
 import pickle
 
 
@@ -215,7 +215,7 @@ with open('graph_data.pkl', 'rb') as inp:
         except EOFError:
             break
  
-
+'''
     
     
     
