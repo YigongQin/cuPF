@@ -414,7 +414,7 @@ ini_PF(float* PFs, float* phi, int* alpha_m, int length){
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
-  float* tip_z, float* frac, float* z, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
+  float* tip_z, int* cross_sec, float* frac, float* z, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -435,6 +435,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int 
      tip_z[kt] = z[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_z[kt]);
+     memcpy(cross_sec + k*fnx*fny, alpha + *cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
 
      for (int k = 1; k<fnz-1; k++){
        int offset_z = fnx*fny*k; 
@@ -574,7 +575,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
-  int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
+  int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   int num_gpus_per_node = 4;
@@ -713,7 +714,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, tip_y, frac, z, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
+   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, tip_y, cross_sec, frac, z, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -746,7 +747,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              //cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, tip_y, frac, z, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, tip_y, cross_sec, frac, z, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
           }
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();

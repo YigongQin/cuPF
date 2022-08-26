@@ -22,7 +22,7 @@ using namespace std;
 #define NUM_PF 16
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
-    int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area);
+    int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec);
 // add function for easy retrieving params
 template<class T>
 T get(std::stringstream& ss) 
@@ -140,7 +140,7 @@ int main(int argc, char** argv)
 
     char* fileName=argv[1]; 
     std::string mac_folder = argv[2];
-    std::string out_direc = "ML_dataset";//argv[2];
+    std::string out_direc = "graph";//argv[2];
 
     std::string lineText;
 
@@ -457,13 +457,13 @@ int main(int argc, char** argv)
   //  }
 //    std::cout<<std::endl;
         std::cout<< "rank "<< pM.rank<< " ymin "<< y[0] << " ymax "<<y[length_y-1]<<std::endl;
-    std::cout<< "rank "<< pM.rank<< " zmin " << z[0] <<" zmax "<<x[length_z-1]<<std::endl;
+    std::cout<< "rank "<< pM.rank<< " zmin " << z[0] <<" zmax "<<z[length_z-1]<<std::endl;
 
     int length=length_x*length_y*length_z;
     int full_length = length_x*length_y*length_z_full;
     std::cout<<"x length of psi, phi, U="<<length_x<<std::endl;
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
-    std::cout<<"y length of psi, phi, U="<<length_z<<std::endl;   
+    std::cout<<"z length of psi, phi, U="<<length_z<<std::endl;   
     std::cout<<"length of psi, phi, U="<<length<<std::endl;
     float* psi=(float*) malloc(length* sizeof(float));
     float* phi=(float*) malloc(length* sizeof(float));
@@ -487,6 +487,7 @@ int main(int argc, char** argv)
     int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
+    int* cross_sec = (int*) malloc(num_case*(params.nts+1)*length_x*length_y* sizeof(int));
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -602,7 +603,7 @@ int main(int argc, char** argv)
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
     memset(tip_final,  0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    setup( pM, params, mac, length_x, length_y, length_z, length_z_full, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area);
+    setup( pM, params, mac, length_x, length_y, length_z, length_z_full, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
     for(int i=0; i<length_z; i++){
         z[i]=(i-params.ha_wd)*dxd + zmin_loc;
     }
@@ -646,7 +647,7 @@ int main(int argc, char** argv)
     int phs = NUM_PF;
     string out_format = "ML3D_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
-    out_file = "/scratch/07428/ygqin/Aeolus/Fast_code/" + out_direc + "/" +out_file;
+    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
    // ofstream out( out_file );
    // out.precision(5);
    // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );
@@ -673,7 +674,7 @@ int main(int argc, char** argv)
     h5write_1d(h5_file, "extra_area", extra_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", total_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "tip_y_f", tip_final_asse,   num_case*(params.nts+1)*params.num_theta, "int");
-
+    h5write_1d(h5_file, "cross_sec", cross_sec,  num_case*(params.nts+1)*length_x*length_y, "int");
 
     H5Fclose(h5_file);
     H5Dclose(datasetT);
