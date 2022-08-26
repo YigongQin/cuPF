@@ -2,6 +2,7 @@ import numpy as np
 import scipy.io as sio
 import h5py
 import sys
+from graph_datastruct import graph
 
 nx = 11
 ny = 11
@@ -38,7 +39,7 @@ for i in range(nx*ny*nz*nt):
     ti = int(i/(nx*ny*nz))
     
     #T[i] = 920 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
-    T[i] = 920 + G*( z[zi] - Rmax*t[ti] - z0)    
+    T[i] = G*( z[zi] - Rmax*t[ti] - z0)    
     if i==nx*ny*nz*nt-1: print(T[i], G, z[zi], Rmax, t[ti], z0)
     if ti==0:
        psi[i] = z0 - z[zi]      
