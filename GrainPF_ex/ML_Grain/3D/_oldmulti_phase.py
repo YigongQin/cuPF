@@ -10,9 +10,9 @@ nz = 11
 nt = 11
 Lx = 10
 Ly = 10
-Lz = 10
+Lz = 40
 BC = 1
-top = 7
+top = 30
 
 
 G = float(sys.argv[1]);
