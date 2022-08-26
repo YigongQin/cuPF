@@ -28,49 +28,9 @@ using namespace std;
 void printCudaInfo(int rank, int i);
 extern float toBW(int bytes, float sec);
 
-  
-struct BC_buffs{
-   // R>L, T>B
-   // the dimension of each is ha_wd*num_fields*length
-   float* sendR; 
-   float* sendL;
-   float* sendT;
-   float* sendB;
-   float* sendRT;
-   float* sendRB; 
-   float* sendLT;
-   float* sendLB;
-   float* recvR;
-   float* recvL;
-   float* recvT;
-   float* recvB;
-   float* recvRT;
-   float* recvRB;
-   float* recvLT;
-   float* recvLB;
-   
-
-
-};
-
-
 
 __constant__ GlobalConstants cP;
 
-
-void print2d(float* array, int fnx, int fny){
-
-   int length = fnx*fny;
-   float* cpu_array = new float[fnx*fny];
-
-   cudaMemcpy(cpu_array, array, length * sizeof(float),cudaMemcpyDeviceToHost);
-
-   for (int i=0; i<length; i++){
-       if (i%fnx==0) printf("\n");
-       printf("%4.2f ",cpu_array[i]);
-   }
-
-}
 
 
 // Device codes 
@@ -147,142 +107,6 @@ set_BC_mpi_x(float* ph, int fnx, int fny, \
   }
 }
 
-
-__global__ void
-collect2(float *ptr[], BC_buffs BC, int fnx, int fny, int num_fields, int max_len){
-
-  // parallism we have: ha_wd*max(nx,ny)
-  //  int Lx = num_fields*hd*nx;
-  //  int Ly = num_fields*hd*ny;
-  //  int Lxy = num_fields*hd*hd;
-  //float *ptr[5]={ps,ph,U,dpsi,ph2};
-  int C = blockIdx.x * blockDim.x + threadIdx.x;
-  int hd = cP.ha_wd;
-
-  int fid = C/(max_len*hd);
-  int index = C-fid*max_len*hd;
-  int i = index/hd;  // range [0,max]
-  int j = index-i*hd;  // range [0,hd]
-  int nx = fnx-2*hd; // actual size.
-  int ny = fny-2*hd;
-  int stridexy = hd*hd;
-  if ( (i<ny) && (j<hd) && (fid<num_fields)){
-      // left,right length ny
-      int field_indexL = j+hd+(i+hd)*fnx;
-      int field_indexR = j+nx+(i+hd)*fnx;
-      int stridey = hd*ny; // stride is 
-     // for (int fid=0; fid<5; fid++) {
-        BC.sendL[index+fid*stridey] = ptr[fid][field_indexL];
-        BC.sendR[index+fid*stridey] = ptr[fid][field_indexR];
-       
-     // }
-
-  }
-  
-  if ( (i<nx) && (j<hd) && (fid<num_fields)){
-       // up,bottom, length nx
-      int field_indexB = i+hd+(j+hd)*fnx;
-      int field_indexT = i+hd+(j+ny)*fnx;
-      int stridex = hd*nx; // stride is 
-      //for (int fid=0; fid<5; fid++) {
-       BC.sendB[index+fid*stridex] = ptr[fid][field_indexB];
-       BC.sendT[index+fid*stridex] = ptr[fid][field_indexT];
-         if (i<hd){
-         int field_indexLB = i+hd+(j+hd)*fnx;
-         int field_indexLT = i+hd+(j+ny)*fnx;
-         int field_indexRB = i+nx+(j+hd)*fnx;
-         int field_indexRT = i+nx+(j+ny)*fnx;
-         BC.sendLB[index+fid*stridexy] = ptr[fid][field_indexLB];
-         BC.sendLT[index+fid*stridexy] = ptr[fid][field_indexLT];
-         BC.sendRB[index+fid*stridexy] = ptr[fid][field_indexRB];
-         BC.sendRT[index+fid*stridexy] = ptr[fid][field_indexRT];
-       
-       }
-      //}
-  
-  }
-
-  
-}
-
-
-
-__global__ void
-distribute2(float *ptr[], BC_buffs BC, int fnx, int fny, int num_fields, int max_len){
-
-  int C = blockIdx.x * blockDim.x + threadIdx.x;
-  int hd = cP.ha_wd;
-
-  int fid = C/(max_len*hd);
-  int index = C-fid*max_len*hd;
-  //float *ptr[5]={ps,ph,U,dpsi,ph2};
-  int i = index/hd;  // range [0,max]
-  int j = index-i*hd;  // range [0,hd]
-  int nx = fnx-2*hd; // actual size.
-  int ny = fny-2*hd;
-  int stridexy = hd*hd;
-
-  if ( (i<ny) && (j<hd) && (fid<num_fields)){
-      // left,right length ny
-      int field_indexL = j+(i+hd)*fnx;
-      int field_indexR = j+nx+hd+(i+hd)*fnx;
-      int stridey = hd*ny; // stride is
-     // for (int fid=0; fid<5; fid++) {
-      ptr[fid][field_indexL] = BC.recvL[index+fid*stridey];
-      ptr[fid][field_indexR] = BC.recvR[index+fid*stridey];
-
-      //}
-
-  }
-  if ( (i<nx) && (j<hd) && (fid<num_fields)){
-       // up,bottom, length nx
-      int field_indexB = i+hd+(j)*fnx;
-      int field_indexT = i+hd+(j+ny+hd)*fnx;
-      int stridex = hd*nx; // stride is
-     // for (int fid=0; fid<5; fid++) {
-       ptr[fid][field_indexB] = BC.recvB[index+fid*stridex];
-       ptr[fid][field_indexT] = BC.recvT[index+fid*stridex];
-         if (i<hd){
-         int field_indexLB = i+(j)*fnx;
-         int field_indexLT = i+(j+ny+hd)*fnx;
-         int field_indexRB = i+nx+hd+(j)*fnx;
-         int field_indexRT = i+nx+hd+(j+ny+hd)*fnx;
-         ptr[fid][field_indexLB] = BC.recvLB[index+fid*stridexy];
-         ptr[fid][field_indexLT] = BC.recvLT[index+fid*stridexy];
-         ptr[fid][field_indexRB] = BC.recvRB[index+fid*stridexy];
-         ptr[fid][field_indexRT] = BC.recvRT[index+fid*stridexy];
-
-       }
-      //}
-
-  }
-}
-
-
-
-__global__ void
-XY_2D_interp(float* x, float* y, float* X, float* Y, float* u_2d, float* u_m, int Nx, int Ny, int fnx, int fny){
-
-   int C = blockIdx.x * blockDim.x + threadIdx.x;
-   int j=C/fnx;
-   int i=C-j*fnx;
-
-   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
-   float Dy = Y[1]-Y[0];
-
-   if ( (i<fnx) && (j<fny) ){
-      //printf("%d ",i);
-      int kx = (int) (( x[i] - X[0] )/Dx);
-      float delta_x = ( x[i] - X[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[j] - Y[0] )/Dy);
-      float delta_y = ( y[j] - Y[0] )/Dy - ky;
-      int offset = kx + ky*Nx;
-      u_m[C] =  (1.0f-delta_x)*(1.0f-delta_y)*u_2d[ offset ] + (1.0f-delta_x)*delta_y*u_2d[ offset+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_2d[ offset+1 ] +   delta_x*delta_y*u_2d[ offset+Nx+1 ];
-      }
-
-}
 
 
 
@@ -621,114 +445,7 @@ ini_PF(float* PFs, float* phi, int* alpha_m, int length){
 
 
 
-void allocate_mpi_buffs(GlobalConstants params, BC_buffs *DNS, int fnx, int fny){
 
-    int num_fields = 5;
-    int hd = params.ha_wd;
-    int nx = fnx-2*hd;
-    int ny = fny-2*hd;     
-    int Lx = num_fields*hd*nx;
-    int Ly = num_fields*hd*ny;
-    int Lxy = num_fields*hd*hd;
- 
-    cudaMalloc((void **)&(DNS->sendR),  sizeof(float) * Ly);
-    cudaMalloc((void **)&(DNS->sendL),  sizeof(float) * Ly);
-    cudaMalloc((void **)&(DNS->sendT),  sizeof(float) * Lx);
-    cudaMalloc((void **)&(DNS->sendB),  sizeof(float) * Lx);    
-    cudaMalloc((void **)&(DNS->recvR),  sizeof(float) * Ly);
-    cudaMalloc((void **)&(DNS->recvL),  sizeof(float) * Ly);
-    cudaMalloc((void **)&(DNS->recvT),  sizeof(float) * Lx);
-    cudaMalloc((void **)&(DNS->recvB),  sizeof(float) * Lx);  
-
-    cudaMalloc((void **)&(DNS->sendRT),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->sendLT),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->sendRB),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->sendLB),  sizeof(float) * Lxy);    
-    cudaMalloc((void **)&(DNS->recvRT),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->recvLT),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->recvRB),  sizeof(float) * Lxy);
-    cudaMalloc((void **)&(DNS->recvLB),  sizeof(float) * Lxy); 
-
-
-
-}
-
-
-
-void exchange_BC(MPI_Comm comm, BC_buffs BC, int hd, int fnx, int fny, int nt, int rank, int px, int py, int nprocx, int nprocy){
-
-    int ntag = 8*nt;
-    int num_fields = 5;
-    int nx = fnx-2*hd;
-    int ny = fny-2*hd;
-    int Lx = num_fields*hd*nx;
-    int Ly = num_fields*hd*ny;
-    int Lxy = num_fields*hd*hd;
-
-
-    if ( px < nprocx-1 ) //right send
-          {MPI_Send(BC.sendR, Ly, MPI_FLOAT, rank+1, ntag+1, comm);}
-    if ( px > 0 )
-          {MPI_Recv(BC.recvL, Ly, MPI_FLOAT, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);}
-    if ( px > 0 ) //left send
-          {MPI_Send(BC.sendL, Ly, MPI_FLOAT, rank-1, ntag+2, comm);}
-    if ( px < nprocx-1 )
-          {MPI_Recv(BC.recvR, Ly, MPI_FLOAT, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);}
-
-
-    if ( py < nprocy-1 ) //top send
-          {MPI_Send(BC.sendT, Lx, MPI_FLOAT, rank+nprocx, ntag+3, comm);}
-    if ( py>0 )
-          {MPI_Recv(BC.recvB, Lx, MPI_FLOAT, rank-nprocx, ntag+3, comm, MPI_STATUS_IGNORE);}
-    if ( py >0 ) //bottom send
-          {MPI_Send(BC.sendB, Lx, MPI_FLOAT, rank-nprocx, ntag+4, comm);}
-    if ( py < nprocy -1 )
-          {MPI_Recv(BC.recvT, Lx, MPI_FLOAT, rank+nprocx, ntag+4, comm, MPI_STATUS_IGNORE);}
-
-
-    if ( px < nprocx-1 and py < nprocy-1)
-          {MPI_Send(BC.sendRT, Lxy, MPI_FLOAT, rank+1+nprocx, ntag+5, comm);}
-    if ( px > 0 and py > 0 )
-          {MPI_Recv(BC.recvLB, Lxy, MPI_FLOAT, rank-1-nprocx, ntag+5, comm, MPI_STATUS_IGNORE);}
-    if ( px > 0 and py > 0)
-          {MPI_Send(BC.sendLB, Lxy, MPI_FLOAT, rank-1-nprocx, ntag+6, comm);}
-    if ( px < nprocx-1 and py < nprocy-1 )
-          {MPI_Recv(BC.recvRT, Lxy, MPI_FLOAT, rank+1+nprocx, ntag+6, comm, MPI_STATUS_IGNORE);}
-
-
-    if ( py < nprocy-1 and px > 0 )
-          {MPI_Send(BC.sendLT, Lxy, MPI_FLOAT, rank+nprocx-1, ntag+7, comm);}
-    if ( py>0 and px < nprocx-1 )
-          {MPI_Recv(BC.recvRB, Lxy, MPI_FLOAT, rank-nprocx+1, ntag+7, comm, MPI_STATUS_IGNORE);}
-    if ( py>0 and px < nprocx-1)
-          {MPI_Send(BC.sendRB, Lxy, MPI_FLOAT, rank-nprocx+1, ntag+8, comm);}
-    if ( py < nprocy -1 and px > 0)
-          {MPI_Recv(BC.recvLT, Lxy, MPI_FLOAT, rank+nprocx-1, ntag+8, comm, MPI_STATUS_IGNORE);}
-
-}
-
-
-void commu_BC(MPI_Comm comm, BC_buffs BC, params_MPI pM, int nt, int hd, int fnx, int fny, float* v1, float* v2, float* v3, float* v4, float* v5){
-
-      float *ptr[5] = {v1, v2, v3, v4, v5};
-
-
-      int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
-      int max_len = max(fny,fnx);
-      int num_block_2d = (hd*max_len*5+blocksize_2d-1)/blocksize_2d;
-      //num_block_2d = (hd*(fnx+fny)+blocksize_2d-1)/blocksize_2d;
-     collect2<<< num_block_2d, blocksize_2d>>>(ptr, BC, fnx, fny, 5, max_len);
-     //collect<<< num_block_2d, blocksize_2d>>>(ptr, BC, fnx, fny);
-     cudaDeviceSynchronize();
-    // print2d(BC.sendR, fny, 1);
-     //MPI_Barrier( comm );      
-     exchange_BC(comm, BC, hd, fnx, fny, nt, pM.rank, pM.px, pM.py, pM.nprocx, pM.nprocy);
-     //print2d(BC.recvR, fny-2, 1);
-     //MPI_Barrier( comm );
-     //distribute<<<num_block_2d, blocksize_2d >>>(ptr, BC, fnx, fny);
-     distribute2<<<num_block_2d, blocksize_2d >>>(ptr, BC, fnx, fny, 5, max_len);
-     cudaDeviceSynchronize();      
-}
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grains, \
@@ -751,7 +468,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int kt, int num_grain
      *cur_tip -=1;
      tip_y[kt] = y[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
-     //printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
+     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_y[kt]);
 
      for (int j = 1; j<fny-1; j++){ 
          for (int i=1; i<fnx-1;i++){
@@ -886,6 +603,25 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 }
 
+void sampleh(int *lowsl, int* alpha, int fnx, int fny){
+
+     bool contin_flag = true;
+
+     while(contin_flag){
+       // at this line
+        *lowsl += 1;
+        int zeros = 0;
+        for (int i=1; i<fnx-1;i++){
+             int C = fnx*(*lowsl) + i;
+             //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
+             if (alpha[C]==0) { zeros+=1;}
+             if (zeros>ZERO) {contin_flag=false;break;}
+        }
+     }
+     *lowsl -=1;
+
+}
+
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fny_f, float* x, float* y, float* phi, float* psi,float* U, int* alpha, \
   int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area){
@@ -953,9 +689,9 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   // cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
 
   // MPI send/recv buffers
-  BC_buffs SR_buffs;
-  BC_buffs *buff_pointer = &SR_buffs; 
-  allocate_mpi_buffs(params, buff_pointer, fnx, fny);
+ // BC_buffs SR_buffs;
+ // BC_buffs *buff_pointer = &SR_buffs; 
+ // allocate_mpi_buffs(params, buff_pointer, fnx, fny);
   //static int max_var = 5;
 
   //---macrodata for interpolation
@@ -1013,6 +749,8 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    printf("kts %d, nts %d\n",kts, params.nts);
    int cur_tip=1;
    int tip_front = 1;
+   int lowsl = 1;
+   int sams = 0;
    int tip_thres = (int) ((1-BLANK)*fny);
    printf("max tip can go: %d\n", tip_thres); 
    float* meanx;
@@ -1054,7 +792,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
      set_BC_mpi_y<<< num_block_PF1d, blocksize_1d >>>(PFs_old, fnx, fny, pM.px, pM.py, pM.nprocx, pM.nprocy, params.ha_wd);
 
     
-     if ( (2*kt+2)%kts==0) {
+     if ( move_count + lowsl > params.ini_h+(sams+1)*params.delta_h) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
@@ -1063,11 +801,18 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.N
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, (2*kt+2)/kts, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             calc_qois(&cur_tip, alpha, fnx, fny, sams+1, params.num_theta, tip_y, frac, y, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             sams+=1;
+             if (sams==params.nts){printf("sample all heights\n");break;}
           }
 
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny);
+             lowsl = 1;
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+             sampleh(&lowsl, alpha, fnx,fny);
+             //printf("lowsl %d\n", lowsl);
              while (tip_front >=tip_thres){
                 collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
                 move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, y_device2, PFs_old, y_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny);
