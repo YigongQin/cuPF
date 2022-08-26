@@ -19,7 +19,7 @@ using namespace std;
 #define ACR 1e-5
 #define NBW 1
 #define NUM_PF 16
-#define OMEGA 12.8
+#define OMEGA 12
 #define ZERO 0
 
 #define TIPP 20
@@ -322,7 +322,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
                repul += 0.25f*(ph[overlap_id]+1.0f)*(ph[overlap_id]+1.0f);
            }
         }
-        float rhs_psi = diff * cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
+        float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
               - cP.lamd*Up* ( (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) - 0.5f*OMEGA*(ph[C]+1.0f)*repul);
 
       //# =============================================================
