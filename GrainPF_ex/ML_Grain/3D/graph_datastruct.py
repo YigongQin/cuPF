@@ -85,7 +85,7 @@ class graph:
        # vertices = []
         vert_map = {}
         vert_count = 0
-        alpah, beta = 0,0 
+        alpha, beta = 0,0 
        # edges = []
         
         for region in vor.regions:
