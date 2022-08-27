@@ -475,7 +475,7 @@ int main(int argc, char** argv)
     int* alpha_i=(int*) malloc(length* sizeof(int));
     int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
     int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
-    read_input(mac_folder+"/alpha.txt", &alpha_cross);
+    read_input(mac_folder+"/alpha.txt", alpha_cross);
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
