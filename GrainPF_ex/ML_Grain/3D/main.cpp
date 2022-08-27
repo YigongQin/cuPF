@@ -258,7 +258,7 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/G.txt", &G0);
     read_input(mac_folder+"/Rmax.txt", &Rmax);
     read_input(mac_folder+"/NG.txt", &num_thetaf);
-    read_input(mac_folder+"/theta.txt", max.theta_arr);
+    read_input(mac_folder+"/theta.txt", mac.theta_arr);
     params.num_theta = (int) num_thetaf;
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
@@ -474,7 +474,7 @@ int main(int argc, char** argv)
     float* alpha=(float*) malloc(length* sizeof(float));    
     int* alpha_i=(int*) malloc(length* sizeof(int));
     int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
-    int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int))
+    int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
     read_input(mac_folder+"/alpha.txt", &alpha_cross);
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
@@ -590,7 +590,7 @@ int main(int argc, char** argv)
       if ( (alpha_i[id]>=0) || (alpha_i[id]<=params.num_theta-1) ){}
       else {printf("alpha is wrong \n");exit(1);}
     */
-        alpha_i[id] = alpha_cross[j*pM.nx_loc+i]
+        alpha_i[id] = alpha_cross[j*pM.nx_loc+i];
        }
 
       else {alpha_i[id]=0;}
