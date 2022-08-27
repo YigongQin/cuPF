@@ -19,7 +19,7 @@ using namespace std;
 #define LS -0.995
 #include "include_struct.h"
 #define NBW 1
-#define NUM_PF 16
+
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec);
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
    // float nx;
    // float Mt;
     int num_case = 1; //1100;
-    float grain_size= 2.5;
+   
     bool equal_len = false;
     int valid_run = 1;//100;
     float G0;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
-    mac.theta_arr = new float[2*NUM_PF+1];
+    
   //  std::string mac_folder = "./Takaki/";
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
     hsize_t dimT[1];
@@ -270,8 +270,12 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/G.txt", &G0);
     read_input(mac_folder+"/Rmax.txt", &Rmax);
     read_input(mac_folder+"/NG.txt", &num_thetaf);
-    read_input(mac_folder+"/theta.txt", mac.theta_arr);
     params.num_theta = (int) num_thetaf;
+    params.NUM_PF = params.num_theta;
+    int NUM_PF = params.NUM_PF;
+    mac.theta_arr = new float[2*NUM_PF+1];
+    read_input(mac_folder+"/theta.txt", mac.theta_arr);
+
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
@@ -480,7 +484,7 @@ int main(int argc, char** argv)
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
     std::cout<<"z length of psi, phi, U="<<length_z<<std::endl;   
     std::cout<<"length of psi, phi, U="<<length<<std::endl;
-    cout<< length<<endl;
+ 
     float* psi=(float*) malloc(length* sizeof(float));
     float* phi=(float*) malloc(length* sizeof(float));
     float* Uc=(float*) malloc(length* sizeof(float));
@@ -490,7 +494,7 @@ int main(int argc, char** argv)
     int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
     read_input(mac_folder+"/alpha.txt", alpha_cross);
     printf("%d %d\n", alpha_cross[0], alpha_cross[pM.nx_loc*pM.ny_loc-1]);
-    cout<< length<<endl;
+
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
@@ -508,7 +512,7 @@ int main(int argc, char** argv)
     int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* cross_sec = (int*) malloc(num_case*(params.nts+1)*length_x*length_y* sizeof(int));
-    cout<< length<<endl;
+    
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -532,18 +536,18 @@ int main(int argc, char** argv)
     mac.sint = new float[2*NUM_PF+1];
     //srand(atoi(argv[3]));
     mac.theta_arr[0] = 0.0f;
-    cout << mac.theta_arr[0] << endl;
+
     float* frac_ini = (float*) malloc(params.num_theta* sizeof(float));
     float sum_frac = 0.0;
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
     std::default_random_engine generator;
-    std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
+ //   std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
 
     // start the region of gathering lots of runs
     for (int run=0;run<num_case;run++){
    // for (int run=1005;run<1006;run++){
     printf("case %d\n",run);
-    int loc_seed = atoi(argv[3]) + 20*((int)G0) + (int) (10000*Rmax);
+    int loc_seed = 20*((int)G0) + (int) (10000*Rmax);
     loc_seed = loc_seed*num_case + run;
     srand(loc_seed);
     generator.seed( loc_seed );
@@ -559,7 +563,7 @@ int main(int argc, char** argv)
    
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = i+1;} //rand()%NUM_PF +1;
-    cout<< aseq[0]<<endl; 
+     
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    
@@ -667,8 +671,8 @@ int main(int argc, char** argv)
     //}
     //std::cout<<std::endl;
     // step 3 (time marching): call the kernels Mt times
-    int phs = NUM_PF;
-    string out_format = "ML3D_PF"+to_string(phs)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
+
+    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
    // ofstream out( out_file );

@@ -18,7 +18,6 @@ using namespace std;
 #define LS -0.995
 #define ACR 1e-5
 #define NBW 1
-#define NUM_PF 16
 #define OMEGA 12
 #define ZERO 0
 
@@ -56,73 +55,6 @@ void print2d(float* array, int fnx, int fny){
 // other functions return at the boundary
 
 
-__global__ void
-set_BC_mpi_y(float* ph, int fnx, int fny, \
-        int px, int py, int nprocx, int nprocy, int ha_wd){
-
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int PF_id = index/fnx;    
-  int pf_index = index- PF_id*fnx; 
-  int offset = PF_id*fnx*fny;
-  if ( (pf_index<fnx) && (PF_id<NUM_PF) ){
-  // orignially it is 0,2; fny-1, fny-3
-  // now ha_wd-1, ha_wd+1; fny-ha_wd, fny-ha_wd-2
-      if (py==0) {
-          int b_out = pf_index+(ha_wd-1)*fnx + offset;
-          int b_in = pf_index+(ha_wd+1)*fnx + offset;
-
-            //ps[b_out] = ps[b_in];
-            ph[b_out] = ph[b_in];
-            //U[b_out] = U[b_in];
-            //dpsi[b_out] = dpsi[b_in];
-            //ph2[b_out] = ph2[b_in];
-            }
-       if (py==nprocy-1) {     
-          int t_out = pf_index+(fny-ha_wd)*fnx + offset;
-          int t_in = pf_index+(fny-ha_wd-2)*fnx + offset;        
-           // ps[t_out] = ps[t_in];
-            ph[t_out] = ph[t_in];
-           // U[t_out] = U[t_in];
-           // dpsi[t_out] = dpsi[t_in];
-           // ph2[t_out] = ph2[t_in];
-           }
-  }
-
-}
-__global__ void
-set_BC_mpi_x(float* ph, int fnx, int fny, \
-        int px, int py, int nprocx, int nprocy, int ha_wd){
-
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int PF_id = index/fny;
-  int pf_index = index- PF_id*fny; 
-  int offset = PF_id*fnx*fny;
-  if ( (pf_index<fny) && (PF_id<NUM_PF) ){
-  // orignially it is 0,2; fnx-1, fnx-3
-  // now ha_wd-1, ha_wd+1; fnx-ha_wd, fnx-ha_wd-2  
-      if (px==0) {
-      
-         int l_out = pf_index*fnx + ha_wd-1 + offset;
-         int l_in = pf_index*fnx + ha_wd+1 + offset;
-          //  ps[l_out] = ps[l_in];
-            ph[l_out] = ph[l_in];
-          //  U[l_out] = U[l_in];
-          //  dpsi[l_out] = dpsi[l_in];
-          //  ph2[l_out] = ph2[l_in];
-      }
-      if (px==nprocx-1){
-      
-         int r_out = pf_index*fnx + fnx-ha_wd + offset;
-         int r_in = pf_index*fnx + fnx-ha_wd-2 + offset;    
-          //  ps[r_out] = ps[r_in];
-            ph[r_out] = ph[r_in];
-          //  U[r_out] = U[r_in];
-          // dpsi[r_out] = dpsi[r_in];
-          //  ph2[r_out] = ph2[r_in];
-      }  
-  }
-}
-
 __inline__ __device__ int 
 L2G_4D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
 
@@ -132,7 +64,7 @@ L2G_4D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
 
 
 __global__ void
-set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area){
+set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area, int NUM_PF){
 
    // dimension with R^{2D} * PF
 
@@ -211,7 +143,7 @@ kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float
 // psi equation
 __global__ void
 rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny, int fnz, int nt, \
-       float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint ){
+       float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint, int NUM_PF){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny*fnz);
@@ -360,7 +292,7 @@ set_minus1(float* u, int size){
 
 
 __global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax){
+collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax, int NUM_PF){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
  //  int PF_id = index/(length);
@@ -390,7 +322,7 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax){
 
 
 __global__ void
-ini_PF(float* PFs, float* phi, int* alpha_m, int length){
+ini_PF(float* PFs, float* phi, int* alpha_m, int length, int NUM_PF){
 
    int index = blockIdx.x * blockDim.x + threadIdx.x;
    int PF_id = index/(length);
@@ -487,7 +419,7 @@ void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, 
 }
 
 __global__ void 
-move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny){
+move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny, int NUM_PF){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny);
@@ -520,7 +452,7 @@ move_frame(float* ph_buff, float* y_buff, float* ph, float* y, int* alpha, int* 
 }
 
 __global__ void
-copy_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny){
+copy_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny, int NUM_PF){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int PF_id = C/(fnx*fny);
@@ -539,7 +471,7 @@ copy_frame(float* ph_buff, float* y_buff, float* ph, float* y, int fnx, int fny)
 
 
 __global__ void
-ave_x(float* phi, float* meanx, int fnx, int fny){
+ave_x(float* phi, float* meanx, int fnx, int fny, int NUM_PF){
 
 
   int C = blockIdx.x * blockDim.x + threadIdx.x;
@@ -557,7 +489,7 @@ ave_x(float* phi, float* meanx, int fnx, int fny){
 
 
 
-void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny){
+void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny, int NUM_PF){
 
      int length = fnx*fny;
      int blocksize_2d = 128; 
@@ -584,6 +516,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaSetDevice(device_id_innode); 
   printCudaInfo(pM.rank,device_id_innode);
   
+  int NUM_PF = params.NUM_PF
   float* x_device;// = NULL;
   float* y_device;// = NULL;
   float* z_device;
@@ -682,18 +615,18 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   // gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, length);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, NUM_PF);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, length, NUM_PF);
    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
   // commu_BC(comm, SR_buffs, pM, params.Mt+2, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
   // commu_BC(comm, SR_buffs, pM, params.Mt+3, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area);
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area, NUM_PF);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area, NUM_PF);
 
    rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, z_device, fnx, fny, fnz, 0,\
-0, Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
+0, Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
    //print2d(phi_old,fnx,fny);
    float t_cur_step;
    int kts = params.Mt/params.nts;
@@ -724,7 +657,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
 
      //if ( params.ha_wd==1 ) commu_BC(comm, SR_buffs, pM, 2*kt, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area, NUM_PF);
      //cudaDeviceSynchronize();
    //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
 
@@ -732,16 +665,16 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
      //cudaDeviceSynchronize();
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, z_device, fnx, fny, fnz, 2*kt+1,\
-t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
+t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
  
 //     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
         2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area, NUM_PF);
 
     if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax);
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
@@ -757,7 +690,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
      //cudaDeviceSynchronize();*/
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
      rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, z_device, fnx, fny, fnz, 2*kt+2,\
-t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint );
+t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
 
 
    }
@@ -773,7 +706,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
 
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax); 
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
  //  calc_frac(alpha, fnx, fny, fnz, params.nts, params.num_theta, tip_y, frac, z, aseq, ntip, left_coor);
