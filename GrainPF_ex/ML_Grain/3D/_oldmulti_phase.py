@@ -26,10 +26,15 @@ t = np.linspace(0,top/Rmax,nt)
 tmax = t[-1]
 
 T = np.zeros(nx*ny*nz*nt)
-alpha = np.zeros(nx*ny*nz)
+#alpha = np.zeros(nx*ny*nz)
 psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
+dx_dim = 0.08
+gnx = int(1/dx_dim)
+
+graph(size = (gnx, gny), density = 0.2, noise=0.001) 
+alpha = graph.alpha_field
 
 for i in range(nx*ny*nz*nt):
     
