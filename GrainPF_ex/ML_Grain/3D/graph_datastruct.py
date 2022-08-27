@@ -12,7 +12,6 @@ import PIL.Image as Image
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
-import random
 from math import pi
 
 def in_bound(x, y):
@@ -54,7 +53,7 @@ def hexagonal_lattice(dx=0.05, noise=0.0001):
 
         
 class graph:
-    def __init__(self, size, density = 0.05, noise =0.00005, randInit = True):
+    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, randInit = True):
 
         self.imagesize = size
         self.vertices = [] ## vertices coordinates
@@ -66,14 +65,16 @@ class graph:
         self.density = density
         self.noise = noise
         self.alpha_field = None
-        self.num_pf = 16
-        self.color_choices = np.zeros(2*self.num_pf+1)
-        self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_pf)
+
         
         
         if randInit:
+            np.random.seed(seed)
             self.inbound_random_voronoi()    
             self.plot_polygons(pic_size=self.imagesize)
+            self.num_pf = len(self.regions)
+            self.color_choices = np.zeros(2*self.num_pf+1)
+            self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_pf)
         
     def inbound_random_voronoi(self):
 
@@ -197,7 +198,7 @@ class graph:
 
 
 
-#g1 = graph(size = (125, 125), density = 0.2, noise=0.001)  
+#g1 = graph(size = (125, 125), density = 0.2, noise=0.001, seed=1)  
 #g1.show_data_struct()     
 
 '''
