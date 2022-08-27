@@ -66,8 +66,9 @@ class graph:
         self.density = density
         self.noise = noise
         self.alpha_field = None
-        self.num_pf = 32
-        self.color_choices = -pi/2*np.random.random_sample(2*self.num_pf)
+        self.num_pf = 16
+        self.color_choices = np.zeros(2*self.num_pf+1)
+        self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_pf)
         
         
         if randInit:
@@ -106,8 +107,8 @@ class graph:
                 
                 regions.append(region)
                 reordered_region = []
-                alpha = random.randint(0, self.num_pf-1)
-                beta = random.randint(0, self.num_pf-1)
+                alpha = random.randint(1, self.num_pf)
+                beta = random.randint(1, self.num_pf)
                 self.region_colors.append((alpha, beta))
                 
                 for index in region:
@@ -195,8 +196,8 @@ class graph:
 
 
 
-g1 = graph(size = (125, 125), density = 0.2, noise=0.001)  
-g1.show_data_struct()     
+#g1 = graph(size = (125, 125), density = 0.2, noise=0.001)  
+#g1.show_data_struct()     
 
 '''
 import pickle
