@@ -435,7 +435,7 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int 
      tip_z[kt] = z[*cur_tip];
      ntip[kt] = *cur_tip+move_count;
      printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_z[kt]);
-     memcpy(cross_sec + k*fnx*fny, alpha + *cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+     memcpy(cross_sec + kt*fnx*fny, alpha + *cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
 
      for (int k = 1; k<fnz-1; k++){
        int offset_z = fnx*fny*k; 

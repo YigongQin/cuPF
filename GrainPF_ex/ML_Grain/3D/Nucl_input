@@ -34,8 +34,8 @@ Created on Fri May 29 11:10:53 2020
     dx = 0.8                            # mesh width
     W0 = 0.1                    # interface thickness      um
     asp_ratio_yx = 1
-    asp_ratio_zx = 1                  	# aspect ratio
-    moving_ratio = 1
+    asp_ratio_zx = 4                  	# aspect ratio
+    moving_ratio = 4
    # nx = 128            		# number of cells in x, number of grids is nx+1
     #Mt = 100000                      	# total  number of time steps
     eta = 0.0  
