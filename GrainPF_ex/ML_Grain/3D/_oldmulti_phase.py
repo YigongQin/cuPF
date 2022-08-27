@@ -47,7 +47,7 @@ for i in range(nx*ny*nz*nt):
 mac_folder = 'line_AM/'    
 np.savetxt(mac_folder+'x.txt', x, fmt='%1.4e',delimiter='\n') 
 np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
-np.savetxt(mac_folder+'z.txt', y, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'z.txt', z, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
