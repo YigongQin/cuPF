@@ -73,6 +73,18 @@ void read_input(std::string input, float* target){
 
 }
 
+void read_input(std::string input, int* target){
+    std::string line;
+    int num_lines = 0;
+    std::ifstream graph(input);
+
+    while (std::getline(graph, line))
+        {
+           std::stringstream ss(line);
+           ss >> target[num_lines];
+           num_lines+=1;}
+
+}
 
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
 
