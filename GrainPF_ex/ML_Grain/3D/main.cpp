@@ -489,7 +489,7 @@ int main(int argc, char** argv)
     int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
     int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
     read_input(mac_folder+"/alpha.txt", alpha_cross);
-    //printf("%d %d\n", alpha_cross[0], alpha_cross[pM.nx_loc*pM.ny_loc-1]);
+    printf("%d %d\n", alpha_cross[0], alpha_cross[pM.nx_loc*pM.ny_loc-1]);
     cout<< length<<endl;
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
@@ -606,7 +606,8 @@ int main(int argc, char** argv)
       if ( (alpha_i[id]>=0) || (alpha_i[id]<=params.num_theta-1) ){}
       else {printf("alpha is wrong \n");exit(1);}
     */
-        alpha_i[id] = alpha_cross[j*pM.nx_loc+i];
+        alpha_i[id] = alpha_cross[(j-1)*pM.nx_loc+(i-1)];
+       if (alpha_i[id]<1 || alpha_i[id]>16) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha_i[id]<<endl;
        }
 
       else {alpha_i[id]=0;}
