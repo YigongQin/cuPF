@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 import random
+from math import pi
 
 def in_bound(x, y):
     eps = 1e-12
@@ -65,6 +66,9 @@ class graph:
         self.density = density
         self.noise = noise
         self.alpha_field = None
+        self.num_pf = 32
+        self.color_choices = -pi/2*np.random.random_sample(2*self.num_pf)
+        
         
         if randInit:
             self.inbound_random_voronoi()    
@@ -102,8 +106,8 @@ class graph:
                 
                 regions.append(region)
                 reordered_region = []
-                alpha = random.randint(0, 90)
-                beta = random.randint(0, 90)
+                alpha = random.randint(0, self.num_pf-1)
+                beta = random.randint(0, self.num_pf-1)
                 self.region_colors.append((alpha, beta))
                 
                 for index in region:
@@ -179,7 +183,7 @@ class graph:
         ax[1].axis("equal")
         ax[1].set_xticks([])
         ax[1].set_yticks([])
-        ax[2].imshow(self.alpha_field, origin='lower', cmap='coolwarm')
+        ax[2].imshow(self.color_choices[self.alpha_field], origin='lower', cmap='coolwarm')
         ax[2].set_xticks([])
         ax[2].set_yticks([])
         
@@ -191,8 +195,8 @@ class graph:
 
 
 
-#g1 = graph(size = (1000, 1000), density = 0.2, noise=0.001)   
-#g1.show_data_struct()     
+g1 = graph(size = (125, 125), density = 0.2, noise=0.001)  
+g1.show_data_struct()     
 
 '''
 import pickle
@@ -201,7 +205,7 @@ import pickle
 with open('graph_data.pkl', 'wb') as outp:
     
     for i in range(5):
-        g1 = graph(size = (200, 200), density = 0.2, noise=0.001)  
+        g1 = graph(size = (125, 125), density = 0.2, noise=0.001)  
         pickle.dump(g1, outp, pickle.HIGHEST_PROTOCOL)
     del g1
 
