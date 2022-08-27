@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
-
+    mac.theta_arr = new float[2*NUM_PF+1];
   //  std::string mac_folder = "./Takaki/";
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
     hsize_t dimT[1];
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = grain_dim*grain_size; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+    params.lxd = mac.X_mac[mac.Nx-2]; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
@@ -480,6 +480,7 @@ int main(int argc, char** argv)
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
     std::cout<<"z length of psi, phi, U="<<length_z<<std::endl;   
     std::cout<<"length of psi, phi, U="<<length<<std::endl;
+    cout<< length<<endl;
     float* psi=(float*) malloc(length* sizeof(float));
     float* phi=(float*) malloc(length* sizeof(float));
     float* Uc=(float*) malloc(length* sizeof(float));
@@ -488,6 +489,8 @@ int main(int argc, char** argv)
     int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
     int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
     read_input(mac_folder+"/alpha.txt", alpha_cross);
+    //printf("%d %d\n", alpha_cross[0], alpha_cross[pM.nx_loc*pM.ny_loc-1]);
+    cout<< length<<endl;
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
@@ -505,6 +508,7 @@ int main(int argc, char** argv)
     int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
     int* cross_sec = (int*) malloc(num_case*(params.nts+1)*length_x*length_y* sizeof(int));
+    cout<< length<<endl;
     //std::cout<<"y= ";
     //for(int i=0+length_y; i<2*length_y; i++){
     //    std::cout<<phi[i]<<" ";
@@ -528,7 +532,7 @@ int main(int argc, char** argv)
     mac.sint = new float[2*NUM_PF+1];
     //srand(atoi(argv[3]));
     mac.theta_arr[0] = 0.0f;
-
+    cout << mac.theta_arr[0] << endl;
     float* frac_ini = (float*) malloc(params.num_theta* sizeof(float));
     float sum_frac = 0.0;
     int* grain_grid = (int*) malloc(params.num_theta* sizeof(int)); 
@@ -555,7 +559,7 @@ int main(int argc, char** argv)
    
     for (int i=0; i<params.num_theta; i++){
        aseq[i] = i+1;} //rand()%NUM_PF +1;
-    
+    cout<< aseq[0]<<endl; 
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    

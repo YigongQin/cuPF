@@ -4,14 +4,14 @@ import h5py
 import sys
 from graph_datastruct import graph
 
-nx = 11
-ny = 11
-nz = 11
+nx = 13
+ny = 13
+nz = 13
 nt = 11
 Lx = 10
 Ly = 10
 Lz = 40
-BC = 1
+BC = Lx/(nx-3) 
 top = 30
 
 
@@ -31,12 +31,13 @@ psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
 dx_dim = 0.08
-gnx = int(1/dx_dim) + 1
+gnx = int(Lx/dx_dim) + 1
 
-g1 = graph(size = (gnx, gny), density = 0.2, noise=0.001) 
+g1 = graph(size = (gnx, gnx), density = 0.2, noise=0.001) 
+print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)
-
+theta = g1.color_choices
 for i in range(nx*ny*nz*nt):
     
     xi = i%nx
@@ -57,7 +58,8 @@ np.savetxt(mac_folder+'z.txt', z, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
-np.savetxt(mac_folder+'alpha.txt', U, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'alpha.txt', alpha, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'theta.txt', theta, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%1.4e',delimiter='\n')

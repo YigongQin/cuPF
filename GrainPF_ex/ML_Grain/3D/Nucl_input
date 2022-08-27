@@ -51,9 +51,9 @@ Created on Fri May 29 11:10:53 2020
     zmin = 0
    # Ti = 877.6
     num_theta = 16
-    Nx = 11
-    Ny = 11
-    Nz = 11
+    Nx = 13
+    Ny = 13
+    Nz = 13
     Nt = 11
     cfl = 0.8
  
