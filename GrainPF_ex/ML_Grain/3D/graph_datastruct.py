@@ -85,7 +85,7 @@ class graph:
        # vertices = []
         vert_map = {}
         vert_count = 0
-        g = 0
+        alpah, beta = 0,0 
        # edges = []
         
         for region in vor.regions:
@@ -108,10 +108,9 @@ class graph:
                 
                 regions.append(region)
                 reordered_region = []
-               # alpha = random.randint(1, self.num_pf)
-               # beta = random.randint(1, self.num_pf)
-                g+=1
-                self.region_colors.append((g, g))
+                alpha = alpha+1 #random.randint(1, self.num_pf)
+                beta = beta+1 #random.randint(1, self.num_pf)
+                self.region_colors.append((alpha, beta))
                 
                 for index in region:
                     point = tuple(vor.vertices[index])
