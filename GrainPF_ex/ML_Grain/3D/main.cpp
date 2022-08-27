@@ -197,7 +197,7 @@ int main(int argc, char** argv)
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
         getParam(lineText, "kin_delta", params.kin_delta);
-        params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
+      //  params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
         getParam(lineText, "beta0", params.beta0);
         // new multiple
         //getParam(lineText, "Ti", params.Ti);
@@ -206,8 +206,8 @@ int main(int argc, char** argv)
         getParam(lineText, "xmin", params.xmin);
         getParam(lineText, "ymin", params.ymin);
         getParam(lineText, "zmin", params.zmin);
-        getParam(lineText, "num_theta", num_thetaf);
-        params.num_theta = (int) num_thetaf;
+      //  getParam(lineText, "num_theta", num_thetaf);
+      //  params.num_theta = (int) num_thetaf;
         getParam(lineText, "Nx", temp_Nx);
         getParam(lineText, "Ny", temp_Ny);
         getParam(lineText, "Nz", temp_Nz);
@@ -257,6 +257,9 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/U.txt",mac.U_mac);
     read_input(mac_folder+"/G.txt", &G0);
     read_input(mac_folder+"/Rmax.txt", &Rmax);
+    read_input(mac_folder+"/NG.txt", &num_thetaf);
+    read_input(mac_folder+"/theta.txt", max.theta_arr);
+    params.num_theta = (int) num_thetaf;
     //G0 = atof(argv[4]);
     //Rmax = atof(argv[5]); 
 //    read_input(mac_folder+"/Temp.txt", mac.T_3D);
@@ -471,6 +474,8 @@ int main(int argc, char** argv)
     float* alpha=(float*) malloc(length* sizeof(float));    
     int* alpha_i=(int*) malloc(length* sizeof(int));
     int* alpha_i_full = (int*) malloc(full_length* sizeof(int));
+    int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int))
+    read_input(mac_folder+"/alpha.txt", &alpha_cross);
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
     int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
@@ -506,7 +511,7 @@ int main(int argc, char** argv)
     // initialize the angles:
     float grain_gap = M_PI/2.0/(NUM_PF-1);     
     //printf("grain gap %f \n", grain_gap);
-    mac.theta_arr = new float[2*NUM_PF+1];
+   // mac.theta_arr = new float[2*NUM_PF+1];
     mac.cost = new float[2*NUM_PF+1];
     mac.sint = new float[2*NUM_PF+1];
     //srand(atoi(argv[3]));
@@ -528,12 +533,12 @@ int main(int argc, char** argv)
     generator.seed( loc_seed );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
-    for (int i=0; i<2*NUM_PF; i++){
+    for (int i=0; i<2*NUM_PF+1; i++){
         //mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
-        mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
+       // mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
        // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
-        mac.sint[i+1] = sinf(mac.theta_arr[i+1]);
-        mac.cost[i+1] = cosf(mac.theta_arr[i+1]);
+        mac.sint[i] = sinf(mac.theta_arr[i]);
+        mac.cost[i] = cosf(mac.theta_arr[i]);
     }  
    
     for (int i=0; i<params.num_theta; i++){
@@ -576,7 +581,7 @@ int main(int argc, char** argv)
       phi[id]=tanhf(psi[id]/params.sqrt2);
      //   Uc[id]=0.0;
       if (phi[id]>LS){
-      int xid = (int) (x[i]/(params.lxd/grain_dim));
+    /*  int xid = (int) (x[i]/(params.lxd/grain_dim));
       int yid = (int) (y[j]/(params.lyd/grain_dim));
       if (xid==grain_dim) {xid=grain_dim-1; }
       if (yid==grain_dim) {yid=grain_dim-1; }
@@ -584,7 +589,8 @@ int main(int argc, char** argv)
       alpha_i[id] = aseq[aid];
       if ( (alpha_i[id]>=0) || (alpha_i[id]<=params.num_theta-1) ){}
       else {printf("alpha is wrong \n");exit(1);}
-
+    */
+        alpha_i[id] = alpha_cross[j*pM.nx_loc+i]
        }
 
       else {alpha_i[id]=0;}

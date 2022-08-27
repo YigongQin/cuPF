@@ -31,10 +31,11 @@ psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
 dx_dim = 0.08
-gnx = int(1/dx_dim)
+gnx = int(1/dx_dim) + 1
 
-graph(size = (gnx, gny), density = 0.2, noise=0.001) 
-alpha = graph.alpha_field
+g1 = graph(size = (gnx, gny), density = 0.2, noise=0.001) 
+alpha = g1.alpha_field
+NG = len(g1.regions)
 
 for i in range(nx*ny*nz*nt):
     
@@ -56,8 +57,10 @@ np.savetxt(mac_folder+'z.txt', z, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'alpha.txt', U, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%1.4e',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()

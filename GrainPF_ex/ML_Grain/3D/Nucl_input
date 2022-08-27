@@ -16,7 +16,7 @@ Created on Fri May 29 11:10:53 2020
     L_cp = 229
     # Al-Cu 
     delta = 0.01                    # strength of the surface tension anisotropy         
-    kin_delta = 0.13
+    kin_delta = 0.11
     beta0 = 1e-7                    # linear coefficient
     k = 0.14                        # interface solute partition coefficient
     #c_infm = 7.8                  # shift in melting temperature     K
