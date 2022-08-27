@@ -495,7 +495,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
      int blocksize_2d = 128; 
      int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
 
-     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny);
+     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny, NUM_PF);
 
      cudaMemcpy(meanx_host, meanx, fny * sizeof(float),cudaMemcpyDeviceToHost);
      while( (meanx_host[*cur_tip]/(NUM_PF*fnx)>LS) && (*cur_tip<fny-1) ) {*cur_tip+=1;}
@@ -516,7 +516,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaSetDevice(device_id_innode); 
   printCudaInfo(pM.rank,device_id_innode);
   
-  int NUM_PF = params.NUM_PF
+  int NUM_PF = params.NUM_PF;
   float* x_device;// = NULL;
   float* y_device;// = NULL;
   float* z_device;
