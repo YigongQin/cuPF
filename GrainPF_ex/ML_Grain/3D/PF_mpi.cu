@@ -53,7 +53,7 @@ void print2d(float* array, int fnx, int fny){
 // boundary condition
 // only use this function to access the boundary points, 
 // other functions return at the boundary
-__inline__ __device__ int 
+__inline__ __device__ void 
 G2L_4D(int C, int &i, int &j, int &k, int &pf_id, int fnx, int fny, int fnz){
 
   PF_id = C/(fnx*fny*fnz);
