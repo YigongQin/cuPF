@@ -695,7 +695,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
-             //cur_tip=0;
+             cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, tip_y, cross_sec, frac, z, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
           }
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
