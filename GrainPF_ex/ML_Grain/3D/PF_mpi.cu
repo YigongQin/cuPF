@@ -161,6 +161,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
   G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
+  int pf_C = C - PF_id*fnx*fny*fnz;
   // macros
   /*
    float Dt = Tmac[1]-Tmac[0];
