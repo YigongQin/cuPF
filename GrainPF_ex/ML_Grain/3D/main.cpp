@@ -611,7 +611,7 @@ int main(int argc, char** argv)
       else {printf("alpha is wrong \n");exit(1);}
     */
         alpha_i[id] = alpha_cross[(j-1)*pM.nx_loc+(i-1)];
-       if (alpha_i[id]<1 || alpha_i[id]>16) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha_i[id]<<endl;
+       if (alpha_i[id]<1 || alpha_i[id]>NUM_PF) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha_i[id]<<endl;
        }
 
       else {alpha_i[id]=0;}
@@ -650,7 +650,7 @@ int main(int argc, char** argv)
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
-           memcpy(alpha_asse+loca_case*full_length,alpha_i,sizeof(int)*full_length);
+           memcpy(alpha_asse+loca_case*full_length,alpha_i_full,sizeof(int)*full_length);
 
     }   
 
