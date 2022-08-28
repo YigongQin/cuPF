@@ -158,13 +158,9 @@ __global__ void
 rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny, int fnz, int nt, \
        float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint, int NUM_PF){
 
-  int C = blockIdx.x * blockDim.x + threadIdx.x;
-  int PF_id = C/(fnx*fny*fnz);
-  int pf_C = C - PF_id*fnx*fny*fnz;  // local C in every PF
-  int k=pf_C/(fnx*fny);
-  int pf_C_z=pf_C-k*fnx*fny; 
-  int j=pf_C_z/fnx;
-  int i=pf_C_z-j*fnx;
+  int C = blockIdx.x * blockDim.x + threadIdx.x; 
+  int i, j, k, PF_id;
+  G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
   // macros
   /*
    float Dt = Tmac[1]-Tmac[0];
@@ -180,13 +176,25 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) &&(PF_id<NUM_PF) ) {
        // find the indices of the 8 neighbors for center
       //if ( (ph[C]<1.0f) && (ph[C]>-1.0f) ){
-       //if (C==1000){printf("find");}
+
        int R=C+1;
        int L=C-1;
        int T=C+fnx;
        int B=C-fnx;
        int U=C+fnx*fny;
        int D=C-fnx*fny;
+
+
+       // first checkout the gradient 
+       float phxn = ( ph[R] - ph[L] ) * 0.5f;
+       float phyn = ( ph[T] - ph[B] ) * 0.5f;
+       float phzn = ( ph[U] - ph[D] ) * 0.5f;
+
+
+       float gradph2 = phxn*phxn + phyn*phyn + phzn*phzn;
+       if (gradph2>1e-12){
+
+
        //float alpha = theta_arr[PF_id+1];
        float cosa, sina, cosb, sinb;
        if (ph[C]>LS){
@@ -200,10 +208,7 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
        sinb = 0.0f;
        cosb = 1.0f;
        }
-       // first checkout the anisotropy 
-        float phxn = ( ph[R] - ph[L] ) * 0.5f;
-        float phyn = ( ph[T] - ph[B] ) * 0.5f;
-        float phzn = ( ph[U] - ph[D] ) * 0.5f;
+
 
   
 
@@ -289,6 +294,10 @@ rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny
         ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
         //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
         //if (C==1000){printf("%f ",ph_new[C]);}
+        }
+        else{
+            ph_new[C] = ph[C];
+        }
 
      }
 } 
