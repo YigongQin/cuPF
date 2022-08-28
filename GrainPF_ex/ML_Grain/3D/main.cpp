@@ -686,7 +686,7 @@ int main(int argc, char** argv)
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     h5write_1d(h5_file, "phi",      phi , length, "float");
-    h5write_1d(h5_file, "single_alpha",  alpha_i, length, "int");
+    h5write_1d(h5_file, "single_alpha",  alpha_i_full, full_length, "int");
     h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
     h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
 

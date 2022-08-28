@@ -684,7 +684,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
-             cudaMemcpy(y, y_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(z, z_device, fny * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              //cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, tip_y, cross_sec, frac, z, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
