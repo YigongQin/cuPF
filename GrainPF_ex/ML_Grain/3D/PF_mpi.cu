@@ -435,8 +435,8 @@ __global__ void
 move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny, int fnz, int NUM_PF){
 
     int C = blockIdx.x * blockDim.x + threadIdx.x;
-    int i, j, k, pf_id;
-    G2L_4D(C, i, j, k, pf_id, fnx, fny, fnz);
+    int i, j, k, PF_id;
+    G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
 
     if ( (i==0) && (j==0) && (k>0) && (k<fnz-2) && (PF_id==0) ) {
         z_buff[k] = z[k+1];}
@@ -466,8 +466,8 @@ __global__ void
 copy_frame(float* ph_buff, float* z_buff, float* ph, float* z, int fnx, int fny, int fnz, int NUM_PF){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
-  int i, j, k, pf_id;
-  G2L_4D(C, i, j, k, pf_id, fnx, fny, fnz);
+  int i, j, k, PF_id;
+  G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
 
   if ( (i == 0) && (j==0) && (k>0) && (k < fnz-1) && (PF_id==0) ){
         z[k] = z_buff[k];}
@@ -692,7 +692,7 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
      if ( (2*kt+2)%TIPP==0) {
-             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz);
+             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
            //  lowsl = 1;
              collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -733,6 +733,8 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
    collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
+   cudaMemcpy(alpha_i_full+move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
  //  calc_frac(alpha, fnx, fny, fnz, params.nts, params.num_theta, tip_y, frac, z, aseq, ntip, left_coor);
 
   cudaFree(x_device); cudaFree(y_device); cudaFree(z_device); cudaFree(z_device2);
