@@ -1,7 +1,7 @@
 EXECUTABLE := phase_field
 CU_FILES   := PF_mpi.cu
 CU_DEPS    :=
-CC_FILES   := main.cpp
+CC_FILES   := main.cpp helper.cpp
 
 all: $(EXECUTABLE)
 
@@ -44,7 +44,8 @@ NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS)
 
 #CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
-OBJS=$(OBJDIR)/main.o $(OBJDIR)/PF_mpi.o 
+OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o 
+OBJS += $(OBJDIR)/PF_mpi.o 
 
 CXXFLAGS += -I$(CUDA_PATH)/include/ $(HDF5_FLAGS) -L$(CUDA_PATH)/lib64/ -lcudart 
 
