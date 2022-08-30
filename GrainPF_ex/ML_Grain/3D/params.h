@@ -1,3 +1,6 @@
+#ifndef PARAMS_H
+#define PARAMS_H 
+
 struct GlobalConstants {
   int nx;
   int ny;
@@ -118,7 +121,7 @@ struct Mac_input{
 
 
 
-
+#endif 
 
 
 

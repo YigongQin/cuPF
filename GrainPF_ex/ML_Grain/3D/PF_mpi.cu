@@ -77,6 +77,66 @@ kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float
 
 
 __global__ void
+set_minus1(float* u, int size){
+
+     int index = blockIdx.x * blockDim.x + threadIdx.x;
+     if(index<size) u[index] = -1.0f;
+
+}
+
+
+__global__ void
+collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
+
+   int C = blockIdx.x * blockDim.x + threadIdx.x;
+   int length = cP.length;
+ //  int PF_id = index/(length);
+ //  int C = index - PF_id*length;
+   
+  //if ( (C<length) && (PF_id<NUM_PF) ) {
+
+    //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
+   if (C<length){
+   // for loop to find the argmax of the phase field
+     for (int PF_id=0; PF_id<cP.NUM_PF; PF_id++){
+       int loc = C + length*PF_id; 
+       int max_loc = C + length*argmax[C];
+       if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
+     }
+    
+   int max_loc_f = C + length*argmax[C]; 
+   if (PFs[max_loc_f]>LS){
+      phi[C] = PFs[max_loc_f]; 
+      alpha_m[C] = argmax[C] +1;
+    }
+   }
+
+
+
+}
+
+
+__global__ void
+ini_PF(float* PFs, float* phi, int* alpha_m){
+
+   int index = blockIdx.x * blockDim.x + threadIdx.x;
+   int length = cP.length;
+   int PF_id = index/(length);
+   int C = index - PF_id*length;
+
+ // if (PF_id==1){
+  if ( (C<length) && (PF_id<cP.NUM_PF) ) {
+    if ( (phi[C]>LS) && (PF_id== (alpha_m[C]-1)) ){
+  //  if ( (phi[C]>LS) && (PF_id== 0)){ //(alpha_m[C]-1)) ){
+      PFs[index] = phi[C];
+    }
+ // }
+  }
+}
+
+
+
+__global__ void
 set_BC_3D(float* ph, int max_area){
 
    // dimension with R^{2D} * PF
@@ -288,63 +348,7 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
 
 // U equation
 
-__global__ void
-set_minus1(float* u, int size){
 
-     int index = blockIdx.x * blockDim.x + threadIdx.x;
-     if(index<size) u[index] = -1.0f;
-
-}
-
-
-__global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
-
-   int C = blockIdx.x * blockDim.x + threadIdx.x;
-   int length = cP.length;
- //  int PF_id = index/(length);
- //  int C = index - PF_id*length;
-   
-  //if ( (C<length) && (PF_id<NUM_PF) ) {
-
-    //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
-   if (C<length){
-   // for loop to find the argmax of the phase field
-     for (int PF_id=0; PF_id<cP.NUM_PF; PF_id++){
-       int loc = C + length*PF_id; 
-       int max_loc = C + length*argmax[C];
-       if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
-     }
-    
-   int max_loc_f = C + length*argmax[C]; 
-   if (PFs[max_loc_f]>LS){
-      phi[C] = PFs[max_loc_f]; 
-      alpha_m[C] = argmax[C] +1;
-    }
-   }
-
-
-
-}
-
-
-__global__ void
-ini_PF(float* PFs, float* phi, int* alpha_m){
-
-   int index = blockIdx.x * blockDim.x + threadIdx.x;
-   int length = cP.length;
-   int PF_id = index/(length);
-   int C = index - PF_id*length;
-
- // if (PF_id==1){
-  if ( (C<length) && (PF_id<cP.NUM_PF) ) {
-    if ( (phi[C]>LS) && (PF_id== (alpha_m[C]-1)) ){
-  //  if ( (phi[C]>LS) && (PF_id== 0)){ //(alpha_m[C]-1)) ){
-      PFs[index] = phi[C];
-    }
- // }
-  }
-}
 
 
 
