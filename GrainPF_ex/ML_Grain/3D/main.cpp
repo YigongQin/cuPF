@@ -14,11 +14,10 @@
 #include <algorithm>
 #include <iterator>
 #include <hdf5.h>
+#include "params.h"
 #include <random>
 using namespace std;
 #define LS -0.995
-#include "include_struct.h"
-#define NBW 1
 
 
 void setup( params_MPI pM, GlobalConstants params, Mac_input mac, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
