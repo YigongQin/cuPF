@@ -2,12 +2,12 @@
 #define PARAMS_H 
 
 struct GlobalConstants {
-  int nx, ny, nz, nz_full, fnx, fny, fnz, , fnz_f, length, ha_wd;
+  int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, ha_wd;
   int Mt, nts, num_theta, NUM_PF; 
   float lx, lxd, lyd, lzd, tmax;
   float xmin, ymin, zmin; // MPI-related
   float asp_ratio_yx, asp_ratio_zx, moving_ratio;
-  float dx, dt, hi, cfl, dt_sqrt,;
+  float dx, dt, hi, cfl, dt_sqrt;
   int ictype;
   float G, R, delta, kin_delta;
   float k, c_infty, m_slope, c_infm, Dl, GT;
@@ -30,7 +30,7 @@ struct params_MPI{
     int rank;
     int px, py, pz;
     int nproc, nprocx, nprocy, nprocz;
-    int nx_loc, ny_loc, nz_loc,n z_full_loc;
+    int nx_loc, ny_loc, nz_loc, nz_full_loc;
 };
 
 struct Mac_input{
