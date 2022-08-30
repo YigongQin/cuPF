@@ -317,7 +317,7 @@ __global__ void
 collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
-   int length = cP.length
+   int length = cP.length;
  //  int PF_id = index/(length);
  //  int C = index - PF_id*length;
    
@@ -516,7 +516,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
      int blocksize_2d = 128; 
      int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
 
-     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx,fnx, fny, fnz, NUM_PF);
+     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx);
 
      cudaMemcpy(meanx_host, meanx, fnz * sizeof(float),cudaMemcpyDeviceToHost);
      while( (meanx_host[*cur_tip]/(NUM_PF*fnx*fny)>LS) && (*cur_tip<fnz-1) ) {*cur_tip+=1;}
@@ -628,7 +628,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, float* x, floa
   
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m;
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m);
    ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m);
    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
@@ -718,7 +718,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, float* x, floa
 
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF); 
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
