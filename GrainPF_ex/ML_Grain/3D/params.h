@@ -2,110 +2,39 @@
 #define PARAMS_H 
 
 struct GlobalConstants {
-  int nx;
-  int ny;
-  int nz;
-  int Mt;
-  int fnx, fny, fnz, fnz_f;
-  int length;
-  int nts; 
+  int nx, ny, nz, nz_full, fnx, fny, fnz, , fnz_f, length, ha_wd;
+  int Mt, nts, num_theta, NUM_PF; 
+  float lx, lxd, lyd, lzd, tmax;
+  float xmin, ymin, zmin; // MPI-related
+  float asp_ratio_yx, asp_ratio_zx, moving_ratio;
+  float dx, dt, hi, cfl, dt_sqrt,;
   int ictype;
-  float G;
-  float R;
-  float delta;
-  float k;
-  float c_infm;
-  float Dl;
-  float Dh;
-  float d0;
-  float W0;
-  float lT;
-  float lamd; 
-  float tau0;
-  float c_infty; 
-  float R_tilde;
-  float Dl_tilde; 
-  float lT_tilde; 
-  float beta0_tilde;
-  float eps; 
-  float alpha0; 
-  float dx; 
-  float dt; 
-  float asp_ratio_yx;
-  float asp_ratio_zx; 
-  float lxd;
-  float lx; 
-  float lyd; 
-  float lzd;
-  float eta; 
-  float U0;
-  float cfl; 
-  float kin_delta;
-  float beta0;
-  float kin_coeff;
-  float GT;
-  float m_slope;
-  float mu_k;
-  float L_cp;
-  int num_theta;
-  int NUM_PF;
-  // parameters that are not in the input file
-  float hi;
-  float cosa;
-  float sina;
-  float sqrt2;
-  float a_s;
-  float epsilon;
-  float a_12;
-  float dt_sqrt;
-  int noi_period;
-  int seed_val;
-  // MPI-related
-  float Ti;
-  int ha_wd;
-  int Mnx;
-  int Mny;
-  int Mnt;
-  float xmin;
-  float ymin;
-  float zmin;
- 
-  // nucleation parameters
-  float Tmelt;
-  float Tliq;
-  float Tsol;
-  float undcool_mean;
-  float undcool_std;
-  float nuc_Nmax;
-  float nuc_rad;
-  int pts_cell; 
+  float G, R, delta, kin_delta;
+  float k, c_infty, m_slope, c_infm, Dl, GT;
+  float Dh, d0, W0, L_cp;
+  float lamd, tau0, beta0, mu_k, lT;
+  float R_tilde, Dl_tilde, lT_tilde, beta0_tilde;
+  float alpha0, U0, eps, eta;  
 
-  float moving_ratio;
-  int nz_full;
-  float tmax;
+  // parameters that are not in the input file
+  float cosa, sina, sqrt2, a_s, epsilon, a_12;
+  int noi_period, seed_val; // noise
+  // nucleation parameters
+  float Tmelt, Ti, Tliq, Tsol;
+  float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
+
 };
 
 struct params_MPI{
 
     int rank;
-    int px;
-    int py;
-    int nproc;
-    int nprocx;
-    int nprocy;
-    int nx_loc;
-    int ny_loc;
-    int nz_loc;
-
-    // moving-domain
-    int nz_full_loc;
+    int px, py, pz;
+    int nproc, nprocx, nprocy, nprocz;
+    int nx_loc, ny_loc, nz_loc,n z_full_loc;
 };
 
 struct Mac_input{
-  int Nx;
-  int Ny;
-  int Nz;
-  int Nt;
+  int Nx,  Ny, Nz, Nt;
   float* X_mac; 
   float* Y_mac; 
   float* Z_mac;
