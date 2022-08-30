@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <cuda.h>
+
+
+
+
+
 void print2d(float* array, int fnx, int fny);
 void printCudaInfo(int rank, int i);
 
