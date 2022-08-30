@@ -3,6 +3,8 @@ struct GlobalConstants {
   int ny;
   int nz;
   int Mt;
+  int fnx, fny, fnz, fnz_f;
+  int length;
   int nts; 
   int ictype;
   float G;

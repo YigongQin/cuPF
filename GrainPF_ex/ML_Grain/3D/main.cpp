@@ -442,6 +442,7 @@ int main(int argc, char** argv)
     int length_y = pM.ny_loc+2*params.ha_wd;
     int length_z = pM.nz_loc+2*params.ha_wd;
     int length_z_full = pM.nz_full_loc+2*params.ha_wd;
+    params.fnx = length_x, params.fny = length_y, params.fnz = length_z;
     float* x=(float*) malloc(length_x* sizeof(float));
     float* y=(float*) malloc(length_y* sizeof(float));
     float* z=(float*) malloc(length_z* sizeof(float));

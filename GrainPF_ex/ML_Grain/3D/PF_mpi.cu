@@ -93,11 +93,12 @@ kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float
 
 
 __global__ void
-set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area, int NUM_PF){
+set_BC_3D(float* ph, int max_area){
 
    // dimension with R^{2D} * PF
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   int pf = index/max_area;
   int bc_idx = index- pf*max_area;     
 
@@ -155,11 +156,12 @@ set_BC_3D(float* ph, int fnx, int fny, int fnz, int max_area, int NUM_PF){
 
 // psi equation
 __global__ void
-rhs_psi(float* ph, float* ph_new, float* x, float* y, float* z, int fnx, int fny, int fnz, int nt, \
-       float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint, int NUM_PF){
+rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, \
+       float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
   int pf_C = C - PF_id*fnx*fny*fnz;
   // macros
@@ -312,9 +314,10 @@ set_minus1(float* u, int size){
 
 
 __global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax, int NUM_PF){
+collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
+   int length = cP.length
  //  int PF_id = index/(length);
  //  int C = index - PF_id*length;
    
@@ -323,7 +326,7 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax, int NU
     //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
    if (C<length){
    // for loop to find the argmax of the phase field
-     for (int PF_id=0; PF_id<NUM_PF; PF_id++){
+     for (int PF_id=0; PF_id<cP.NUM_PF; PF_id++){
        int loc = C + length*PF_id; 
        int max_loc = C + length*argmax[C];
        if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
@@ -342,14 +345,15 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int length, int* argmax, int NU
 
 
 __global__ void
-ini_PF(float* PFs, float* phi, int* alpha_m, int length, int NUM_PF){
+ini_PF(float* PFs, float* phi, int* alpha_m){
 
    int index = blockIdx.x * blockDim.x + threadIdx.x;
+   int length = cP.length;
    int PF_id = index/(length);
    int C = index - PF_id*length;
 
  // if (PF_id==1){
-  if ( (C<length) && (PF_id<NUM_PF) ) {
+  if ( (C<length) && (PF_id<cP.NUM_PF) ) {
     if ( (phi[C]>LS) && (PF_id== (alpha_m[C]-1)) ){
   //  if ( (phi[C]>LS) && (PF_id== 0)){ //(alpha_m[C]-1)) ){
       PFs[index] = phi[C];
@@ -439,10 +443,11 @@ void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, 
 }
 
 __global__ void 
-move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count, int fnx, int fny, int fnz, int NUM_PF){
+move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count){
 
     int C = blockIdx.x * blockDim.x + threadIdx.x;
     int i, j, k, PF_id;
+    int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
     G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
 
     if ( (i==0) && (j==0) && (k>0) && (k<fnz-2) && (PF_id==0) ) {
@@ -470,10 +475,11 @@ move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* 
 }
 
 __global__ void
-copy_frame(float* ph_buff, float* z_buff, float* ph, float* z, int fnx, int fny, int fnz, int NUM_PF){
+copy_frame(float* ph_buff, float* z_buff, float* ph, float* z){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
 
   if ( (i == 0) && (j==0) && (k>0) && (k < fnz-1) && (PF_id==0) ){
@@ -487,11 +493,12 @@ copy_frame(float* ph_buff, float* z_buff, float* ph, float* z, int fnx, int fny,
 
 
 __global__ void
-ave_x(float* phi, float* meanx, int fnx, int fny, int fnz, int NUM_PF){
+ave_x(float* phi, float* meanx){
 
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, pf_id;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   G2L_4D(C, i, j, k, pf_id, fnx, fny, fnz);
  
    if (C<fnx*fny*fnz*NUM_PF){
@@ -520,7 +527,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 }
 
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
   int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec){
   // we should have already pass all the data structure in by this time
   // move those data onto device
@@ -530,7 +537,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   cudaSetDevice(device_id_innode); 
   printCudaInfo(pM.rank,device_id_innode);
   
-  int NUM_PF = params.NUM_PF;
+  int fnx = params.fnx, fny = params.fny, fnz = params.fnz, fnz_f = params.fnz_f, NUM_PF = params.NUM_PF;
   float* x_device;// = NULL;
   float* y_device;// = NULL;
   float* z_device;
@@ -552,7 +559,7 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
   int cnx = fnx/(2*params.pts_cell+1);
   int cny = fny/(2*params.pts_cell+1);
 
-  int length = fnx*fny*fnz;
+  int length = params.length;
   int bc_len = fnx+fny+fnz;
 
 
@@ -587,10 +594,6 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    curandState* dStates;
    int period = params.noi_period;
    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
-  // float* random_nums;
-  // cudaMalloc((void **) &random_nums, sizeof(float) * (length+period));
-
-  //static int max_var = 5;
 
   //---macrodata for interpolation
 
@@ -623,25 +626,20 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
   
-   //init_nucl_status<<< num_block_c, blocksize_2d >>>(phi_old, nucl_status, cnx, cny, fnx); 
-   //initialize<<< num_block_2d, blocksize_2d >>>(psi_old, phi_old, U_old, psi_new, phi_new, U_new, x_device, y_device, fnx, fny);
-   //init_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d, blocksize_2d >>>(dStates, params.seed_val,length+period);
-  // gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, length, NUM_PF);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m;
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m);
    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
-  // commu_BC(comm, SR_buffs, pM, params.Mt+2, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
-  // commu_BC(comm, SR_buffs, pM, params.Mt+3, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area, NUM_PF);
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area, NUM_PF);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
 
-   rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, z_device, fnx, fny, fnz, 0,\
-0, Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
-   //print2d(phi_old,fnx,fny);
+   rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
+    Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+
+
    float t_cur_step;
    int kts = params.Mt/params.nts;
    printf("kts %d, nts %d\n",kts, params.nts);
@@ -665,30 +663,19 @@ void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int f
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
-   //for (int kt=0; kt<1; kt++){
-  //   cudaDeviceSynchronize();
-     //if ( (2*kt+2)%period==0) gen_rand_num<<< (fnx*fny+period+blocksize_2d-1)/blocksize_2d,blocksize_2d >>>(dStates, random_nums,length+period);
 
-     //if ( params.ha_wd==1 ) commu_BC(comm, SR_buffs, pM, 2*kt, params.ha_wd, fnx, fny, psi_new, phi_new, U_old, dpsi, alpha_m);
-     //cudaDeviceSynchronize();
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, fnx, fny, fnz, max_area, NUM_PF);
-     //cudaDeviceSynchronize();
-   //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_old, U_new, phi_new, dpsi, fnx, fny);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
 
-
-     //cudaDeviceSynchronize();
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_new, PFs_old, x_device, y_device, z_device, fnx, fny, fnz, 2*kt+1,\
-t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
+     rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, \
+        Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
  
-//     add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
-        2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nt); 
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area, NUM_PF);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
 
     if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
@@ -701,34 +688,28 @@ t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, m
      if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
            //  lowsl = 1;
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
             // sampleh(&lowsl, alpha, fnx,fny);
              //printf("lowsl %d\n", lowsl);
              while (tip_front >=tip_thres){
-                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, length, argmax, NUM_PF);
-                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count, fnx, fny, fnz, NUM_PF);
-                copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device, fnx, fny, fnz, NUM_PF);
+                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
+                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
+                copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device);
                 move_count +=1;
                 tip_front-=1;
 
              }
 
-          set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, fnx, fny, fnz, max_area, NUM_PF);
+          set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
           }
-     //cudaDeviceSynchronize();
-   //  rhs_U<<< num_block_2d, blocksize_2d >>>(U_new, U_old, phi_old, dpsi, fnx, fny);
-     //cudaDeviceSynchronize();*/
+
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(PFs_old, PFs_new, x_device, y_device, z_device, fnx, fny, fnz, 2*kt+2,\
-t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint, NUM_PF );
+     rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, \
+        Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
 
    }
-   // params.kin_delta -= 0.05;
-  // for (int i=0;i<params.nts+1;i++){
-  //     printf("ntip %d \n", ntip[i]);
-  // }
 
 
    cudaDeviceSynchronize();
