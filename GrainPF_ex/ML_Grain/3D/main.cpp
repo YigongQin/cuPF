@@ -21,7 +21,7 @@ using namespace std;
 #define NBW 1
 
 
-void setup( params_MPI pM, GlobalConstants params, Mac_input mac, int fnx, int fny, int fnz, int fnz_f, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
+void setup( params_MPI pM, GlobalConstants params, Mac_input mac, float* x, float* y, float* z, float* phi, float* psi,float* U, int* alpha, \
     int* alpha_i_full, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec);
 // add function for easy retrieving params
 template<class T>
@@ -631,7 +631,7 @@ int main(int argc, char** argv)
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
     memset(tip_final,  0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    setup( pM, params, mac, length_x, length_y, length_z, length_z_full, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
+    setup( pM, params, mac, x, y, z, phi, psi, Uc, alpha_i, alpha_i_full, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
     for(int i=0; i<length_z; i++){
         z[i]=(i-params.ha_wd)*dxd + zmin_loc;
     }
