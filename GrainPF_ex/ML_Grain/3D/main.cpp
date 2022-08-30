@@ -442,7 +442,9 @@ int main(int argc, char** argv)
     int length_y = pM.ny_loc+2*params.ha_wd;
     int length_z = pM.nz_loc+2*params.ha_wd;
     int length_z_full = pM.nz_full_loc+2*params.ha_wd;
-    params.fnx = length_x, params.fny = length_y, params.fnz = length_z;
+    int length=length_x*length_y*length_z;
+    int full_length = length_x*length_y*length_z_full;
+    params.fnx = length_x, params.fny = length_y, params.fnz = length_z, params.length = length;
     float* x=(float*) malloc(length_x* sizeof(float));
     float* y=(float*) malloc(length_y* sizeof(float));
     float* z=(float*) malloc(length_z* sizeof(float));
@@ -479,8 +481,7 @@ int main(int argc, char** argv)
         std::cout<< "rank "<< pM.rank<< " ymin "<< y[0] << " ymax "<<y[length_y-1]<<std::endl;
     std::cout<< "rank "<< pM.rank<< " zmin " << z[0] <<" zmax "<<z[length_z-1]<<std::endl;
 
-    int length=length_x*length_y*length_z;
-    int full_length = length_x*length_y*length_z_full;
+
     std::cout<<"x length of psi, phi, U="<<length_x<<std::endl;
     std::cout<<"y length of psi, phi, U="<<length_y<<std::endl;
     std::cout<<"z length of psi, phi, U="<<length_z<<std::endl;   
