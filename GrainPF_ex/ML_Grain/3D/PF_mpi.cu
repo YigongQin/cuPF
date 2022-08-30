@@ -26,9 +26,6 @@ using namespace std;
 #define TIPP 20
 #define BLANK 0.2
 
-void printCudaInfo(int rank, int i);
-extern float toBW(int bytes, float sec);
-
   
 
 
