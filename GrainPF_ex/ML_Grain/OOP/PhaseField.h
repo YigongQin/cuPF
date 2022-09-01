@@ -4,7 +4,7 @@
 #include "cuPDE.h"
 #include "params.h"
 
-class PhaseField: public cuPDE {
+class PhaseField: public PDE {
 
 public:
 	// define the scale/resolution of the problem first
