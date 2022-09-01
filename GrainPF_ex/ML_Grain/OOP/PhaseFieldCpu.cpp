@@ -164,7 +164,7 @@ void PhaseField::initField(Mac_input mac){
 }
 
 
-void output(){
+void PhaseField::output(){
 
 }
 
