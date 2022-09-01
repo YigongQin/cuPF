@@ -143,7 +143,7 @@ void PhaseField::initField(Mac_input mac){
      //   Uc[id]=0.0;
       if (phi[id]>LS){
 
-        alpha[id] = alpha_cross[(j-1)*(fnx-2*params.ha_wd)+(i-1)];
+        alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.ha_wd)+(i-1)];
        if (alpha[id]<1 || alpha[id]>NUM_PF) cout<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<<alpha[id]<<endl;
        }
 

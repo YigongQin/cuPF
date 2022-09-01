@@ -39,7 +39,7 @@ struct Mac_input{
   float* Y_mac; 
   float* Z_mac;
   float* t_mac;
-  float* alpha_mac;
+  int* alpha_mac;
   float* psi_mac;
   float* U_mac;
   float* T_3D;

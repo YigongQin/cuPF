@@ -246,7 +246,7 @@ int main(int argc, char** argv)
     mac.Y_mac = new float[mac.Ny];
     mac.Z_mac = new float[mac.Nz];
     mac.t_mac = new float[mac.Nt];
-    mac.alpha_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    
     mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
@@ -429,9 +429,9 @@ int main(int argc, char** argv)
 
 
 
-    int* alpha_cross = (int*) malloc(pM.nx_loc*pM.ny_loc* sizeof(int));
-    read_input(mac_folder+"/alpha.txt", alpha_cross);
-    printf("%d %d\n", alpha_cross[0], alpha_cross[pM.nx_loc*pM.ny_loc-1]);
+    mac.alpha_mac = new int [pM.nx_loc*pM.ny_loc];
+    read_input(mac_folder+"/alpha.txt", mac.alpha_mac);
+    printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[pM.nx_loc*pM.ny_loc-1]);
 
     float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
     float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
