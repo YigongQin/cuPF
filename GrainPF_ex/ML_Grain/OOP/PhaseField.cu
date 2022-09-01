@@ -9,6 +9,7 @@
 #include "CycleTimer.h"
 #include "params.h"
 #include "helper.h"
+#include "PhaseField.h"
 
 using namespace std;
 #define BLOCK_DIM_X 16
