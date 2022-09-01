@@ -1,7 +1,9 @@
 #include "params.h"
 #include "PhaseField.h"
 #include <cmath>
+#include <iostream>
 using namespace std;
+#define LS -0.995
 // constructor
 
 PhaseField::PhaseField() {
@@ -79,9 +81,9 @@ void PhaseField::cpuSetup(params_MPI pM){
   //  for(int i=0; i<fnx; i++){
   //      std::cout<<x[i]<<" ";
   //  }
-    cout<< "rank "<< pM.rank<< " xmin " << pf_solver->x[0] << " xmax "<<pf_solver->x[fnx-1]<<endl;
-    cout<< "rank "<< pM.rank<< " ymin " << pf_solver->y[0] << " ymax "<<pf_solver->y[fny-1]<<endl;
-    cout<< "rank "<< pM.rank<< " zmin " << pf_solver->z[0] << " zmax "<<pf_solver->z[fnz-1]<<endl;
+    cout<< "rank "<< pM.rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
+    cout<< "rank "<< pM.rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;
+    cout<< "rank "<< pM.rank<< " zmin " << z[0] << " zmax "<<z[fnz-1]<<endl;
     cout<<"x length of psi, phi, U="<<fnx<<endl;
     cout<<"y length of psi, phi, U="<<fny<<endl;
     cout<<"z length of psi, phi, U="<<fnz<<endl;   
@@ -141,8 +143,8 @@ void PhaseField::initField(Mac_input mac){
      //   Uc[id]=0.0;
       if (phi[id]>LS){
 
-        alpha[id] = alpha_cross[(j-1)*pM.nx_loc+(i-1)];
-       if (alpha[id]<1 || alpha[id]>NUM_PF) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha[id]<<endl;
+        alpha[id] = alpha_cross[(j-1)*(fnx-2*params.ha_wd)+(i-1)];
+       if (alpha[id]<1 || alpha[id]>NUM_PF) cout<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<<alpha[id]<<endl;
        }
 
       else {alpha[id]=0;}

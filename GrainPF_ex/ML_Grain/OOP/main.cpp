@@ -18,7 +18,7 @@
 #include <random>
 #include "PhaseField.h"
 using namespace std;
-#define LS -0.995
+
 
 
 // add function for easy retrieving params
