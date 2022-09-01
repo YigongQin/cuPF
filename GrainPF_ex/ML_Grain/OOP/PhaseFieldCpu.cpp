@@ -1,13 +1,15 @@
 #include "params.h"
 #include "PhaseField.h"
+#include <cmath>
+using namespace std;
 // constructor
 
 PhaseField::PhaseField() {
 
-    x = NULL;
-    phi = NULL;
-    x_device = NULL;
-    phi_new = NULL;
+    x = nullptr;
+    phi = nullptr;
+    x_device = nullptr;
+    phi_new = nullptr;
 }
 
 
@@ -70,7 +72,7 @@ void PhaseField::cpuSetup(params_MPI pM){
     psi = new float[length];
     phi = new float[length];
   //  Uc = new float[length];
-    alpha_i = new int[length];
+    alpha = new int[length];
     alpha_i_full = new int[full_length];
 
   //  std::cout<<"x= ";
@@ -99,8 +101,7 @@ void PhaseField::initField(Mac_input mac){
         mac.cost[i] = cosf(mac.theta_arr[i]);
     }  
    
-    for (int i=0; i<params.num_theta; i++){
-       aseq[i] = i+1;} //rand()%NUM_PF +1;
+
      
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
@@ -140,18 +141,18 @@ void PhaseField::initField(Mac_input mac){
      //   Uc[id]=0.0;
       if (phi[id]>LS){
 
-        alpha_i[id] = alpha_cross[(j-1)*pM.nx_loc+(i-1)];
-       if (alpha_i[id]<1 || alpha_i[id]>NUM_PF) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha_i[id]<<endl;
+        alpha[id] = alpha_cross[(j-1)*pM.nx_loc+(i-1)];
+       if (alpha[id]<1 || alpha[id]>NUM_PF) cout<<(j-1)*pM.nx_loc+(i-1)<<alpha[id]<<endl;
        }
 
-      else {alpha_i[id]=0;}
+      else {alpha[id]=0;}
       }
 
     else{
        psi[id]=0.0f;
        phi[id]=0.0f;
      //  Uc[id]=0.0f;
-       alpha_i[id]=0;
+       alpha[id]=0;
  
     }
     }

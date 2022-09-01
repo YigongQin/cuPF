@@ -473,7 +473,8 @@ int main(int argc, char** argv)
    // generator.seed( loc_seed );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
-
+    for (int i=0; i<params.num_theta; i++){
+       aseq[i] = i+1;} //rand()%NUM_PF +1;
 
     memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
