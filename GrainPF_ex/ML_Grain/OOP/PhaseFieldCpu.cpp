@@ -11,7 +11,7 @@ PhaseField::PhaseField() {
 }
 
 
-void PhaseField::cpuSetup(params_MPI pM, GlobalParams params){
+void PhaseField::cpuSetup(params_MPI pM, GlobalConstants params){
 
 
     pM.nx_loc = params.nx/pM.nprocx;

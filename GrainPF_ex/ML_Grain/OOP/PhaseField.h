@@ -13,7 +13,7 @@ public:
 	float* z_device2;
 	float* phi;
 	float* psi;
-	float* U;
+	float* Uc;
 	int* alpha;
 	int* alpha_i_full;
 
@@ -29,13 +29,13 @@ public:
 
 	PhaseField();
 	virtual ~PhaseField();
-	void cpuSetup(params_MPI pM, GlobalParams params);
+	void cpuSetup(params_MPI pM, GlobalConstants params);
 	void initField(Mac_input mac);
 	void cudaSetup(params_MPI pM); // setup cuda for every GPU
-	void evolve(GlobalParams params, Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec); // evolve the field with input
+	void evolve(GlobalConstants params, Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec); // evolve the field with input
 	void output();
 
-}
+};
 
 
 

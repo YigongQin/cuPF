@@ -420,7 +420,7 @@ int main(int argc, char** argv)
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
-    pf_solver->initCpu(pM, params);
+    pf_solver->cpuSetup(pM, params);
     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length ,full_length = params.full_length;
 
     
@@ -478,8 +478,8 @@ int main(int argc, char** argv)
     memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
     memset(tip_final,  0, sizeof(int)*(params.nts+1)*params.num_theta ); 
 
-    pf_solver->initField();
-    pf_solver->cudaSetup();
+    pf_solver->initField(mac);
+    pf_solver->cudaSetup(pM);
     pf_solver->evolve(params, mac, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
@@ -497,7 +497,7 @@ int main(int argc, char** argv)
 
     if (run>=num_case-valid_run){
         int loca_case = run-(num_case-valid_run);
-           memcpy(alpha_asse+loca_case*full_length,alpha_i_full,sizeof(int)*full_length);
+           memcpy(alpha_asse+loca_case*full_length, pf_solver->alpha_i_full,sizeof(int)*full_length);
 
     }   
 
@@ -525,14 +525,14 @@ int main(int argc, char** argv)
 
     h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-    h5write_1d(h5_file, "phi",      phi , length, "float");
-    h5write_1d(h5_file, "single_alpha",  alpha_i_full, full_length, "int");
+    h5write_1d(h5_file, "phi",      pf_solver->phi , length, "float");
+    h5write_1d(h5_file, "single_alpha",  pf_solver->alpha_i_full, full_length, "int");
     h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
     h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
 
-    h5write_1d(h5_file, "x_coordinates", x, fnx, "float");
-    h5write_1d(h5_file, "y_coordinates", y, fny, "float");
-    h5write_1d(h5_file, "z_coordinates", z_full, fnz_f, "float");
+    h5write_1d(h5_file, "x_coordinates", pf_solver->x, fnx, "float");
+    h5write_1d(h5_file, "y_coordinates", pf_solver->y, fny, "float");
+    h5write_1d(h5_file, "z_coordinates", pf_solver->z_full, params.fnz_f, "float");
 
     h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
@@ -550,8 +550,6 @@ int main(int argc, char** argv)
     H5Fclose(h5in_file);
 
     //MPI_Finalize();
-    delete[] phi;
-    delete[] Uc;
-    delete[] psi;
+
     return 0;
 }
