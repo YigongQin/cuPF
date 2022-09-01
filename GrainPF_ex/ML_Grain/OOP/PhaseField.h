@@ -11,6 +11,8 @@ public:
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
 
 	float* z_device2;
+
+	float* z_full;
 	float* phi;
 	float* psi;
 	float* Uc;
