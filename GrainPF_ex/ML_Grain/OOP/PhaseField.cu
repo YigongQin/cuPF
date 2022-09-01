@@ -589,7 +589,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
 
 
 
-void PhaseField::evolve(GlobalParams params, Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec){
+void PhaseField::evolve(GlobalConstants params, Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   //int* nucl_status;

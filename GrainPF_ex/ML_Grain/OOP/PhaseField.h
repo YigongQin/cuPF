@@ -24,7 +24,7 @@ public:
 	float* phi_new;
 	float* PFs_old;
 	float* PFs_new;
-	float* alpha_m;
+	int* alpha_m;
 	int* d_alpha_full;
 	int* argmax;
 
