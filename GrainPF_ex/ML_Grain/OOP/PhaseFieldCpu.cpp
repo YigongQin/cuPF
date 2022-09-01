@@ -1,5 +1,5 @@
 #include "params.h"
-
+#include "PhaseField.h"
 // constructor
 
 PhaseField::PhaseField() {
@@ -161,7 +161,9 @@ void PhaseField::initField(Mac_input mac){
 }
 
 
+void output(){
 
+}
 
 
 
