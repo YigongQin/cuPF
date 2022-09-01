@@ -7,6 +7,7 @@
 class PhaseField: public PDE {
 
 public:
+	GlobalConstants params;
 	// define the scale/resolution of the problem first
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
 
@@ -31,10 +32,10 @@ public:
 
 	PhaseField();
 	virtual ~PhaseField();
-	void cpuSetup(params_MPI pM, GlobalConstants params);
+	void cpuSetup(params_MPI pM);
 	void initField(Mac_input mac);
 	void cudaSetup(params_MPI pM); // setup cuda for every GPU
-	void evolve(GlobalConstants params, Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec); // evolve the field with input
+	void evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec); // evolve the field with input
 	void output();
 
 };

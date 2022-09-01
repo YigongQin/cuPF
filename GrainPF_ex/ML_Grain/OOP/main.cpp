@@ -420,7 +420,8 @@ int main(int argc, char** argv)
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
-    pf_solver->cpuSetup(pM, params);
+    pf_solver->params = params;
+    pf_solver->cpuSetup(pM);
     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length ,full_length = params.full_length;
 
     
@@ -480,7 +481,7 @@ int main(int argc, char** argv)
 
     pf_solver->initField(mac);
     pf_solver->cudaSetup(pM);
-    pf_solver->evolve(params, mac, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
+    pf_solver->evolve(mac, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
     // save the QoIs 
     //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
     //float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));

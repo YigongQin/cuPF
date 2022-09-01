@@ -15,7 +15,7 @@ public:
 	float* t;
 	
 	virtual ~PDE(){};
-	virtual void cpuSetup(params_MPI pM, GlobalConstants params);
+	virtual void cpuSetup(params_MPI pM);
 	virtual void initField(Mac_input mac);
 	virtual void cudaSetup(params_MPI pM); // setup cuda for every GPU
 	//virtual void evolve() = 0;
