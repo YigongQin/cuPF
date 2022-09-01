@@ -422,7 +422,8 @@ int main(int argc, char** argv)
     pf_solver = new PhaseField();
     pf_solver->params = params;
     pf_solver->cpuSetup(pM);
-    int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length ,full_length = params.full_length;
+    int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
+    length = pf_solver->params.length ,full_length = pf_solver->params.full_length;
 
     
 //===================================

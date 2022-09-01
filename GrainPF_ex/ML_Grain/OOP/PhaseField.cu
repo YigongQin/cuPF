@@ -593,7 +593,7 @@ void PhaseField::evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int
   // we should have already pass all the data structure in by this time
   // move those data onto device
   //int* nucl_status;
-  int* argmax;
+  
   int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
  
   for (int i=0; i<params.num_theta; i++){left_coor[i]=1;}
@@ -617,7 +617,7 @@ void PhaseField::evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int
   cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
   cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
   cudaMalloc((void **)&(Mgpu.t_mac),    sizeof(float) * mac.Nt);
-  cudaMalloc((void **)&(Mgpu.T_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nt);
+  cudaMalloc((void **)&(Mgpu.T_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nz*mac.Nt);
   cudaMalloc((void **)&(Mgpu.theta_arr),    sizeof(float) * (2*NUM_PF+1) );
   cudaMalloc((void **)&(Mgpu.cost),    sizeof(float) * (2*NUM_PF+1) );
   cudaMalloc((void **)&(Mgpu.sint),    sizeof(float) * (2*NUM_PF+1) );
