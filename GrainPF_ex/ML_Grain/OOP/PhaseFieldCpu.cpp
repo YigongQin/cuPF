@@ -181,7 +181,6 @@ void PhaseField::parseInputParams(char* fileName){
         getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
-    ;
     // Close the file
     parseFile.close();
  
@@ -210,7 +209,7 @@ void PhaseField::parseInputParams(char* fileName){
     read_input(mac.folder+"/G.txt", &params.G);
     read_input(mac.folder+"/Rmax.txt", &params.R);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
-    params.NUM_PF = params.num_theta
+    params.NUM_PF = params.num_theta;
     mac.theta_arr = new float[2*params.NUM_PF+1];
     mac.cost = new float[2*params.NUM_PF+1];
     mac.sint = new float[2*params.NUM_PF+1];
