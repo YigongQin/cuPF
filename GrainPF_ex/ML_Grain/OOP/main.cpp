@@ -361,7 +361,7 @@ int main(int argc, char** argv)
     //==============================
     // parameters depend on MPI
 
-    
+    params.seed_val = atoi(argv[3]);
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
@@ -369,6 +369,8 @@ int main(int argc, char** argv)
     pf_solver->cpuSetup(pM);
     pf_solver->q.num_case = 1;
     pf_solver->q.valid_run = 1;
+    pf_solver->q.initQoI();
+
  //   int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
  //   length = pf_solver->params.length ,full_length = pf_solver->params.full_length;
 
@@ -424,7 +426,10 @@ int main(int argc, char** argv)
 
 
     pf_solver->output(pM);
-
+    H5Dclose(datasetT);
+    H5Sclose(dataspaceT);
+    H5Sclose(memspace);
+    H5Fclose(h5in_file);
 
     //MPI_Finalize();
 

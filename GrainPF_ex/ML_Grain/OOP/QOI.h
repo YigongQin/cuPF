@@ -9,13 +9,14 @@ public:
 	float *tip_y, *frac, *angles;
 	int *alpha, *extra_area, *total_area, *tip_final, *cross_sec;
 
-	QOI(GlobalConstants params);
+	QOI(){};
 	virtual ~QOI();
+	void initQoI();
 	
 
 };
 
-QOI::QOI(GlobalConstants params){
+void QOI::initQoI(GlobalConstants params){
     tip_y = new float[num_case*(params.nts+1)];
     frac = new float[num_case*(params.nts+1)*params.num_theta];
     angles = new float[num_case*(2*params.NUM_PF+1)];

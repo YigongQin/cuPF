@@ -174,7 +174,7 @@ std::string to_stringp(const T a_value, int n )
 }
 
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
-    hid_t  h5in_file,  datasetT, dataspaceT, memspace;
+
     herr_t  status;
     hid_t dataspace, h5data=0;
     hsize_t dim[1];
@@ -210,7 +210,7 @@ void PhaseField::output(params_MPI pM){
 
     string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(q.num_case-q.valid_run)+"_test"+to_string(q.valid_run)+\
     "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
-    "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(atoi(argv[3]));
+    "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
     out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
     cout<< "save dir" << out_file <<endl;
@@ -239,10 +239,7 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "cross_sec", q.cross_sec,  q.num_case*(params.nts+1)*fnx*fny, "int");
 
     H5Fclose(h5_file);
-    H5Dclose(datasetT);
-    H5Sclose(dataspaceT);
-    H5Sclose(memspace);
-    H5Fclose(h5in_file);
+
 
 }
 
