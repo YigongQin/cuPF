@@ -6,6 +6,7 @@
 #include <map>
 #include<functional>
 #include<mpi.h>
+#include <cmath>
 #include <algorithm>
 #include <iterator>
 #include "params.h"
