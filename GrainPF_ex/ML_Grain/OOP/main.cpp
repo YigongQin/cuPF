@@ -365,11 +365,10 @@ int main(int argc, char** argv)
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
-    pf_solver->params = params;
+    pf_solver->params = params; //set parameters of simulations
+    pf_solver->q.num_case = 1;  //set parameters of realizations
+    pf_solver->q.valid_run = 1; 
     pf_solver->cpuSetup(pM);
-    pf_solver->q.num_case = 1;
-    pf_solver->q.valid_run = 1;
-    pf_solver->q.initQoI();
 
  //   int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
  //   length = pf_solver->params.length ,full_length = pf_solver->params.full_length;
