@@ -181,7 +181,7 @@ void PhaseField::parseInputParams(char* fileName){
         getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
-    
+    params.NUM_PF = params.num_theta;
     // Close the file
     parseFile.close();
  
@@ -196,11 +196,11 @@ void PhaseField::parseInputParams(char* fileName){
     mac.t_mac = new float[mac.Nt];
     
     mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-   // mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
-    mac.theta_arr = new float[2*NUM_PF+1];
-    mac.cost = new float[2*NUM_PF+1];
-    mac.sint = new float[2*NUM_PF+1];
+    mac.theta_arr = new float[2*params.NUM_PF+1];
+    mac.cost = new float[2*params.NUM_PF+1];
+    mac.sint = new float[2*params.NUM_PF+1];
 
     read_input(mac.folder+"/x.txt", mac.X_mac);
     read_input(mac.folder+"/y.txt", mac.Y_mac);
@@ -280,7 +280,7 @@ void PhaseField::parseInputParams(char* fileName){
 
     
 
-    params.NUM_PF = params.num_theta;
+    
 
 }
 
