@@ -20,27 +20,6 @@
 using namespace std;
 
 
-
-// add function for easy retrieving params
-template<class T>
-T get(std::stringstream& ss) 
-{
-    T t; 
-    ss<<t; 
-    if (!ss) // if it failed to read
-        throw std::runtime_error("could not parse parameter");
-    return t;
-}
-
-template <typename T>
-std::string to_stringp(const T a_value, int n )
-{
-    std::ostringstream out;
-    out.precision(n);
-    out << std::fixed << a_value;
-    return out.str();
-}
-
 void getParam(std::string lineText, std::string key, float& param){
     std::stringstream iss(lineText);
     std::string word;
@@ -84,37 +63,7 @@ void read_input(std::string input, int* target){
 
 }
 
-void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
 
-	herr_t  status;
-	hid_t dataspace, h5data=0;
-	hsize_t dim[1];
-	dim[0] = length;
-    
-    dataspace = H5Screate_simple(1, dim, NULL);
-
-    if (dtype.compare("int") ==0){
-
-    	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    	status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else if (dtype.compare("float") ==0){
-    	h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    	status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else {
-
-    	printf("the data type not specifed");
-    	status = 1;
-    }
-
-    H5Sclose(dataspace);
-    H5Dclose(h5data);
-
-
-}
 
 
 int main(int argc, char** argv)
