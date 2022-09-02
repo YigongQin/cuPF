@@ -3,7 +3,9 @@
 #include "QOI.h"
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <sstream>
+#include <string>
 #include <hdf5.h>
 using namespace std;
 #define LS -0.995
@@ -18,6 +20,257 @@ PhaseField::PhaseField() {
     q = new QOI();
 }
 
+void getParam(std::string lineText, std::string key, float& param){
+    std::stringstream iss(lineText);
+    std::string word;
+    while (iss >> word){
+        //std::cout << word << std::endl;
+        std::string myKey=key;
+        if(word!=myKey) continue;
+        iss>>word;
+        std::string equalSign="=";
+        if(word!=equalSign) continue;
+        iss>>word;
+        param=std::stof(word);
+        
+    }
+}
+
+
+void read_input(std::string input, float* target){
+    std::string line;
+    int num_lines = 0;
+    std::ifstream graph(input);
+
+    while (std::getline(graph, line))
+        {
+           std::stringstream ss(line);
+           ss >> target[num_lines];
+           num_lines+=1;}
+
+}
+
+void read_input(std::string input, int* target){
+    std::string line;
+    int num_lines = 0;
+    std::ifstream graph(input);
+
+    while (std::getline(graph, line))
+        {
+           std::stringstream ss(line);
+           ss >> target[num_lines];
+           num_lines+=1;}
+
+}
+
+
+void PhaseField::parseInputParams(Mac_input mac, char* fileName, string mac_folder){
+
+    float nts;
+    float ictype;
+    float ha_wd;
+    float temp_Nx, temp_Ny, temp_Nz, temp_Nt;
+    float seed_val, nprd;
+    ifstream parseFile(fileName);
+    string lineText;
+    while (parseFile.good()){
+        std::getline (parseFile, lineText);
+        // Output the text from the file
+        //getParam(lineText, "G", params.G);
+        //getParam(lineText, "R", params.R); 
+        getParam(lineText, "delta", params.delta); 
+        getParam(lineText, "k", params.k); 
+        //getParam(lineText, "c_infm", params.c_infm); 
+        getParam(lineText, "Dh", params.Dh); 
+        //getParam(lineText, "d0", params.d0); 
+        getParam(lineText, "W0", params.W0);  
+        getParam(lineText, "c_infty", params.c_infty);
+        getParam(lineText, "m_slope", params.m_slope);
+        //getParam(lineText, "beta0", params.beta0);
+        getParam(lineText, "GT", params.GT);
+        getParam(lineText, "L_cp", params.L_cp);
+        getParam(lineText, "mu_k", params.mu_k);
+        getParam(lineText, "eps", params.eps);
+        getParam(lineText, "alpha0", params.alpha0);
+        getParam(lineText, "dx", params.dx);
+        getParam(lineText, "asp_ratio_yx", params.asp_ratio_yx);
+        getParam(lineText, "asp_ratio_zx", params.asp_ratio_zx);
+      //  getParam(lineText, "nx", nx);
+      //  params.nx = (int)nx;
+      //  getParam(lineText, "Mt", Mt);
+      //  params.Mt = (int)Mt;
+        getParam(lineText, "eta", params.eta);
+        getParam(lineText, "U0", params.U0);
+        getParam(lineText, "nts", nts);
+        params.nts = (int)nts;
+        getParam(lineText, "ictype", ictype);
+        params.ictype = (int)ictype;
+       getParam(lineText, "seed_val", seed_val);
+        params.seed_val = (int)seed_val;
+        getParam(lineText, "noi_period", nprd);
+        params.noi_period = (int)nprd;
+        getParam(lineText, "kin_delta", params.kin_delta);
+      //  params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
+        getParam(lineText, "beta0", params.beta0);
+        // new multiple
+        //getParam(lineText, "Ti", params.Ti);
+        getParam(lineText, "ha_wd", ha_wd);
+        params.ha_wd = (int)ha_wd;
+        getParam(lineText, "xmin", params.xmin);
+        getParam(lineText, "ymin", params.ymin);
+        getParam(lineText, "zmin", params.zmin);
+      //  getParam(lineText, "num_theta", num_thetaf);
+      //  params.num_theta = (int) num_thetaf;
+        getParam(lineText, "Nx", temp_Nx);
+        getParam(lineText, "Ny", temp_Ny);
+        getParam(lineText, "Nz", temp_Nz);
+        getParam(lineText, "Nt", temp_Nt);
+        getParam(lineText, "cfl", params.cfl); 
+
+        getParam(lineText, "Tmelt", params.Tmelt);
+        getParam(lineText, "undcool_mean", params.undcool_mean);
+        getParam(lineText, "undcool_std", params.undcool_std);
+        getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
+        getParam(lineText, "nuc_rad", params.nuc_rad);
+
+        getParam(lineText, "moving_ratio", params.moving_ratio);
+    }
+    
+    float dxd = params.dx*params.W0;
+    // Close the file
+    parseFile.close();
+
+
+    float G0;
+    float Rmax;
+    float num_thetaf;
+   
+    
+    mac.Nx = (int) temp_Nx;
+    mac.Ny = (int) temp_Ny;
+    mac.Nz = (int) temp_Nz;
+    mac.Nt = (int) temp_Nt;
+    mac.X_mac = new float[mac.Nx];
+    mac.Y_mac = new float[mac.Ny];
+    mac.Z_mac = new float[mac.Nz];
+    mac.t_mac = new float[mac.Nt];
+    
+    mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
+    
+
+    read_input(mac_folder+"/x.txt", mac.X_mac);
+    read_input(mac_folder+"/y.txt", mac.Y_mac);
+    read_input(mac_folder+"/z.txt", mac.Z_mac);
+    read_input(mac_folder+"/t.txt", mac.t_mac);
+   // read_input(mac_folder+"/alpha.txt",mac.alpha_mac);
+    read_input(mac_folder+"/psi.txt",mac.psi_mac);
+    read_input(mac_folder+"/U.txt",mac.U_mac);
+    read_input(mac_folder+"/G.txt", &G0);
+    read_input(mac_folder+"/Rmax.txt", &Rmax);
+    read_input(mac_folder+"/NG.txt", &num_thetaf);
+    params.num_theta = (int) num_thetaf;
+    params.NUM_PF = params.num_theta;
+    int NUM_PF = params.NUM_PF;
+    mac.theta_arr = new float[2*NUM_PF+1];
+    mac.cost = new float[2*NUM_PF+1];
+    mac.sint = new float[2*NUM_PF+1];
+    mac.theta_arr[0] = 0.0f;
+    read_input(mac_folder+"/theta.txt", mac.theta_arr);
+
+    mac.alpha_mac = new int [pM.nx_loc*pM.ny_loc];
+    read_input(mac_folder+"/alpha.txt", mac.alpha_mac);
+    printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[pM.nx_loc*pM.ny_loc-1]);
+
+
+
+
+    hid_t  h5in_file,  datasetT, dataspaceT, memspace;
+    hsize_t dimT[1];
+    herr_t  status;
+    dimT[0] = mac.Nx*mac.Ny*mac.Nz*mac.Nt; 
+    h5in_file = H5Fopen( (mac_folder+"/Temp.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    datasetT = H5Dopen2(h5in_file, "Temp", H5P_DEFAULT);
+    dataspaceT = H5Dget_space(datasetT);
+    memspace = H5Screate_simple(1,dimT,NULL);
+    status = H5Dread(datasetT, H5T_NATIVE_FLOAT, memspace, dataspaceT,
+                     H5P_DEFAULT, mac.T_3D);
+    printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nz*mac.Nt-1]); 
+    H5Dclose(datasetT);
+    H5Sclose(dataspaceT);
+    H5Sclose(memspace);
+    H5Fclose(h5in_file);
+
+
+
+    params.c_infm = params.c_infty*params.m_slope;
+    params.Tliq = params.Tmelt - params.c_infm;
+    params.Tsol = params.Tmelt - params.c_infm/params.k;
+    params.Ti = params.Tsol;   
+    params.d0 = params.GT/params.L_cp;
+    params.beta0 = 1.0/(params.mu_k*params.L_cp);
+    //params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
+    params.lamd = 0.8839*params.W0/params.d0;//     # coupling constant
+    //params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
+    params.tau0 = params.beta0*params.lamd*params.W0/0.8839;
+    //params.kin_coeff = tauk/params.tau0;
+    //params.R_tilde = params.R*params.tau0/params.W0;
+    //params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
+    //params.lT_tilde = params.lT/params.W0;
+    params.beta0_tilde = params.beta0*params.W0/params.tau0;
+    params.dt = params.cfl*params.dx*params.beta0_tilde;
+//    params.ny = (int) (params.asp_ratio*params.nx);
+    params.lxd = mac.X_mac[mac.Nx-2]; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
+//    params.lyd = params.asp_ratio*params.lxd;
+    params.hi = 1.0/params.dx;
+    params.cosa = cos(params.alpha0/180*M_PI);
+    params.sina = sin(params.alpha0/180*M_PI);
+    params.sqrt2 = sqrt(2.0);
+    params.a_s = 1 - 3.0*params.delta;
+    params.epsilon = 4.0*params.delta/params.a_s;
+    params.a_12 = 4.0*params.a_s*params.epsilon;
+    params.dt_sqrt = sqrt(params.dt);
+
+    params.nx = (int) (params.lxd/params.dx/params.W0);//global cells 
+    params.ny = (int) (params.asp_ratio_yx*params.nx);
+    params.nz = (int) (params.moving_ratio*params.nx);
+    params.nz_full = (int) (params.asp_ratio_zx*params.nx);
+    params.lxd = params.nx*dxd;
+    params.lyd = params.ny*dxd;
+    params.lzd = params.nz*dxd;
+    params.Mt = (int) (mac.t_mac[mac.Nt-1]/params.tau0/params.dt);
+    params.Mt = (params.Mt/2)*2; 
+    int kts = params.Mt/params.nts;
+    kts = (kts/2)*2;
+    params.Mt = kts*params.nts;
+    params.pts_cell = (int) (params.nuc_rad/dxd);
+
+    params.G = G0;
+    params.R = Rmax;
+    params.tmax = params.tau0*params.dt*params.Mt;
+
+
+
+    if (pM.rank==0){ 
+        // print params and mac information
+
+    std::cout<<"dx = "<<params.lxd/params.nx/params.W0<<std::endl;
+    std::cout<<"dy = "<<params.lyd/params.ny/params.W0<<std::endl;   
+    std::cout<<"dz = "<<params.lyd/params.ny/params.W0<<std::endl;  
+
+
+    std::cout<<"noise coeff = "<<params.dt_sqrt*params.hi*params.eta<<std::endl;
+
+
+    std::cout<<"mac Nx = "<<mac.Nx<<std::endl;
+    std::cout<<"mac Ny = "<<mac.Ny<<std::endl;
+    std::cout<<"mac Nz = "<<mac.Nz<<std::endl;
+    std::cout<<"mac Nt = "<<mac.Nt<<std::endl;
+
+
+    }
+}
 
 void PhaseField::cpuSetup(params_MPI &pM){
 

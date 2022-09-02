@@ -4,6 +4,8 @@
 #include "cuPDE.h"
 #include "params.h"
 #include "QOI.h"
+#include <string>
+using namespace std;
 
 class PhaseField: public PDE {
 
@@ -34,6 +36,7 @@ public:
 
 	PhaseField();
 	virtual ~PhaseField();
+	void parseInputParams(Mac_input mac, char* fileName, string mac_folder);
 	void cpuSetup(params_MPI &pM);
 	void initField(Mac_input mac);
 	void cudaSetup(params_MPI pM); // setup cuda for every GPU
