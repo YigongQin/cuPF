@@ -29,6 +29,10 @@ void QOI::initQoI(GlobalConstants params){
 }
 
 
+QOI::~QOI(){
+
+	
+}
 
 
 #endif
