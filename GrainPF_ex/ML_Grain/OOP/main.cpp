@@ -6,13 +6,9 @@
 #include <map>
 #include<functional>
 #include<mpi.h>
-
-#include <cmath>
 #include <algorithm>
 #include <iterator>
-#include <hdf5.h>
 #include "params.h"
-#include <random>
 #include "PhaseField.h"
 using namespace std;
 

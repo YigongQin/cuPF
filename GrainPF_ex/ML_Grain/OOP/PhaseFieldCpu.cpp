@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <hdf5.h>
+#include <random>
 using namespace std;
 #define LS -0.995
 // constructor
