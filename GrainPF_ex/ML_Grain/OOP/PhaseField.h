@@ -10,6 +10,7 @@ using namespace std;
 class PhaseField: public PDE {
 
 public:
+	Mac_input mac;
 	GlobalConstants params;
 	QOI* q;
 	// define the scale/resolution of the problem first
@@ -36,11 +37,11 @@ public:
 
 	PhaseField();
 	virtual ~PhaseField();
-	void parseInputParams(Mac_input mac, char* fileName);
+	void parseInputParams(char* fileName);
 	void cpuSetup(params_MPI &pM);
-	void initField(Mac_input mac);
+	void initField();
 	void cudaSetup(params_MPI pM); // setup cuda for every GPU
-	void evolve(Mac_input mac); // evolve the field with input
+	void evolve(); // evolve the field with input
 	void output(params_MPI pM);
 
 };

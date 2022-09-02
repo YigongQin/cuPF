@@ -65,7 +65,7 @@ void read_input(std::string input, int* target){
 }
 
 
-void PhaseField::parseInputParams(Mac_input mac, char* fileName){
+void PhaseField::parseInputParams(char* fileName){
 
     float nts;
     float ictype;
@@ -161,16 +161,16 @@ void PhaseField::parseInputParams(Mac_input mac, char* fileName){
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
     
 
-    read_input(params.mac_folder+"/x.txt", mac.X_mac);
-    read_input(params.mac_folder+"/y.txt", mac.Y_mac);
-    read_input(params.mac_folder+"/z.txt", mac.Z_mac);
-    read_input(params.mac_folder+"/t.txt", mac.t_mac);
-   // read_input(params.mac_folder+"/alpha.txt",mac.alpha_mac);
-    read_input(params.mac_folder+"/psi.txt",mac.psi_mac);
-    read_input(params.mac_folder+"/U.txt",mac.U_mac);
-    read_input(params.mac_folder+"/G.txt", &G0);
-    read_input(params.mac_folder+"/Rmax.txt", &Rmax);
-    read_input(params.mac_folder+"/NG.txt", &num_thetaf);
+    read_input(mac.folder+"/x.txt", mac.X_mac);
+    read_input(mac.folder+"/y.txt", mac.Y_mac);
+    read_input(mac.folder+"/z.txt", mac.Z_mac);
+    read_input(mac.folder+"/t.txt", mac.t_mac);
+   // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
+    read_input(mac.folder+"/psi.txt",mac.psi_mac);
+    read_input(mac.folder+"/U.txt",mac.U_mac);
+    read_input(mac.folder+"/G.txt", &G0);
+    read_input(mac.folder+"/Rmax.txt", &Rmax);
+    read_input(mac.folder+"/NG.txt", &num_thetaf);
     params.num_theta = (int) num_thetaf;
     params.NUM_PF = params.num_theta;
     int NUM_PF = params.NUM_PF;
@@ -178,7 +178,7 @@ void PhaseField::parseInputParams(Mac_input mac, char* fileName){
     mac.cost = new float[2*NUM_PF+1];
     mac.sint = new float[2*NUM_PF+1];
     mac.theta_arr[0] = 0.0f;
-    read_input(params.mac_folder+"/theta.txt", mac.theta_arr);
+    read_input(mac.folder+"/theta.txt", mac.theta_arr);
 
 
 
@@ -188,7 +188,7 @@ void PhaseField::parseInputParams(Mac_input mac, char* fileName){
     hsize_t dimT[1];
     herr_t  status;
     dimT[0] = mac.Nx*mac.Ny*mac.Nz*mac.Nt; 
-    h5in_file = H5Fopen( (params.mac_folder+"/Temp.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    h5in_file = H5Fopen( (mac.folder+"/Temp.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     datasetT = H5Dopen2(h5in_file, "Temp", H5P_DEFAULT);
     dataspaceT = H5Dget_space(datasetT);
     memspace = H5Screate_simple(1,dimT,NULL);
@@ -250,6 +250,10 @@ void PhaseField::parseInputParams(Mac_input mac, char* fileName){
 
 
 
+}
+
+void PhaseField::cpuSetup(params_MPI &pM){
+
     if (pM.rank==0){ 
         // print params and mac information
 
@@ -266,12 +270,7 @@ void PhaseField::parseInputParams(Mac_input mac, char* fileName){
     std::cout<<"mac Nz = "<<mac.Nz<<std::endl;
     std::cout<<"mac Nt = "<<mac.Nt<<std::endl;
 
-
     }
-}
-
-void PhaseField::cpuSetup(params_MPI &pM){
-
 
     pM.nx_loc = params.nx/pM.nprocx;
     pM.ny_loc = params.ny/pM.nprocy;
@@ -348,7 +347,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
 }
 
 
-void PhaseField::initField(Mac_input mac){
+void PhaseField::initField(){
 
     for (int i=0; i<2*NUM_PF+1; i++){
         //mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
@@ -359,7 +358,7 @@ void PhaseField::initField(Mac_input mac){
     }  
    
     mac.alpha_mac = new int [(fnx-2*params.ha_wd)*(fny-2*params.ha_wd)];
-    read_input(params.mac_folder+"/alpha.txt", mac.alpha_mac);
+    read_input(mac.folder+"/alpha.txt", mac.alpha_mac);
     printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[(fnx-2*params.ha_wd)*(fny-2*params.ha_wd)-1]);
 
      

@@ -22,7 +22,7 @@ struct GlobalConstants {
   // nucleation parameters
   float Tmelt, Ti, Tliq, Tsol;
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
-  std::string mac_folder;
+
 };
 
 struct params_MPI{
@@ -34,6 +34,7 @@ struct params_MPI{
 };
 
 struct Mac_input{
+  std::string folder;
   int Nx,  Ny, Nz, Nt;
   float* X_mac; 
   float* Y_mac; 

@@ -44,11 +44,11 @@ int main(int argc, char** argv)
 
     char* fileName=argv[1]; 
     string mac_folder = argv[2];
-    Mac_input mac;
+
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
-    pf_solver->params.mac_folder = mac_folder;
+    pf_solver->mac.folder = mac_folder;
     pf_solver->parseInputParams(mac, fileName);
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
