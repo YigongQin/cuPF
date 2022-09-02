@@ -359,7 +359,7 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
 
 
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
-  float* tip_z, int* cross_sec, float* frac, float* z, int* aseq, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
+  float* tip_z, int* cross_sec, float* frac, float* z, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
 
      // cur_tip here inludes the halo
      bool contin_flag = true;
@@ -589,7 +589,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
 
 
 
-void PhaseField::evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int* extra_area, int* tip_final, int* total_area, int* cross_sec){
+void PhaseField::evolve(Mac_input mac){
   // we should have already pass all the data structure in by this time
   // move those data onto device
   //int* nucl_status;
@@ -674,7 +674,7 @@ void PhaseField::evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, tip_y, cross_sec, frac, z, aseq, ntip, extra_area, tip_final, total_area, loss_area, move_count, params.nts+1);
+   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q.tip_y, q.cross_sec, q.frac, z, ntip, q.extra_area, q.tip_final, q.total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -696,7 +696,7 @@ void PhaseField::evolve(Mac_input mac, float* tip_y, float* frac, int* aseq, int
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, tip_y, cross_sec, frac, z, aseq,ntip,extra_area,tip_final,total_area, loss_area, move_count, params.nts+1);
+             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q.tip_y, q.cross_sec, q.frac, z, ntip, q.extra_area, q.tip_final, q.total_area, loss_area, move_count, params.nts+1);
           }
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();

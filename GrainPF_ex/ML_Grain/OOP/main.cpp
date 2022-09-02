@@ -155,12 +155,8 @@ int main(int argc, char** argv)
     std::string lineText;
 
     std::ifstream parseFile(fileName);
-   // float nx;
-   // float Mt;
-    int num_case = 1; //1100;
-   
-    bool equal_len = false;
-    int valid_run = 1;//100;
+
+
     float G0;
     float Rmax;
     float nts;
@@ -422,8 +418,10 @@ int main(int argc, char** argv)
     pf_solver = new PhaseField();
     pf_solver->params = params;
     pf_solver->cpuSetup(pM);
-    int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
-    length = pf_solver->params.length ,full_length = pf_solver->params.full_length;
+    pf_solver->q.num_case = 1;
+    pf_solver->q.valid_run = 1;
+ //   int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
+ //   length = pf_solver->params.length ,full_length = pf_solver->params.full_length;
 
     
 //===================================
@@ -434,23 +432,8 @@ int main(int argc, char** argv)
     read_input(mac_folder+"/alpha.txt", mac.alpha_mac);
     printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[pM.nx_loc*pM.ny_loc-1]);
 
-    float* tip_y=(float*) malloc((params.nts+1)* sizeof(float));
-    float* frac=(float*) malloc((params.nts+1)*params.num_theta* sizeof(float));
-    int* tip_final =(int*) malloc((params.nts+1)*params.num_theta* sizeof(int));
-    int* extra_area  =(int*)   malloc((params.nts+1)*params.num_theta* sizeof(int));
-    int* total_area = (int*)   malloc((params.nts+1)*params.num_theta* sizeof(int));
-    int* aseq=(int*) malloc(params.num_theta* sizeof(int));
 
-    float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
-    float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
-    int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
-    float* angles_asse=(float*) malloc(num_case*(2*NUM_PF+1)* sizeof(float));
-    int* alpha_asse=(int*) malloc(valid_run*full_length* sizeof(int));
-
-    int* extra_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
-    int* total_area_asse  = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
-    int* tip_final_asse   = (int*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(int));
-    int* cross_sec = (int*) malloc(num_case*(params.nts+1)*fnx*fny* sizeof(int));
+    
 
    // mac.theta_arr = new float[2*NUM_PF+1];
     mac.cost = new float[2*NUM_PF+1];
@@ -474,83 +457,25 @@ int main(int argc, char** argv)
    // generator.seed( loc_seed );
    // int* aseq=(int*) malloc(params.num_theta* sizeof(int));
    // initialize the angles for every PF, while keep the liquid 0 
-    for (int i=0; i<params.num_theta; i++){
-       aseq[i] = i+1;} //rand()%NUM_PF +1;
-
-    memset(extra_area, 0, sizeof(int)*(params.nts+1)*params.num_theta );
-    memset(total_area, 0, sizeof(int)*(params.nts+1)*params.num_theta ); 
-    memset(tip_final,  0, sizeof(int)*(params.nts+1)*params.num_theta ); 
+   // for (int i=0; i<params.num_theta; i++){
+    //   aseq[i] = i+1;} //rand()%NUM_PF +1;
 
     pf_solver->initField(mac);
     pf_solver->cudaSetup(pM);
-    pf_solver->evolve(mac, tip_y, frac, aseq, extra_area, tip_final, total_area, cross_sec);
-    // save the QoIs 
-    //float* tip_y_asse=(float*) malloc(num_case*(params.nts+1)* sizeof(float));
-    //float* frac_asse=(float*) malloc(num_case*(params.nts+1)*params.num_theta* sizeof(float));
-    //int* aseq_asse=(int*) malloc(num_case*params.num_theta* sizeof(int));
-    memcpy(tip_y_asse+run*(params.nts+1),tip_y,sizeof(float)*(params.nts+1));  
-    memcpy(frac_asse+run*(params.nts+1)*params.num_theta,frac,sizeof(float)*(params.nts+1)*params.num_theta); 
-    memcpy(aseq_asse+run*params.num_theta,aseq,sizeof(int)*params.num_theta);
-    memcpy(angles_asse+run*(2*NUM_PF+1),mac.theta_arr,sizeof(float)*(2*NUM_PF+1));
-    memcpy(extra_area_asse+run*(params.nts+1)*params.num_theta, extra_area, sizeof(int)*(params.nts+1)*params.num_theta );
-    memcpy(total_area_asse+run*(params.nts+1)*params.num_theta, total_area, sizeof(int)*(params.nts+1)*params.num_theta );    
-    memcpy(tip_final_asse +run*(params.nts+1)*params.num_theta, tip_final,  sizeof(int)*(params.nts+1)*params.num_theta ); 
+    pf_solver->evolve(mac);
 
+  //  if (run>=num_case-valid_run){
+   //     int loca_case = run-(num_case-valid_run);
+    //       memcpy(alpha_asse+loca_case*full_length, pf_solver->alpha_i_full,sizeof(int)*full_length);
 
-
-    if (run>=num_case-valid_run){
-        int loca_case = run-(num_case-valid_run);
-           memcpy(alpha_asse+loca_case*full_length, pf_solver->alpha_i_full,sizeof(int)*full_length);
-
-    }   
+   // }   
 
     }
 
 
-    //std::cout<<"y= ";
-    //for(int i=0+fny; i<2*fny; i++){
-    //    std::cout<<Uc[i]<<" ";
-    //}
-    //std::cout<<std::endl;
-    // step 3 (time marching): call the kernels Mt times
 
-    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(num_case-valid_run)+"_test"+to_string(valid_run)+"_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+"_anis"+to_stringp(params.kin_delta,3)+"_G0"+to_stringp(G0,3)+"_Rmax"+to_stringp(Rmax,3)+"_seed"+to_string(atoi(argv[3]));
-    string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
-    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
-    cout<< "save dir" << out_file <<endl;
-   // ofstream out( out_file );
-   // out.precision(5);
-   // copy( phi, phi + length, ostream_iterator<float>( out, "\n" ) );
+    pf_solver->output(pM);
 
-    // claim file and dataset handles
-    hid_t  h5_file; 
-
-
-    h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-    h5write_1d(h5_file, "phi",      pf_solver->phi , length, "float");
-    h5write_1d(h5_file, "single_alpha",  pf_solver->alpha_i_full, full_length, "int");
-    h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
-    h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
-
-    h5write_1d(h5_file, "x_coordinates", pf_solver->x, fnx, "float");
-    h5write_1d(h5_file, "y_coordinates", pf_solver->y, fny, "float");
-    h5write_1d(h5_file, "z_coordinates", pf_solver->z_full, params.fnz_f, "float");
-
-    h5write_1d(h5_file, "y_t",       tip_y_asse,   num_case*(params.nts+1), "float");
-    h5write_1d(h5_file, "fractions", frac_asse,   num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    angles_asse, num_case*(2*NUM_PF+1), "float");
-
-    h5write_1d(h5_file, "extra_area", extra_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "total_area", total_area_asse,   num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "tip_y_f", tip_final_asse,   num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "cross_sec", cross_sec,  num_case*(params.nts+1)*fnx*fny, "int");
-
-    H5Fclose(h5_file);
-    H5Dclose(datasetT);
-    H5Sclose(dataspaceT);
-    H5Sclose(memspace);
-    H5Fclose(h5in_file);
 
     //MPI_Finalize();
 

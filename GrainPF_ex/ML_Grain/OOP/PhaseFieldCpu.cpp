@@ -2,6 +2,7 @@
 #include "PhaseField.h"
 #include <cmath>
 #include <iostream>
+#include <hdf5.h>
 using namespace std;
 #define LS -0.995
 // constructor
@@ -164,7 +165,43 @@ void PhaseField::initField(Mac_input mac){
 }
 
 
-void PhaseField::output(){
+void PhaseField::output(params_MPI pM){
+
+    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(q.num_case-q.valid_run)+"_test"+to_string(q.valid_run)+\
+    "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
+    "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(atoi(argv[3]));
+    string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
+    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
+    cout<< "save dir" << out_file <<endl;
+
+    hid_t  h5_file; 
+
+
+    h5_file = H5Fcreate(out_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+    h5write_1d(h5_file, "phi",      phi , length, "float");
+    h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
+   // h5write_1d(h5_file, "alpha",    alpha_asse, valid_run*full_length, "int");
+  //  h5write_1d(h5_file, "sequence", aseq_asse, num_case*params.num_theta, "int");
+
+    h5write_1d(h5_file, "x_coordinates", x, fnx, "float");
+    h5write_1d(h5_file, "y_coordinates", y, fny, "float");
+    h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
+
+    h5write_1d(h5_file, "y_t",       q.tip_y_asse,   q.num_case*(params.nts+1), "float");
+    h5write_1d(h5_file, "fractions", q.frac_asse,   q.num_case*(params.nts+1)*params.num_theta, "float");
+    h5write_1d(h5_file, "angles",    q.angles_asse, q.num_case*(2*NUM_PF+1), "float");
+
+    h5write_1d(h5_file, "extra_area", q.extra_area_asse,   q.num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "total_area", q.total_area_asse,   q.num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "tip_y_f", q.tip_final_asse,   q.num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "cross_sec", q.cross_sec,  q.num_case*(params.nts+1)*fnx*fny, "int");
+
+    H5Fclose(h5_file);
+    H5Dclose(datasetT);
+    H5Sclose(dataspaceT);
+    H5Sclose(memspace);
+    H5Fclose(h5in_file);
 
 }
 
