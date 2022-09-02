@@ -19,7 +19,7 @@ public:
 	virtual void initField(Mac_input mac) = 0;
 	virtual void cudaSetup(params_MPI pM) = 0; // setup cuda for every GPU
 	//virtual void evolve() = 0;
-	virtual void output() = 0;
+	virtual void output(params_MPI pM) = 0;
 
 };
 

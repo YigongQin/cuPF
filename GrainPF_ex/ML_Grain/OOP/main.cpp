@@ -448,7 +448,7 @@ int main(int argc, char** argv)
  //   std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
 
     // start the region of gathering lots of runs
-    for (int run=0;run<num_case;run++){
+    for (int run=0;run<pf_solver->q.num_case;run++){
    
     printf("case %d\n",run);
    // int loc_seed = 20*((int)G0) + (int) (10000*Rmax);
