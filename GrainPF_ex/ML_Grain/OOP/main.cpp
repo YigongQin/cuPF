@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
     pf_solver->mac.folder = mac_folder;
-    pf_solver->parseInputParams(mac, fileName);
+    pf_solver->parseInputParams(fileName);
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);
@@ -76,9 +76,9 @@ int main(int argc, char** argv)
    // for (int i=0; i<params.num_theta; i++){
     //   aseq[i] = i+1;} //rand()%NUM_PF +1;
 
-    pf_solver->initField(mac);
+    pf_solver->initField();
     pf_solver->cudaSetup(pM);
-    pf_solver->evolve(mac);
+    pf_solver->evolve();
 
   //  if (run>=num_case-valid_run){
    //     int loca_case = run-(num_case-valid_run);
