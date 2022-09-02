@@ -366,8 +366,8 @@ int main(int argc, char** argv)
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
     pf_solver->params = params; //set parameters of simulations
-    pf_solver->q.num_case = 1;  //set parameters of realizations
-    pf_solver->q.valid_run = 1; 
+    pf_solver->q->num_case = 1;  //set parameters of realizations
+    pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);
 
  //   int fnx = pf_solver->params.fnx, fny = pf_solver->params.fny, fnz = pf_solver->params.fnz, \
@@ -398,7 +398,7 @@ int main(int argc, char** argv)
  //   std::normal_distribution<float> distribution(grain_size,0.35*grain_size);
 
     // start the region of gathering lots of runs
-    for (int run=0;run<pf_solver->q.num_case;run++){
+    for (int run=0;run<pf_solver->q->num_case;run++){
    
     printf("case %d\n",run);
    // int loc_seed = 20*((int)G0) + (int) (10000*Rmax);

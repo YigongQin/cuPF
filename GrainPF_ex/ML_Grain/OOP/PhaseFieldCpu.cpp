@@ -1,5 +1,6 @@
 #include "params.h"
 #include "PhaseField.h"
+#include "QOI.h"
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -14,6 +15,7 @@ PhaseField::PhaseField() {
     phi = nullptr;
     x_device = nullptr;
     phi_new = nullptr;
+    q = new QOI();
 }
 
 
@@ -91,7 +93,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
     cout<<"z length of psi, phi, U="<<fnz<<endl;   
     cout<<"length of psi, phi, U="<<length<<endl;
  
-    q.initQoI(params);
+    q->initQoI(params);
 }
 
 
@@ -209,7 +211,7 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 
 void PhaseField::output(params_MPI pM){
 
-    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(q.num_case-q.valid_run)+"_test"+to_string(q.valid_run)+\
+    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(q->num_case-q->valid_run)+"_test"+to_string(q->valid_run)+\
     "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
     "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
@@ -230,14 +232,14 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "y_coordinates", y, fny, "float");
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
 
-    h5write_1d(h5_file, "y_t",       q.tip_y,   q.num_case*(params.nts+1), "float");
-    h5write_1d(h5_file, "fractions", q.frac,   q.num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    q.angles, q.num_case*(2*NUM_PF+1), "float");
+    h5write_1d(h5_file, "y_t",       q->tip_y,   q->num_case*(params.nts+1), "float");
+    h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
+    h5write_1d(h5_file, "angles",    q->angles, q->num_case*(2*NUM_PF+1), "float");
 
-    h5write_1d(h5_file, "extra_area", q.extra_area,   q.num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "total_area", q.total_area,   q.num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "tip_y_f", q.tip_final,   q.num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "cross_sec", q.cross_sec,  q.num_case*(params.nts+1)*fnx*fny, "int");
+    h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "tip_y_f", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "cross_sec", q->cross_sec,  q->num_case*(params.nts+1)*fnx*fny, "int");
 
     H5Fclose(h5_file);
 

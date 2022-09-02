@@ -9,7 +9,7 @@ class PhaseField: public PDE {
 
 public:
 	GlobalConstants params;
-	QOI q;
+	QOI* q;
 	// define the scale/resolution of the problem first
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
 
