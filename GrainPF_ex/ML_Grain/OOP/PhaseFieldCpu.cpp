@@ -44,7 +44,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
     params.fny = pM.ny_loc+2*params.ha_wd;
     params.fnz = pM.nz_loc+2*params.ha_wd;
     params.fnz_f = pM.nz_full_loc+2*params.ha_wd;
-    fnx = params.fnx, fny = params.fny, fnz = params.fnz;
+    fnx = params.fnx, fny = params.fny, fnz = params.fnz, fnz_f = params.fnz_f;
     params.length=fnx*fny*fnz;
     params.full_length = fnx*fny*fnz_f;
     length = params.length,full_length = params.full_length, NUM_PF = params.NUM_PF;
