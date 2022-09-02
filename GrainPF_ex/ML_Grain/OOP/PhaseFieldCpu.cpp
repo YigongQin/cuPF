@@ -12,14 +12,6 @@ using namespace std;
 #define LS -0.995
 // constructor
 
-PhaseField::PhaseField() {
-
-    x = nullptr;
-    phi = nullptr;
-    x_device = nullptr;
-    phi_new = nullptr;
-    q = new QOI();
-}
 
 void getParam(std::string lineText, std::string key, float& param){
     std::stringstream iss(lineText);
@@ -62,6 +54,58 @@ void read_input(std::string input, int* target){
            ss >> target[num_lines];
            num_lines+=1;}
 
+}
+
+template <typename T>
+std::string to_stringp(const T a_value, int n )
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return out.str();
+}
+
+void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
+
+    herr_t  status;
+    hid_t dataspace, h5data=0;
+    hsize_t dim[1];
+    dim[0] = length;
+    
+    dataspace = H5Screate_simple(1, dim, NULL);
+
+    if (dtype.compare("int") ==0){
+
+        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+    }
+    else if (dtype.compare("float") ==0){
+        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+    }
+    else {
+
+        printf("the data type not specifed");
+        status = 1;
+    }
+
+    H5Sclose(dataspace);
+    H5Dclose(h5data);
+
+
+}
+
+
+
+PhaseField::PhaseField() {
+
+    x = nullptr;
+    phi = nullptr;
+    x_device = nullptr;
+    phi_new = nullptr;
+    q = new QOI();
 }
 
 
@@ -122,10 +166,10 @@ void PhaseField::parseInputParams(char* fileName){
         getParam(lineText, "zmin", params.zmin);
       //  getParam(lineText, "num_theta", num_thetaf);
       //  params.num_theta = (int) num_thetaf;
-        getParam(lineText, "Nx", temp_Nx);
-        getParam(lineText, "Ny", temp_Ny);
-        getParam(lineText, "Nz", temp_Nz);
-        getParam(lineText, "Nt", temp_Nt);
+        getParam(lineText, "nx", temp_Nx);
+        getParam(lineText, "ny", temp_Ny);
+        getParam(lineText, "nz", temp_Nz);
+        getParam(lineText, "nt", temp_Nt);
         getParam(lineText, "cfl", params.cfl); 
 
         getParam(lineText, "Tmelt", params.Tmelt);
@@ -141,6 +185,34 @@ void PhaseField::parseInputParams(char* fileName){
     // Close the file
     parseFile.close();
  
+    // macro input
+    mac.Nx = (int) temp_Nx;
+    mac.Ny = (int) temp_Ny;
+    mac.Nz = (int) temp_Nz;
+    mac.Nt = (int) temp_Nt;
+    mac.X_mac = new float[mac.Nx];
+    mac.Y_mac = new float[mac.Ny];
+    mac.Z_mac = new float[mac.Nz];
+    mac.t_mac = new float[mac.Nt];
+    
+    mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+   // mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
+    mac.theta_arr = new float[2*NUM_PF+1];
+    mac.cost = new float[2*NUM_PF+1];
+    mac.sint = new float[2*NUM_PF+1];
+
+    read_input(mac.folder+"/x.txt", mac.X_mac);
+    read_input(mac.folder+"/y.txt", mac.Y_mac);
+    read_input(mac.folder+"/z.txt", mac.Z_mac);
+    read_input(mac.folder+"/t.txt", mac.t_mac);
+   // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
+    read_input(mac.folder+"/psi.txt",mac.psi_mac);
+    read_input(mac.folder+"/U.txt",mac.U_mac);
+    read_input(mac.folder+"/G.txt", &params.G);
+    read_input(mac.folder+"/Rmax.txt", &params.R);
+    read_input(mac.folder+"/NG.txt", &params.num_theta);
+    read_input(mac.folder+"/theta.txt", mac.theta_arr);
 
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
     hsize_t dimT[1];
@@ -157,6 +229,8 @@ void PhaseField::parseInputParams(char* fileName){
     H5Sclose(dataspaceT);
     H5Sclose(memspace);
     H5Fclose(h5in_file);
+    
+
 
 
     float dxd = params.dx*params.W0;
@@ -205,34 +279,6 @@ void PhaseField::parseInputParams(char* fileName){
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
     
-    // macro input
-    mac.Nx = (int) temp_Nx;
-    mac.Ny = (int) temp_Ny;
-    mac.Nz = (int) temp_Nz;
-    mac.Nt = (int) temp_Nt;
-    mac.X_mac = new float[mac.Nx];
-    mac.Y_mac = new float[mac.Ny];
-    mac.Z_mac = new float[mac.Nz];
-    mac.t_mac = new float[mac.Nt];
-    
-    mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-   // mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-    mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
-    mac.theta_arr = new float[2*NUM_PF+1];
-    mac.cost = new float[2*NUM_PF+1];
-    mac.sint = new float[2*NUM_PF+1];
-
-    read_input(mac.folder+"/x.txt", mac.X_mac);
-    read_input(mac.folder+"/y.txt", mac.Y_mac);
-    read_input(mac.folder+"/z.txt", mac.Z_mac);
-    read_input(mac.folder+"/t.txt", mac.t_mac);
-   // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
-    read_input(mac.folder+"/psi.txt",mac.psi_mac);
-    read_input(mac.folder+"/U.txt",mac.U_mac);
-    read_input(mac.folder+"/G.txt", &params.G);
-    read_input(mac.folder+"/Rmax.txt", &params.R);
-    read_input(mac.folder+"/NG.txt", &params.num_theta);
-    read_input(mac.folder+"/theta.txt", mac.theta_arr);
 
     params.NUM_PF = params.num_theta;
 
@@ -421,46 +467,7 @@ void QOI::initQoI(GlobalConstants params){
 
 
 
-template <typename T>
-std::string to_stringp(const T a_value, int n )
-{
-    std::ostringstream out;
-    out.precision(n);
-    out << std::fixed << a_value;
-    return out.str();
-}
 
-void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
-
-    herr_t  status;
-    hid_t dataspace, h5data=0;
-    hsize_t dim[1];
-    dim[0] = length;
-    
-    dataspace = H5Screate_simple(1, dim, NULL);
-
-    if (dtype.compare("int") ==0){
-
-        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else if (dtype.compare("float") ==0){
-        h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-    }
-    else {
-
-        printf("the data type not specifed");
-        status = 1;
-    }
-
-    H5Sclose(dataspace);
-    H5Dclose(h5data);
-
-
-}
 
 
 void PhaseField::output(params_MPI pM){
