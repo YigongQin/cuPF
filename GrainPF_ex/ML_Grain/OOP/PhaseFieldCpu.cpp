@@ -2,6 +2,7 @@
 #include "PhaseField.h"
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <hdf5.h>
 using namespace std;
 #define LS -0.995
@@ -212,7 +213,7 @@ void PhaseField::output(params_MPI pM){
     "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
     "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
-    out_file = "/scratch1/07428/ygqin/" + out_direc + "/" +out_file;
+    out_file = "/scratch1/07428/ygqin/graph/" +out_file;
     cout<< "save dir" << out_file <<endl;
 
     hid_t  h5_file; 

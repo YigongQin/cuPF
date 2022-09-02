@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
     char* fileName=argv[1]; 
     std::string mac_folder = argv[2];
-    std::string out_direc = "graph";//argv[2];
+    //argv[2];
 
     std::string lineText;
 
