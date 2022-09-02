@@ -77,7 +77,7 @@ T = np.zeros(nx*ny*nz*nt)
 psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
-dx_dim = dx*W0
+dx_dim = 0.08
 gnx = int(Lx/dx_dim) + 1
 
 g1 = graph(size = (gnx, gnx), density = 0.2, noise=0.001) 
