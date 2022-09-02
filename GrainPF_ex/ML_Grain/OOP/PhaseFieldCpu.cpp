@@ -137,52 +137,10 @@ void PhaseField::parseInputParams(char* fileName){
         getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
-    float dxd = params.dx*params.W0;
+    
     // Close the file
     parseFile.close();
-
-
-    float G0;
-    float Rmax;
-    float num_thetaf;
-   
-    
-    mac.Nx = (int) temp_Nx;
-    mac.Ny = (int) temp_Ny;
-    mac.Nz = (int) temp_Nz;
-    mac.Nt = (int) temp_Nt;
-    mac.X_mac = new float[mac.Nx];
-    mac.Y_mac = new float[mac.Ny];
-    mac.Z_mac = new float[mac.Nz];
-    mac.t_mac = new float[mac.Nt];
-    
-    mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-    mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-    mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
-    
-
-    read_input(mac.folder+"/x.txt", mac.X_mac);
-    read_input(mac.folder+"/y.txt", mac.Y_mac);
-    read_input(mac.folder+"/z.txt", mac.Z_mac);
-    read_input(mac.folder+"/t.txt", mac.t_mac);
-   // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
-    read_input(mac.folder+"/psi.txt",mac.psi_mac);
-    read_input(mac.folder+"/U.txt",mac.U_mac);
-    read_input(mac.folder+"/G.txt", &G0);
-    read_input(mac.folder+"/Rmax.txt", &Rmax);
-    read_input(mac.folder+"/NG.txt", &num_thetaf);
-    params.num_theta = (int) num_thetaf;
-    params.NUM_PF = params.num_theta;
-    int NUM_PF = params.NUM_PF;
-    mac.theta_arr = new float[2*NUM_PF+1];
-    mac.cost = new float[2*NUM_PF+1];
-    mac.sint = new float[2*NUM_PF+1];
-    mac.theta_arr[0] = 0.0f;
-    read_input(mac.folder+"/theta.txt", mac.theta_arr);
-
-
-
-
+ 
 
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
     hsize_t dimT[1];
@@ -201,7 +159,7 @@ void PhaseField::parseInputParams(char* fileName){
     H5Fclose(h5in_file);
 
 
-
+    float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
     params.Tsol = params.Tmelt - params.c_infm/params.k;
@@ -242,13 +200,41 @@ void PhaseField::parseInputParams(char* fileName){
     int kts = params.Mt/params.nts;
     kts = (kts/2)*2;
     params.Mt = kts*params.nts;
-    params.pts_cell = (int) (params.nuc_rad/dxd);
-
-    params.G = G0;
-    params.R = Rmax;
     params.tmax = params.tau0*params.dt*params.Mt;
 
+    params.pts_cell = (int) (params.nuc_rad/dxd);
 
+    
+    // macro input
+    mac.Nx = (int) temp_Nx;
+    mac.Ny = (int) temp_Ny;
+    mac.Nz = (int) temp_Nz;
+    mac.Nt = (int) temp_Nt;
+    mac.X_mac = new float[mac.Nx];
+    mac.Y_mac = new float[mac.Ny];
+    mac.Z_mac = new float[mac.Nz];
+    mac.t_mac = new float[mac.Nt];
+    
+    mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+   // mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
+    mac.theta_arr = new float[2*NUM_PF+1];
+    mac.cost = new float[2*NUM_PF+1];
+    mac.sint = new float[2*NUM_PF+1];
+
+    read_input(mac.folder+"/x.txt", mac.X_mac);
+    read_input(mac.folder+"/y.txt", mac.Y_mac);
+    read_input(mac.folder+"/z.txt", mac.Z_mac);
+    read_input(mac.folder+"/t.txt", mac.t_mac);
+   // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
+    read_input(mac.folder+"/psi.txt",mac.psi_mac);
+    read_input(mac.folder+"/U.txt",mac.U_mac);
+    read_input(mac.folder+"/G.txt", &params.G);
+    read_input(mac.folder+"/Rmax.txt", &params.R);
+    read_input(mac.folder+"/NG.txt", &params.num_theta);
+    read_input(mac.folder+"/theta.txt", mac.theta_arr);
+
+    params.NUM_PF = params.num_theta;
 
 }
 
