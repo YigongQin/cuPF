@@ -167,6 +167,21 @@ void PhaseField::initField(Mac_input mac){
 
 }
 
+
+void QOI::initQoI(GlobalConstants params){
+    tip_y = new float[num_case*(params.nts+1)];
+    frac = new float[num_case*(params.nts+1)*params.num_theta];
+    angles = new float[num_case*(2*params.NUM_PF+1)];
+
+    cross_sec = new int[num_case*(params.nts+1)*params.fnx*params.fny];
+    alpha = new int[valid_run*params.full_length];
+    extra_area = new int[num_case*(params.nts+1)*params.num_theta];
+    total_area  = new int[num_case*(params.nts+1)*params.num_theta];
+    tip_final   = new int[num_case*(params.nts+1)*params.num_theta];
+}
+
+
+
 template <typename T>
 std::string to_stringp(const T a_value, int n )
 {
