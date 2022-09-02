@@ -140,6 +140,7 @@ void PhaseField::parseInputParams(char* fileName){
         getParam(lineText, "dx", params.dx);
         getParam(lineText, "asp_ratio_yx", params.asp_ratio_yx);
         getParam(lineText, "asp_ratio_zx", params.asp_ratio_zx);
+        getParam(lineText, "Lx", params.lxd);
       //  getParam(lineText, "nx", nx);
       //  params.nx = (int)nx;
       //  getParam(lineText, "Mt", Mt);
@@ -252,7 +253,6 @@ void PhaseField::parseInputParams(char* fileName){
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
 //    params.ny = (int) (params.asp_ratio*params.nx);
-    params.lxd = mac.X_mac[mac.Nx-2]; //-params.xmin; //this has assumption of [,0] params.dx*params.W0*params.nx; # horizontal length in micron
 //    params.lyd = params.asp_ratio*params.lxd;
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);

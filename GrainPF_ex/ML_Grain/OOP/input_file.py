@@ -77,7 +77,7 @@ T = np.zeros(nx*ny*nz*nt)
 psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
-dx_dim = 0.08
+dx_dim = dx*W0
 gnx = int(Lx/dx_dim) + 1
 
 g1 = graph(size = (gnx, gnx), density = 0.2, noise=0.001) 
@@ -109,7 +109,7 @@ np.savetxt(mac_folder+'alpha.txt', alpha, fmt='%d',delimiter='\n')
 np.savetxt(mac_folder+'theta.txt', theta, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
-np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%d',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()
