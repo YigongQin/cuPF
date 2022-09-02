@@ -674,7 +674,7 @@ void PhaseField::evolve(Mac_input mac){
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q.tip_y, q.cross_sec, q.frac, z, ntip, q.extra_area, q.tip_final, q.total_area, loss_area, move_count, params.nts+1);
+   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -696,7 +696,7 @@ void PhaseField::evolve(Mac_input mac){
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q.tip_y, q.cross_sec, q.frac, z, ntip, q.extra_area, q.tip_final, q.total_area, loss_area, move_count, params.nts+1);
+             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
           }
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
