@@ -11,7 +11,7 @@ public:
 
 	QOI(){};
 	virtual ~QOI();
-	void initQoI();
+	void initQoI(GlobalConstants params);
 	
 
 };
