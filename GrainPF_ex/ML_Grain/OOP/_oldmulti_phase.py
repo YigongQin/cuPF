@@ -4,6 +4,53 @@ import h5py
 import sys
 from graph_datastruct import graph
 
+Dh = 8.43e7                     # heat diffusion
+c_infty = 3
+m_slope = 2.6                    # liquidus slope K/wt    
+GT = 0.347                       # Gibbs-Thompson coefficient K*um
+k = 0.14                        # interface solute partition coefficient
+Dl = 3000                       # liquid diffusion coefficient      um**2/s
+
+L_cp = 229
+delta = 0.01                    # strength of the surface tension anisotropy         
+kin_delta = 0.11
+beta0 = 1e-7                    # linear coefficient
+
+mu_k = 0.217e6                         #um/s/K
+Tmelt = 933.3
+
+# simulation parameters 
+dx = 0.8                            # mesh width
+W0 = 0.1                    # interface thickness      um
+cfl = 0.8
+asp_ratio_yx = 1
+asp_ratio_zx = 4                    # aspect ratio
+moving_ratio = 0.5
+nts = 24          # number snapshots to save, Mt/nts must be int
+
+eps = 1e-8                       # divide-by-zero treatment
+alpha0 = 0                       # misorientation angle in degree
+U0 = -1                    # initial value for U, -1 < U0 < 0
+ictype = 0                    # initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
+
+## MPI
+ha_wd = 1;
+xmin = 0
+ymin = 0
+zmin = 0
+
+
+# nuleation parameters
+undcool_mean = 0.75   # Kelvin  nuleantion barrier
+undcool_std = 0.1   # Kelvin fixed
+nuc_Nmax = 0      # 1/um^2 density; 0 to very big number 
+nuc_rad = 0.3      # 0.2 um radius of a nucleai
+
+## noise
+eta = 0.0  
+seed_val = 3                  # magnitude of noise
+noi_period = 200
+
 nx = 13
 ny = 13
 nz = 13
