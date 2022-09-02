@@ -36,7 +36,7 @@ public:
 
 	PhaseField();
 	virtual ~PhaseField();
-	void parseInputParams(Mac_input mac, char* fileName, string mac_folder);
+	void parseInputParams(Mac_input mac, char* fileName);
 	void cpuSetup(params_MPI &pM);
 	void initField(Mac_input mac);
 	void cudaSetup(params_MPI pM); // setup cuda for every GPU

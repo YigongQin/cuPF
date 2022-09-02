@@ -51,7 +51,8 @@ int main(int argc, char** argv)
 
     PhaseField* pf_solver; // initialize the pointer to the class
     pf_solver = new PhaseField();
-    pf_solver->parseInputParams(mac, fileName, mac_folder);
+    pf_solver->params.mac_folder = mac_folder;
+    pf_solver->parseInputParams(mac, fileName);
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);

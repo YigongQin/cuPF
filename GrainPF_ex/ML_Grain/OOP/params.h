@@ -1,6 +1,6 @@
 #ifndef PARAMS_H
 #define PARAMS_H 
-
+#include <string>
 struct GlobalConstants {
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, ha_wd;
   int Mt, nts, num_theta, NUM_PF; 
@@ -22,7 +22,7 @@ struct GlobalConstants {
   // nucleation parameters
   float Tmelt, Ti, Tliq, Tsol;
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
-
+  std::string:: mac_folder;
 };
 
 struct params_MPI{
