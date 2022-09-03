@@ -582,6 +582,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
 
     // create forcing field
+    
     cudaMalloc((void **)&(Mgpu.X_mac),  sizeof(float) * mac.Nx);
     cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
     cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);

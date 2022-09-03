@@ -11,6 +11,7 @@ class PhaseField: public PDE {
 
 public:
 	Mac_input mac;
+	Mac_input Mgpu;
 	GlobalConstants params;
 	QOI* q;
 	// define the scale/resolution of the problem first
