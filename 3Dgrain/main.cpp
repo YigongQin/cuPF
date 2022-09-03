@@ -34,13 +34,11 @@ int main(int argc, char** argv)
     if (pM.rank ==0){ printf("total/x/y processors %d, %d, %d\n", pM.nproc, pM.nprocx, pM.nprocy);}
 
 
-
-    char* fileName=argv[1]; 
-    string mac_folder = argv[2];
-
-
     int opt;
+    char* fileName=argv[1]; 
+    string mac_folder;
     bool APTon = false;
+    bool checkCorrectness = false;
     int seed_val;
     static struct option long_options[] = {
         {"help",     0, 0,  '?'},
@@ -56,18 +54,11 @@ int main(int argc, char** argv)
     while ((opt = getopt_long(argc, argv, "b:f:r:s:c?", long_options, NULL)) != EOF) {
 
         switch (opt) {
-        case 'b':
-            if (sscanf(optarg, "%d:%d", &benchmarkFrameStart, &benchmarkFrameEnd) != 2) {
-                fprintf(stderr, "Invalid argument to -b option\n");
-                usage(argv[0]);
-                exit(1);
-            }
-            break;
         case 'c':
             checkCorrectness = true;
             break;
         case 'f':
-            frameFilename = optarg;
+            mac_folder = optarg;
             break;
         case 'a':
             APTon = true;
