@@ -66,10 +66,6 @@ int main(int argc, char** argv)
         case 's':
             seed_val = atoi(optarg);
             break;
-        case '?':
-        default:
-            usage(argv[0]);
-            return 1;
         }
     }
 
