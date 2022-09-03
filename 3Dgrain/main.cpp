@@ -39,14 +39,60 @@ int main(int argc, char** argv)
     string mac_folder = argv[2];
 
 
+    int opt;
+    bool APTon = false;
+    int seed_val;
+    static struct option long_options[] = {
+        {"help",     0, 0,  '?'},
+        {"check",    0, 0,  'c'},
+        {"bench",    1, 0,  'b'},
+        {"file",     1, 0,  'f'},
+        {"apton",    1, 0,  'a'},
+        {"size",     1, 0,  's'},
+        {0 ,0, 0, 0}
+    };
+
+    
+    while ((opt = getopt_long(argc, argv, "b:f:r:s:c?", long_options, NULL)) != EOF) {
+
+        switch (opt) {
+        case 'b':
+            if (sscanf(optarg, "%d:%d", &benchmarkFrameStart, &benchmarkFrameEnd) != 2) {
+                fprintf(stderr, "Invalid argument to -b option\n");
+                usage(argv[0]);
+                exit(1);
+            }
+            break;
+        case 'c':
+            checkCorrectness = true;
+            break;
+        case 'f':
+            frameFilename = optarg;
+            break;
+        case 'a':
+            APTon = true;
+            break;
+        case 's':
+            seed_val = atoi(optarg);
+            break;
+        case '?':
+        default:
+            usage(argv[0]);
+            return 1;
+        }
+    }
+
+    
+
     PhaseField* pf_solver; // initialize the pointer to the class
-    pf_solver = new PhaseField();
+    if (APTon){pf_solver = new APTPhaseField();}
+    else{pf_solver = new PhaseField();}
     pf_solver->mac.folder = mac_folder;
     pf_solver->parseInputParams(fileName);
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);
-    pf_solver->params.seed_val = atoi(argv[3]);
+    pf_solver->params.seed_val = seed_val;
 
     // start the region of gathering lots of runs
     for (int run=0;run<pf_solver->q->num_case;run++){
