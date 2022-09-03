@@ -19,8 +19,6 @@ using namespace std;
 #define REAL_DIM_X 14 //BLOCK_DIM_X-2*HALO
 #define REAL_DIM_Y 14 //BLOCK_DIM_Y-2*HALO
 #define LS -0.995
-#define ACR 1e-5
-#define NBW 1
 #define OMEGA 12
 #define ZERO 0
 
@@ -552,7 +550,8 @@ void PhaseField::cudaSetup(params_MPI pM) {
     //gpu_name = cuda.select_device( )
     cudaSetDevice(device_id_innode); 
     printCudaInfo(pM.rank,device_id_innode);
-
+    params.NUM_PF = params.num_theta;
+    NUM_PF = params.NUM_PF;
     
     // allocate device memory and copy the data
     cudaMalloc((void **)&x_device, sizeof(float) * fnx);
@@ -582,7 +581,23 @@ void PhaseField::cudaSetup(params_MPI pM) {
     // pass all the read-only params into global constant
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
 
-
+    // create forcing field
+    cudaMalloc((void **)&(Mgpu.X_mac),  sizeof(float) * mac.Nx);
+    cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
+    cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
+    cudaMalloc((void **)&(Mgpu.t_mac),    sizeof(float) * mac.Nt);
+    cudaMalloc((void **)&(Mgpu.T_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nz*mac.Nt);
+    cudaMalloc((void **)&(Mgpu.theta_arr),    sizeof(float) * (2*params.num_theta+1) );
+    cudaMalloc((void **)&(Mgpu.cost),    sizeof(float) * (2*params.num_theta+1) );
+    cudaMalloc((void **)&(Mgpu.sint),    sizeof(float) * (2*params.num_theta+1) );
+    cudaMemcpy(Mgpu.X_mac, mac.X_mac, sizeof(float) * mac.Nx, cudaMemcpyHostToDevice);  
+    cudaMemcpy(Mgpu.Y_mac, mac.Y_mac, sizeof(float) * mac.Ny, cudaMemcpyHostToDevice); 
+    cudaMemcpy(Mgpu.Z_mac, mac.Z_mac, sizeof(float) * mac.Nz, cudaMemcpyHostToDevice);  
+    cudaMemcpy(Mgpu.t_mac, mac.t_mac, sizeof(float) * mac.Nt, cudaMemcpyHostToDevice);  
+    cudaMemcpy(Mgpu.T_3D, mac.T_3D, sizeof(float) * mac.Nt* mac.Nx* mac.Ny* mac.Nz, cudaMemcpyHostToDevice);   
+    cudaMemcpy(Mgpu.theta_arr, mac.theta_arr, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
+    cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
+    cudaMemcpy(Mgpu.sint, mac.sint, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
 }
 
 
@@ -590,12 +605,9 @@ void PhaseField::cudaSetup(params_MPI pM) {
 
 
 void PhaseField::evolve(){
-  // we should have already pass all the data structure in by this time
-  // move those data onto device
   //int* nucl_status;
   
-  int* left_coor = (int*) malloc(params.num_theta* sizeof(int));
- 
+  int* left_coor = new int[params.num_theta];
   for (int i=0; i<params.num_theta; i++){left_coor[i]=1;}
  
   // allocate x, y, phi, psi, U related params
@@ -603,61 +615,8 @@ void PhaseField::evolve(){
   int cny = fny/(2*params.pts_cell+1);
   int bc_len = fnx+fny+fnz;
 
-
-  int move_count = 0;
-
-   curandState* dStates;
-   int period = params.noi_period;
-   cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
-
-  //---macrodata for interpolation
-
-  Mac_input Mgpu;
-  cudaMalloc((void **)&(Mgpu.X_mac),  sizeof(float) * mac.Nx);
-  cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
-  cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
-  cudaMalloc((void **)&(Mgpu.t_mac),    sizeof(float) * mac.Nt);
-  cudaMalloc((void **)&(Mgpu.T_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nz*mac.Nt);
-  cudaMalloc((void **)&(Mgpu.theta_arr),    sizeof(float) * (2*NUM_PF+1) );
-  cudaMalloc((void **)&(Mgpu.cost),    sizeof(float) * (2*NUM_PF+1) );
-  cudaMalloc((void **)&(Mgpu.sint),    sizeof(float) * (2*NUM_PF+1) );
-  cudaMemcpy(Mgpu.X_mac, mac.X_mac, sizeof(float) * mac.Nx, cudaMemcpyHostToDevice);  
-  cudaMemcpy(Mgpu.Y_mac, mac.Y_mac, sizeof(float) * mac.Ny, cudaMemcpyHostToDevice); 
-  cudaMemcpy(Mgpu.Z_mac, mac.Z_mac, sizeof(float) * mac.Nz, cudaMemcpyHostToDevice);  
-  cudaMemcpy(Mgpu.t_mac, mac.t_mac, sizeof(float) * mac.Nt, cudaMemcpyHostToDevice);  
-  cudaMemcpy(Mgpu.T_3D, mac.T_3D, sizeof(float) * mac.Nt* mac.Nx* mac.Ny* mac.Nz, cudaMemcpyHostToDevice);   
-  cudaMemcpy(Mgpu.theta_arr, mac.theta_arr, sizeof(float) * (2*NUM_PF+1), cudaMemcpyHostToDevice);
-  cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*NUM_PF+1), cudaMemcpyHostToDevice);
-  cudaMemcpy(Mgpu.sint, mac.sint, sizeof(float) * (2*NUM_PF+1), cudaMemcpyHostToDevice);
-
-//--
-
-   int blocksize_1d = 128;
-   int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
-   int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
-   int num_block_1d = (bc_len+blocksize_1d-1)/blocksize_1d;
-   int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
-   int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
-   int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
-   printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-  
-   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
-   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m);
-   set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
-
-     //cudaDeviceSynchronize();
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
-
-   rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
-    Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
-
-
-   float t_cur_step;
-   int kts = params.Mt/params.nts;
-   printf("kts %d, nts %d\n",kts, params.nts);
+   // create moving frame
+   int move_count = 0;
    int cur_tip=1;
    int tip_front = 1;
    int tip_thres = (int) ((1-BLANK)*fnz);
@@ -674,6 +633,40 @@ void PhaseField::evolve(){
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
    memset(loss_area,0,sizeof(int) * params.num_theta);
    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
+
+   // create noise
+   curandState* dStates;
+   int period = params.noi_period;
+   cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
+
+
+   int blocksize_1d = 128;
+   int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
+   int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
+   int num_block_1d = (bc_len+blocksize_1d-1)/blocksize_1d;
+   int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+   int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
+   int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
+   printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
+  
+   float t_cur_step;
+   int kts = params.Mt/params.nts;
+   printf("kts %d, nts %d\n",kts, params.nts);
+
+
+   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
+   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m);
+   set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
+
+     //cudaDeviceSynchronize();
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
+
+   rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
+    Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
@@ -740,9 +733,6 @@ void PhaseField::evolve(){
    cudaMemcpy(alpha_i_full+move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
  //  calc_frac(alpha, fnx, fny, fnz, params.nts, params.num_theta, tip_y, frac, z, aseq, ntip, left_coor);
 
-  
-
- // cudaFree(nucl_status);
 }
 
 

@@ -210,10 +210,9 @@ void PhaseField::parseInputParams(char* fileName){
     read_input(mac.folder+"/G.txt", &params.G);
     read_input(mac.folder+"/Rmax.txt", &params.R);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
-    params.NUM_PF = params.num_theta;
-    mac.theta_arr = new float[2*params.NUM_PF+1];
-    mac.cost = new float[2*params.NUM_PF+1];
-    mac.sint = new float[2*params.NUM_PF+1];
+    mac.theta_arr = new float[2*params.num_theta+1];
+    mac.cost = new float[2*params.num_theta+1];
+    mac.sint = new float[2*params.num_theta+1];
     read_input(mac.folder+"/theta.txt", mac.theta_arr);
 
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
@@ -334,7 +333,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
     fnx = params.fnx, fny = params.fny, fnz = params.fnz, fnz_f = params.fnz_f;
     params.length=fnx*fny*fnz;
     params.full_length = fnx*fny*fnz_f;
-    length = params.length,full_length = params.full_length, NUM_PF = params.NUM_PF;
+    length = params.length,full_length = params.full_length;
 
     x = new float[fnx];
     y = new float[fny];
@@ -382,7 +381,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
 
 void PhaseField::initField(){
 
-    for (int i=0; i<2*NUM_PF+1; i++){
+    for (int i=0; i<2*params.num_theta+1; i++){
         //mac.theta_arr[i+1] = 1.0f*(rand()%10)/(10-1)*(-M_PI/2.0);
        // mac.theta_arr[i+1] = 1.0f*rand()/RAND_MAX*(-M_PI/2.0);
        // mac.theta_arr[i+1] = (i)*grain_gap- M_PI/2.0;
@@ -434,7 +433,7 @@ void PhaseField::initField(){
       if (phi[id]>LS){
 
         alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.ha_wd)+(i-1)];
-       if (alpha[id]<1 || alpha[id]>NUM_PF) cout<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<<alpha[id]<<endl;
+       if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<<alpha[id]<<endl;
        }
 
       else {alpha[id]=0;}
@@ -457,7 +456,7 @@ void PhaseField::initField(){
 void QOI::initQoI(GlobalConstants params){
     tip_y = new float[num_case*(params.nts+1)];
     frac = new float[num_case*(params.nts+1)*params.num_theta];
-    angles = new float[num_case*(2*params.NUM_PF+1)];
+    angles = new float[num_case*(2*params.num_theta+1)];
 
     cross_sec = new int[num_case*(params.nts+1)*params.fnx*params.fny];
     alpha = new int[valid_run*params.full_length];
@@ -473,7 +472,7 @@ void QOI::initQoI(GlobalConstants params){
 
 void PhaseField::output(params_MPI pM){
 
-    string out_format = "ML3D_PF"+to_string(NUM_PF)+"_train"+to_string(q->num_case-q->valid_run)+"_test"+to_string(q->valid_run)+\
+    string out_format = "Epita_Grains"+to_string(params.num_theta)+"_train"+to_string(q->num_case-q->valid_run)+"_test"+to_string(q->valid_run)+\
     "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
     "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
@@ -496,7 +495,7 @@ void PhaseField::output(params_MPI pM){
 
     h5write_1d(h5_file, "y_t",       q->tip_y,   q->num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    q->angles, q->num_case*(2*NUM_PF+1), "float");
+    h5write_1d(h5_file, "angles",    q->angles, q->num_case*(2*params.num_theta+1), "float");
 
     h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
