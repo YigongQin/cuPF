@@ -98,17 +98,6 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 }
 
 
-
-PhaseField::PhaseField() {
-
-    x = nullptr;
-    phi = nullptr;
-    x_device = nullptr;
-    phi_new = nullptr;
-    q = new QOI();
-}
-
-
 void PhaseField::parseInputParams(char* fileName){
 
     float nts;
@@ -375,6 +364,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
     cout<<"z length of psi, phi, U="<<fnz<<endl;   
     cout<<"length of psi, phi, U="<<length<<endl;
  
+    q = new QOI();
     q->initQoI(params);
 }
 

@@ -408,14 +408,6 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 
 }
 
-APTPhaseField::APTPhaseField() {
-
-    x = nullptr;
-    phi = nullptr;
-    x_device = nullptr;
-    phi_new = nullptr;
-    q = new QOI();
-}
 
 APTPhaseField::~APTPhaseField() {
     if (x){

@@ -36,7 +36,7 @@ public:
 	int* argmax;
 
 
-	PhaseField();
+	PhaseField(){};
 	virtual ~PhaseField();
 	void parseInputParams(char* fileName);
 	void cpuSetup(params_MPI &pM);
