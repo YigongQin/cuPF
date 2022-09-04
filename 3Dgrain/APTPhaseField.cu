@@ -409,7 +409,7 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
 }
 
 
-PhaseField::~PhaseField() {
+APTPhaseField::~APTPhaseField() {
     if (x){
         delete [] x;
         delete [] y;
@@ -438,7 +438,7 @@ PhaseField::~PhaseField() {
 }
 
 
-void PhaseField::cudaSetup(params_MPI pM) {
+void APTPhaseField::cudaSetup(params_MPI pM) {
 
     int num_gpus_per_node = 4;
     int device_id_innode = pM.rank % num_gpus_per_node;
