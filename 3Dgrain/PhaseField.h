@@ -41,8 +41,8 @@ public:
 	void parseInputParams(char* fileName);
 	void cpuSetup(params_MPI &pM);
 	void initField();
-	void cudaSetup(params_MPI pM); // setup cuda for every GPU
-	void evolve(); // evolve the field with input
+	virtual void cudaSetup(params_MPI pM); // setup cuda for every GPU
+	virtual void evolve(); // evolve the field with input
 	void output(params_MPI pM);
 
 };
