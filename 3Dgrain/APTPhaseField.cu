@@ -191,15 +191,9 @@ set_BC_3D(float* ph, int max_area){
 }
 
 
-// anisotropy functions
-
-
-
-
-
 // psi equation
 __global__ void
-rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, \
+rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, int* active_args,\
        float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -207,21 +201,8 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
   int pf_C = C - PF_id*fnx*fny*fnz;
-  // macros
-  /*
-   float Dt = Tmac[1]-Tmac[0];
-   int kt = (int) ((t-Tmac[0])/Dt);
-  // printf("%d ",kt);
-   float delta_t = (t-Tmac[0])/Dt-kt;
-   //printf("%f ",Dt);
-   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
-   float Dy = Y[1]-Y[0];
-   float Dz = Z[1]-Z[0];
-   */
-  // if the points are at boundary, return
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) &&(PF_id<NUM_PF) ) {
-       // find the indices of the 8 neighbors for center
-      //if ( (ph[C]<1.0f) && (ph[C]>-1.0f) ){
+
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) {
 
        int R=C+1;
        int L=C-1;
@@ -230,18 +211,10 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
        int U=C+fnx*fny;
        int D=C-fnx*fny;
 
-
-       // first checkout the gradient 
        float phxn = ( ph[R] - ph[L] ) * 0.5f;
        float phyn = ( ph[T] - ph[B] ) * 0.5f;
        float phzn = ( ph[U] - ph[D] ) * 0.5f;
 
-
-      // float gradph2 = phxn*phxn + phyn*phyn + phzn*phzn;
-      // if (gradph2>1e-12){
-
-
-       //float alpha = theta_arr[PF_id+1];
        float cosa, sina, cosb, sinb;
        if (ph[C]>LS){
        sina = sint[PF_id+1];
@@ -255,61 +228,11 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
        cosb = 1.0f;
        }
 
-
-  
-
         float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
-
-        // =============================================================
-        // 1. ANISOTROPIC DIFFUSION
-        // =============================================================
-
-
-
         float diff =  ph[R] + ph[L] + ph[T] + ph[B] + ph[U] + ph[D] - 6*ph[C];
-        
-
-
-        /*# =============================================================
-        #
-        # 3. double well (transformed): sqrt2 * phi + nonlinear terms
-        #
-        # =============================================================*/
-        //float Up = (y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-      /*  
-      int kx = (int) (( x[i] - X[0] )/Dx);
-      float delta_x = ( x[i] - X[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[j] - Y[0] )/Dy);
-      float delta_y = ( y[j] - Y[0] )/Dy - ky;
-
-      int kz = (int) (( z[j] - Z[0] )/Dz);
-      float delta_z = ( z[j] - Z[0] )/Dz - kz;
-      //printf("%d ",kx);
-      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
-      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
-      if (kz==Nz-1) {kz = Nz-2; delta_z =1.0f;}      
-      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
-      int offset    = L2G_4D(kx, ky, kz, kt, Nx, Ny, Nz);
-      int offset_z  = L2G_4D(kx, ky, kz+1, kt, Nx, Ny, Nz);
-      int offset_t  = L2G_4D(kx, ky, kz, kt+1, Nx, Ny, Nz);
-      int offset_zt = L2G_4D(kx, ky, kz+1, kt+1, Nx, Ny, Nz);
-      //if (offset_n>Nx*Ny*Nt-1-1-Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
-     // printf("%d ", Nx);
-      float Tinterp= ( ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_z) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_z ] + (1.0f-delta_x)*delta_y*u_3d[ offset_z+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_z+1 ] +   delta_x*delta_y*u_3d[ offset_z+Nx+1 ] )*delta_z )*(1.0f-delta_t) +\
-
-                   + ( ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_t ] + (1.0f-delta_x)*delta_y*u_3d[ offset_t+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_t+1 ] +   delta_x*delta_y*u_3d[ offset_t+Nx+1 ] )*(1.0f-delta_z) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_zt ] + (1.0f-delta_x)*delta_y*u_3d[ offset_zt+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_zt+1 ] +   delta_x*delta_y*u_3d[ offset_zt+Nx+1 ] )*delta_z )*delta_t;
-       */
         float Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
-        float Up = Tinterp/(cP.L_cp);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
-       // float Up = (Tinterp-cP.Ti)/(cP.c_infm/cP.k)/(1.0-cP.k);  //(y[j]/cP.W0 - cP.R_tilde * (nt*cP.dt) )/cP.lT_tilde;
+        float Up = Tinterp/(cP.L_cp);  
         float repul=0.0f;
         for (int pf_id=0; pf_id<NUM_PF; pf_id++){
             
@@ -320,39 +243,11 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
         }
         float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
               - cP.lamd*Up* ( (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) - 0.5f*OMEGA*(ph[C]+1.0f)*repul);
-
-      //# =============================================================
-        //#
-        //# 4. dpsi/dt term
-       // #
-        //# =============================================================
-        //float tp = (1.0f-(1.0f-cP.k)*Up);
-        //float tau_psi;
-        //if (tp >= cP.k){tau_psi = tp*A2;}
-              // else {tau_psi = cP.k*A2;}
-        
-        //dpsi[C] = rhs_psi / tau_psi; 
-        float dphi = rhs_psi / A2; //tau_psi;
-        //float rand;
-        //if ( ( ph[C]>-0.995 ) && ( ph[C]<0.995 ) ) {rand= cP.dt_sqrt*cP.hi*cP.eta*(curand_uniform(states+C)-0.5);}
-        //else {rand = 0.0f;}      //  ps_new[C] = ps[C] +  cP.dt * dpsi[C];
-        //int new_noi_loc = nt%cP.noi_period;*cP.seed_val)%(fnx*fny);
-        ph_new[C] = ph[C]  +  cP.dt * dphi; // + rand; //cP.dt_sqrt*cP.hi*cP.eta*rnd[C+new_noi_loc];
-        //if ( (ph_new[C]<-1.0f)||(ph_new[C]>1.0f) ) printf("blow up\n");
-        //if (C==1000){printf("%f ",ph_new[C]);}
-
+        float dphi = rhs_psi / A2; 
+        ph_new[C] = ph[C]  +  cP.dt * dphi; 
 
      }
 } 
-
-// U equation
-
-
-
-
-
-
-
 
 
 
@@ -550,7 +445,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
     //gpu_name = cuda.select_device( )
     cudaSetDevice(device_id_innode); 
     printCudaInfo(pM.rank,device_id_innode);
-    params.NUM_PF = params.num_theta;
+    params.NUM_PF = 5;
     NUM_PF = params.NUM_PF;
     
     // allocate device memory and copy the data
@@ -566,6 +461,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
 
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&PFs_new,    sizeof(float) * length * NUM_PF);
+    cudaMalloc((void **)&active_args,    sizeof(int) * length * NUM_PF);
     cudaMalloc((void **)&argmax,    sizeof(int) * length);
     cudaMemset(argmax,0,sizeof(int) * length);
 
@@ -665,7 +561,7 @@ void PhaseField::evolve(){
    set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
    set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
 
-   rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
+   rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
@@ -676,7 +572,7 @@ void PhaseField::evolve(){
      set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
 
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, \
+     rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
  
      set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
@@ -714,7 +610,7 @@ void PhaseField::evolve(){
           }
 
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
-     rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, \
+     rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
 
