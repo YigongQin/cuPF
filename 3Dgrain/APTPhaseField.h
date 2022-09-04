@@ -7,7 +7,7 @@
 #include <string>
 using namespace std;
 
-class PhaseField: public PDE {
+class APTPhaseField: public PDE {
 
 public:
 	Mac_input mac;
@@ -36,8 +36,8 @@ public:
 	int* argmax;
 	int* active_args;
 
-	PhaseField();
-	virtual ~PhaseField();
+	APTPhaseField();
+	virtual ~APTPhaseField();
 	void parseInputParams(char* fileName);
 	void cpuSetup(params_MPI &pM);
 	void initField();

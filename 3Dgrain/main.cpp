@@ -72,8 +72,11 @@ int main(int argc, char** argv)
     
 
     PhaseField* pf_solver; // initialize the pointer to the class
-    if (APTon){pf_solver = new APTPhaseField();}
-    else{pf_solver = new PhaseField();}
+    pf_solver = new PhaseField();
+    if (APTon){
+        APTPhaseField* pf_solver;
+        pf_solver = new APTPhaseField();
+    }
     pf_solver->mac.folder = mac_folder;
     pf_solver->parseInputParams(fileName);
     pf_solver->q->num_case = 1;  //set parameters of realizations
