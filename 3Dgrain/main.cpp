@@ -12,6 +12,7 @@
 #include "params.h"
 #include "PhaseField.h"
 #include "APTPhaseField.h"
+#include "QOI.h"
 using namespace std;
 
 
@@ -79,6 +80,7 @@ int main(int argc, char** argv)
     }
     pf_solver->mac.folder = mac_folder;
     pf_solver->parseInputParams(fileName);
+    pf_solver->q = new QOI();
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);

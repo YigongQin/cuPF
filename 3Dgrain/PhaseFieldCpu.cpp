@@ -364,7 +364,6 @@ void PhaseField::cpuSetup(params_MPI &pM){
     cout<<"z length of psi, phi, U="<<fnz<<endl;   
     cout<<"length of psi, phi, U="<<length<<endl;
  
-    q = new QOI();
     q->initQoI(params);
 }
 
