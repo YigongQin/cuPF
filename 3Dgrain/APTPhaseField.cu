@@ -10,6 +10,7 @@
 #include "params.h"
 #include "helper.h"
 #include "PhaseField.h"
+#include "APTPhaseField.h"
 
 using namespace std;
 #define BLOCK_DIM_X 16
