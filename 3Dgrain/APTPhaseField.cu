@@ -25,7 +25,7 @@ using namespace std;
 
 #define TIPP 20
 #define BLANK 0.2
-
+#define APT_NUM_PF 5
   
 
 
@@ -218,8 +218,8 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) {
 
   //=============== load active phs ================
-        int local_args[NUM_PF]; // local active PF indices
-        float local_phs = [7][NUM_PF]; // active ph for each thread ,use 7-point stencil
+        int local_args[APT_NUM_PF]; // local active PF indices
+        float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
 
 
         int globalC, target_index, stencil, arg_index;
@@ -264,7 +264,7 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
        // start dealing with one specific PF
 
        PF_id = local_args[arg_index]; // global PF index to find the right orientation
-       float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], PhL=local_phs[2][arg_index], \
+       float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
        phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
 
        float phxn = ( phR - phL ) * 0.5f;
@@ -509,7 +509,7 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     //gpu_name = cuda.select_device( )
     cudaSetDevice(device_id_innode); 
     printCudaInfo(pM.rank,device_id_innode);
-    params.NUM_PF = 5;
+    params.NUM_PF = APT_NUM_PF;
     NUM_PF = params.NUM_PF;
     
     // allocate device memory and copy the data
