@@ -161,7 +161,7 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
-  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF, length = cP.length;
   G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
 
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) {
@@ -175,7 +175,7 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
         for (int arg_index = 0; arg_index<NUM_PF; arg_index++){
             local_args[arg_index] = -1;
             for (stencil=0; stencil<7; stencil++){
-                local_phs[stencil][arg_index] = -1;
+                local_phs[stencil][arg_index] = -1.0f;
             } 
         }
         stencil = 0;
@@ -208,7 +208,11 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
         }
 
        for (arg_index = 0; arg_index<NUM_PF; arg_index++){
-       if (local_args[arg_index]==-1){break;}
+       if (local_args[arg_index]==-1){
+            aarg_new[C+arg_index*length] = -1;
+            ph_new[C+arg_index*length] = -1.0f;
+       }
+       else{
 
        // start dealing with one specific PF
 
@@ -248,15 +252,15 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
         float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-phC*phC)*phC \
               - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
         float dphi = rhs_psi / A2; 
-        ph_new[C+arg_index*fnx*fny*fnz] = phC  +  cP.dt * dphi; 
+        ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
         if (phC  +  cP.dt * dphi <LS){
-            aarg_new[C+arg_index*fnx*fny*fnz] = -1;
+            aarg_new[C+arg_index*length] = -1;
         }else{
-            aarg_new[C+arg_index*fnx*fny*fnz] = local_args[arg_index];
+            aarg_new[C+arg_index*length] = local_args[arg_index];
         }
 
         }
-
+        }
 
 
      }
@@ -421,7 +425,7 @@ void APTPhaseField::evolve(){
    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+  // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
