@@ -32,11 +32,6 @@ using namespace std;
 __constant__ GlobalConstants cP;
 
 
-// Device codes 
-
-// boundary condition
-// only use this function to access the boundary points, 
-// other functions return at the boundary
 __inline__ __device__ void 
 G2L_3D(int pf_C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
 
@@ -47,63 +42,9 @@ G2L_3D(int pf_C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
 
 }
 
-__inline__ __device__ int 
-L2G_3D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
-
-    return i + j*fnx + k*fnx*fny + pf*fnx*fny*fnz;
-
-}
-
-__inline__ __device__ void 
-G2L_4D(int C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
-
-  PF_id = C/(fnx*fny*fnz);
-  int pf_C = C - PF_id*fnx*fny*fnz;  // local C in every PF
-  k = pf_C/(fnx*fny);
-  int pf_C_z=pf_C-k*fnx*fny; 
-  j = pf_C_z/fnx;
-  i = pf_C_z-j*fnx;
-
-}
-
-__inline__ __device__ int 
-L2G_4D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
-
-    return i + j*fnx + k*fnx*fny + pf*fnx*fny*fnz;
-
-}
-
-__inline__ __device__ float
-kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
-
-   float a_s = 1.0f + 3.0f*cP.kin_delta;
-   float epsilon = -4.0f*cP.kin_delta/a_s;
-   float ux2 = cosa*cosb*ux  + sina*uy + cosa*sinb*uz;
-         ux2 = ux2*ux2;
-   float uy2 = -sina*cosb*ux + cosa*uy - sina*sinb*uz;
-         uy2 = uy2*uy2;      
-   float uz2 = -sinb*ux      + 0       + cosb*uz;
-         uz2 = uz2*uz2;
-   float MAG_sq = (ux2 + uy2 + uz2);
-   float MAG_sq2= MAG_sq*MAG_sq;
-   if (MAG_sq > cP.eps){
-         return a_s*( 1.0f + epsilon*(ux2*ux2 + uy2*uy2 + uz2*uz2) / MAG_sq2);}
-   else {return 1.0f;}
-}
-
-
 
 __global__ void
-set_minus1(float* u, int size){
-
-     int index = blockIdx.x * blockDim.x + threadIdx.x;
-     if(index<size) u[index] = -1.0f;
-
-}
-
-
-__global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
+APTcollect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
    int length = cP.length;
@@ -129,7 +70,7 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
 
 __global__ void
-ini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
+APTini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
   if ( C<cP.length ) {
@@ -144,7 +85,7 @@ ini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
 
 __global__ void
-set_BC_3D(float* ph, int* active_args, int max_area){
+APTset_BC_3D(float* ph, int* active_args, int max_area){
 
    // dimension with R^{2D} * PF
 
@@ -207,7 +148,7 @@ set_BC_3D(float* ph, int* active_args, int max_area){
 
 // psi equation
 __global__ void
-rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, int* active_args,\
+APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, int* active_args,\
        float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint){
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -313,146 +254,6 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
      }
 } 
 
-
-
-void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
-  float* tip_z, int* cross_sec, float* frac, float* z, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
-
-     // cur_tip here inludes the halo
-     bool contin_flag = true;
-
-     while(contin_flag){
-       // at this line
-        *cur_tip += 1;
-        int offset_z = fnx*fny*(*cur_tip);
-        //int zeros = 0;
-        for (int j=1; j<fny-1; j++){
-          for (int i=1; i<fnx-1; i++){
-             int C = offset_z + j*fnx + i;
-             //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
-             if (alpha[C]==0) {contin_flag=false;break;}
-        }}
-     }
-     *cur_tip -=1;
-     tip_z[kt] = z[*cur_tip];
-     ntip[kt] = *cur_tip+move_count;
-     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_z[kt]);
-     memcpy(cross_sec + kt*fnx*fny, alpha + *cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
-
-     for (int k = 1; k<fnz-1; k++){
-       int offset_z = fnx*fny*k; 
-       for (int j = 1; j<fny-1; j++){ 
-         for (int i = 1; i<fnx-1; i++){
-            int C = offset_z + fnx*j + i;
-              if (alpha[C]>0){ 
-                for (int time = kt; time<all_time; time++){tip_final[time*num_grains+alpha[C]-1] = k+move_count;} 
-                total_area[kt*num_grains+alpha[C]-1]+=1;
-                if (k > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
-         }
-       }
-     }
-     for (int j = 0; j<num_grains; j++){ 
-     total_area[kt*num_grains+j]+=loss_area[j];}
-
-}
-
-void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, float* tip_y, float* frac, float* z, int* aseq, int* ntip, int* left_coor){
-     
-     int* counts= (int*) malloc(num_grains* sizeof(int));
-
-     for (int kt=0; kt<nts+1;kt++){
-     memset(counts, 0, num_grains*sizeof(int));
-     int cur_tip = ntip[kt];
-     printf("cur_tip, %d\n",cur_tip);
-       // pointer points at the first grid
-
-     int summa=0;
-     int offest_z = fnx*fny*cur_tip;
-     for (int j=1; j<fny-1;j++){
-       for (int i=1; i<fnx-1;i++){
-            int C = offest_z + fnx*j + i;
-            if (alpha[C]>0){counts[alpha[C]-1]+=1;}
-      }
-     }
-     for (int j=0; j<num_grains;j++){
-
-       frac[kt*num_grains+j] = counts[j]*1.0/((fnx-2)*(fny-2));
-       summa += counts[j];//frac[kt*num_grains+j];
-       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
-     }
-     if (summa<(fnx-2)*(fny-2)) {printf("the summation %d is off\n", summa);exit(1);}
-     //if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
-     //   for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
-     //}
-     printf("summation %d\n", summa);     
-     }
-}
-
-__global__ void 
-move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count){
-
-    int C = blockIdx.x * blockDim.x + threadIdx.x;
-    int i, j, k, PF_id;
-    int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-    G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
-
-    if ( (i==0) && (j==0) && (k>0) && (k<fnz-2) && (PF_id==0) ) {
-        z_buff[k] = z[k+1];}
-
-    if ( (i==0) && (j==0) &&  (k==fnz-2) && (PF_id==0) ) {        
-        z_buff[k] = 2*z[fnz-2] - z[fnz-3];}
-
-    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-2) && (PF_id<NUM_PF) ) {     
-        ph_buff[C] = ph[C+fnx*fny];}
-
-    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k==fnz-2) && (PF_id<NUM_PF) ) {
-
-        ph_buff[C] = 2*ph[C] - ph[C-fnx*fny];}
-
-    // add last layer of alpha to alpha_full[move_count]
-    if ( (i<fnx) && (j<fny) && (k==1) && (PF_id==0) ) {
-
-        alpha_full[move_count*fnx*fny+C] = alpha[C];
-        atomicAdd(loss_area+alpha[C]-1,1);
-        //printf("%d ", alpha[C]);
-    }
-
-
-}
-
-__global__ void
-copy_frame(float* ph_buff, float* z_buff, float* ph, float* z){
-
-  int C = blockIdx.x * blockDim.x + threadIdx.x; 
-  int i, j, k, PF_id;
-  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-  G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
-
-  if ( (i == 0) && (j==0) && (k>0) && (k < fnz-1) && (PF_id==0) ){
-        z[k] = z_buff[k];}
-
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) && (PF_id<NUM_PF) ) { 
-        ph[C] = ph_buff[C];}
-
-
-}
-
-
-__global__ void
-ave_x(float* phi, float* meanx){
-
-
-  int C = blockIdx.x * blockDim.x + threadIdx.x; 
-  int i, j, k, pf_id;
-  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-  G2L_4D(C, i, j, k, pf_id, fnx, fny, fnz);
- 
-   if (C<fnx*fny*fnz*NUM_PF){
-      atomicAdd(meanx+k,phi[C]);
-
-   } 
-
-}
 
 
 
@@ -616,15 +417,15 @@ void APTPhaseField::evolve(){
 
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args);
+   APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
+   APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args);
    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
      //cudaDeviceSynchronize();
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
+   APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
+   APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
 
-   rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args,\
+   APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
@@ -632,18 +433,18 @@ void APTPhaseField::evolve(){
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
 
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
+     APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
 
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
-     rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args,\
+     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
  
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
+     APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
 
     if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
+             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
@@ -653,7 +454,7 @@ void APTPhaseField::evolve(){
           }
 
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
-     rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args,\
+     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
 
@@ -666,7 +467,7 @@ void APTPhaseField::evolve(){
 
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args); 
+   APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
