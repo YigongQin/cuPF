@@ -11,7 +11,8 @@ using namespace std;
 class APTPhaseField: public PhaseField {
 
 public:
-	int* active_args;
+	int* active_args_old;
+	int* active_args_new;
 
 	APTPhaseField(){};
 	virtual ~APTPhaseField();
