@@ -1,6 +1,7 @@
 #ifndef __PHASEFIELD_H__
 #define __PHASEFIELD_H__
 
+#include <cuda.h>
 #include "cuPDE.h"
 #include "params.h"
 #include "QOI.h"
@@ -47,6 +48,7 @@ public:
 
 };
 
+__global__ void set_minus1(float* u, int size);
 void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
   float* tip_z, int* cross_sec, float* frac, float* z, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time);
 
