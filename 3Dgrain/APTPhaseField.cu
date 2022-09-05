@@ -37,6 +37,23 @@ __constant__ GlobalConstants cP;
 // only use this function to access the boundary points, 
 // other functions return at the boundary
 __inline__ __device__ void 
+G2L_3D(int pf_C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
+
+  k = pf_C/(fnx*fny);
+  int pf_C_z=pf_C-k*fnx*fny; 
+  j = pf_C_z/fnx;
+  i = pf_C_z-j*fnx;
+
+}
+
+__inline__ __device__ int 
+L2G_3D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
+
+    return i + j*fnx + k*fnx*fny + pf*fnx*fny*fnz;
+
+}
+
+__inline__ __device__ void 
 G2L_4D(int C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
 
   PF_id = C/(fnx*fny*fnz);
@@ -85,28 +102,23 @@ set_minus1(float* u, int size){
 
 
 __global__ void
-collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
+collect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
    int C = blockIdx.x * blockDim.x + threadIdx.x;
    int length = cP.length;
- //  int PF_id = index/(length);
- //  int C = index - PF_id*length;
-   
-  //if ( (C<length) && (PF_id<NUM_PF) ) {
-
-    //if (C==513*717+716){printf("PF_id %d, values %f\n", PF_id, PFs[index]);}
    if (C<length){
+     int argmax = 0;
    // for loop to find the argmax of the phase field
      for (int PF_id=0; PF_id<cP.NUM_PF; PF_id++){
        int loc = C + length*PF_id; 
-       int max_loc = C + length*argmax[C];
-       if (PFs[loc]>PFs[max_loc]) {argmax[C]=PF_id;}
+       int max_loc = C + length*argmax;
+       if (PFs[loc]>PFs[max_loc]) {argmax=PF_id;}
      }
     
-   int max_loc_f = C + length*argmax[C]; 
+   int max_loc_f = C + length*argmax; 
    if (PFs[max_loc_f]>LS){
       phi[C] = PFs[max_loc_f]; 
-      alpha_m[C] = argmax[C] +1;
+      alpha_m[C] = active_args[max_loc_f] +1;
     }
    }
 
@@ -116,27 +128,22 @@ collect_PF(float* PFs, float* phi, int* alpha_m, int* argmax){
 
 
 __global__ void
-ini_PF(float* PFs, float* phi, int* alpha_m){
+ini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
-   int index = blockIdx.x * blockDim.x + threadIdx.x;
-   int length = cP.length;
-   int PF_id = index/(length);
-   int C = index - PF_id*length;
-
- // if (PF_id==1){
-  if ( (C<length) && (PF_id<cP.NUM_PF) ) {
-    if ( (phi[C]>LS) && (PF_id== (alpha_m[C]-1)) ){
-  //  if ( (phi[C]>LS) && (PF_id== 0)){ //(alpha_m[C]-1)) ){
-      PFs[index] = phi[C];
+   int C = blockIdx.x * blockDim.x + threadIdx.x;
+  if ( C<cP.length ) {
+    if ( phi[C]>LS){
+      PFs[C] = phi[C];
+      active_args[C] = alpha_m[C]-1;
     }
- // }
+
   }
 }
 
 
 
 __global__ void
-set_BC_3D(float* ph, int max_area){
+set_BC_3D(float* ph, int* active_args, int max_area){
 
    // dimension with R^{2D} * PF
 
@@ -156,6 +163,8 @@ set_BC_3D(float* ph, int max_area){
      int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
      ph[d_out] = ph[d_in];
      ph[u_out] = ph[u_in];
+     active_args[d_out] = active_args[d_in];
+     active_args[u_out] = active_args[u_in];
 
   }
 
@@ -170,6 +179,8 @@ set_BC_3D(float* ph, int max_area){
      int t_in = L2G_4D(zi, fny-3, zk, pf, fnx, fny, fnz);
      ph[b_out] = ph[b_in];
      ph[t_out] = ph[t_in];
+     active_args[b_out] = active_args[b_in];
+     active_args[t_out] = active_args[t_in];
 
   }
 
@@ -185,6 +196,8 @@ set_BC_3D(float* ph, int max_area){
      int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
      ph[l_out] = ph[l_in];
      ph[r_out] = ph[r_in];
+     active_args[l_out] = active_args[l_in];
+     active_args[r_out] = active_args[r_in];     
 
   }
 
@@ -199,24 +212,66 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-  G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
-  int pf_C = C - PF_id*fnx*fny*fnz;
+  G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
 
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) {
 
-       int R=C+1;
-       int L=C-1;
-       int T=C+fnx;
-       int B=C-fnx;
-       int U=C+fnx*fny;
-       int D=C-fnx*fny;
+  //=============== load active phs ================
+        int local_args[NUM_PF]; // local active PF indices
+        float local_phs = [7][NUM_PF]; // active ph for each thread ,use 7-point stencil
 
-       float phxn = ( ph[R] - ph[L] ) * 0.5f;
-       float phyn = ( ph[T] - ph[B] ) * 0.5f;
-       float phzn = ( ph[U] - ph[D] ) * 0.5f;
+
+        int globalC, target_index, stencil, arg_index;
+        for (int arg_index = 0; arg_index<NUM_PF; arg_index++){
+            local_args[arg_index] = -1;
+            for (stencil=0; stencil<7; stencil++){
+                local_phs[stencil][arg_index] = -1;
+            } 
+        }
+        stencil = 0;
+        for (int zi = -1; zi<=1; zi++){
+            for (int yi = -1; yi<=1; yi++){
+                for (int xi = -1; xi <=1; xi++){
+                    for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
+                        globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
+                        target_index = active_args[globalC];
+                        if (target_index==-1){
+                            break;
+                        }
+                        // otherwise find/update the local_args and local_phs
+                        for (arg_index = 0; arg_index<NUM_PF; arg_index++){
+                            if (local_args[arg_index]==target_index) {
+                                break;
+                            }
+                            if (local_args[arg_index] == -1){
+                                local_args[arg_index] = target_index; 
+                                break;
+                            }
+                        }
+                        if ( abs(xi) + abs(yi) + abs(zi) <=1) {
+                            local_phs[stencil][arg_index] = ph[globalC];
+                        }
+                    }
+                    if ( abs(xi) + abs(yi) + abs(zi) <=1) {stencil += 1;}
+                }
+            }
+        }
+
+       for (arg_index = 0; arg_index<NUM_PF; arg_index++){
+       if (local_args[arg_index]==-1){break;}
+
+       // start dealing with one specific PF
+
+       PF_id = local_args[arg_index]; // global PF index to find the right orientation
+       float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], PhL=local_phs[2][arg_index], \
+       phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
+
+       float phxn = ( phR - phL ) * 0.5f;
+       float phyn = ( phT - phB ) * 0.5f;
+       float phzn = ( phU - phD ) * 0.5f;
 
        float cosa, sina, cosb, sinb;
-       if (ph[C]>LS){
+       if (phC>LS){
        sina = sint[PF_id+1];
        cosa = cost[PF_id+1];
        sinb = sint[PF_id+1+NUM_PF];
@@ -230,21 +285,29 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
 
         float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
-        float diff =  ph[R] + ph[L] + ph[T] + ph[B] + ph[U] + ph[D] - 6*ph[C];
+        float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
         float Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
         float Up = Tinterp/(cP.L_cp);  
         float repul=0.0f;
         for (int pf_id=0; pf_id<NUM_PF; pf_id++){
             
-           if (pf_id!=PF_id) {
-               int overlap_id = pf_C + pf_id*fnx*fny*fnz;
-               repul += 0.25f*(ph[overlap_id]+1.0f)*(ph[overlap_id]+1.0f);
+           if (pf_id!=arg_index) {
+               repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
            }
         }
-        float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-ph[C]*ph[C])*ph[C] \
-              - cP.lamd*Up* ( (1.0f-ph[C]*ph[C])*(1.0f-ph[C]*ph[C]) - 0.5f*OMEGA*(ph[C]+1.0f)*repul);
+        float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-phC*phC)*phC \
+              - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
         float dphi = rhs_psi / A2; 
-        ph_new[C] = ph[C]  +  cP.dt * dphi; 
+        ph_new[C+arg_index*fnx*fny*fnz] = phC  +  cP.dt * dphi; 
+        if (phC  +  cP.dt * dphi <LS){
+            active_args[C+arg_index*fnx*fny*fnz] = -1;
+        }else{
+            active_args[C+arg_index*fnx*fny*fnz] = local_args[arg_index];
+        }
+
+        }
+
+
 
      }
 } 
@@ -462,8 +525,7 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     cudaMalloc((void **)&PFs_old,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&PFs_new,    sizeof(float) * length * NUM_PF);
     cudaMalloc((void **)&active_args,    sizeof(int) * length * NUM_PF);
-    cudaMalloc((void **)&argmax,    sizeof(int) * length);
-    cudaMemset(argmax,0,sizeof(int) * length);
+    cudaMemset(active_args,-1,sizeof(int) * length * NUM_PF);
 
     cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
     cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
@@ -553,13 +615,13 @@ void APTPhaseField::evolve(){
 
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m);
-   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
+   ini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args);
    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
      //cudaDeviceSynchronize();
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
-   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
+   set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
 
    rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
@@ -569,44 +631,24 @@ void APTPhaseField::evolve(){
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
 
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
 
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
      rhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
  
-     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
+     set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args, max_area);
 
     if ( (2*kt+2)%kts==0) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
+             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
-          }
-     //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
-     //cudaDeviceSynchronize();
-     if ( (2*kt+2)%TIPP==0) {
-             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
-           //  lowsl = 1;
-             collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
-             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-            // sampleh(&lowsl, alpha, fnx,fny);
-             //printf("lowsl %d\n", lowsl);
-             while (tip_front >=tip_thres){
-                collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax);
-                move_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
-                copy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, z_device2, PFs_old, z_device);
-                move_count +=1;
-                tip_front-=1;
-
-             }
-
-          set_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, max_area);
           }
 
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
@@ -623,7 +665,7 @@ void APTPhaseField::evolve(){
 
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, argmax); 
+   collect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);

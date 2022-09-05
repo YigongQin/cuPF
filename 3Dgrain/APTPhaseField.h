@@ -14,9 +14,9 @@ public:
 	int* active_args;
 
 	APTPhaseField(){};
-	virtual ~APTPhaseField(){};
-	void cudaSetup(params_MPI pM){}; // setup cuda for every GPU
-	void evolve(){}; // evolve the field with input
+	virtual ~APTPhaseField();
+	void cudaSetup(params_MPI pM); // setup cuda for every GPU
+	void evolve(); // evolve the field with input
 
 
 };
