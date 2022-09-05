@@ -9,7 +9,9 @@
 #include "CycleTimer.h"
 #include "params.h"
 #include "helper.h"
+#include "PhaseField.h"
 #include "APTPhaseField.h"
+#include "devicefunc.cu_inl"
 
 using namespace std;
 #define BLOCK_DIM_X 16
@@ -28,16 +30,9 @@ using namespace std;
   
 
 
+__constant__ GlobalConstants cP;
 
-__inline__ __device__ void 
-G2L_3D(int pf_C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
 
-  k = pf_C/(fnx*fny);
-  int pf_C_z=pf_C-k*fnx*fny; 
-  j = pf_C_z/fnx;
-  i = pf_C_z-j*fnx;
-
-}
 
 
 __global__ void

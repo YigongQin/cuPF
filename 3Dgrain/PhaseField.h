@@ -47,6 +47,6 @@ public:
 
 };
 
-
+void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, float* tip_y, float* frac, float* z, int* aseq, int* ntip, int* left_coor);
 
 #endif

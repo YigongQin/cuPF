@@ -10,7 +10,7 @@
 #include "params.h"
 #include "helper.h"
 #include "PhaseField.h"
-
+#include "devicefunc.cu_inl"
 using namespace std;
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
@@ -36,42 +36,7 @@ __constant__ GlobalConstants cP;
 // boundary condition
 // only use this function to access the boundary points, 
 // other functions return at the boundary
-__inline__ __device__ void 
-G2L_4D(int C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
 
-  PF_id = C/(fnx*fny*fnz);
-  int pf_C = C - PF_id*fnx*fny*fnz;  // local C in every PF
-  k = pf_C/(fnx*fny);
-  int pf_C_z=pf_C-k*fnx*fny; 
-  j = pf_C_z/fnx;
-  i = pf_C_z-j*fnx;
-
-}
-
-__inline__ __device__ int 
-L2G_4D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
-
-    return i + j*fnx + k*fnx*fny + pf*fnx*fny*fnz;
-
-}
-
-__inline__ __device__ float
-kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
-
-   float a_s = 1.0f + 3.0f*cP.kin_delta;
-   float epsilon = -4.0f*cP.kin_delta/a_s;
-   float ux2 = cosa*cosb*ux  + sina*uy + cosa*sinb*uz;
-         ux2 = ux2*ux2;
-   float uy2 = -sina*cosb*ux + cosa*uy - sina*sinb*uz;
-         uy2 = uy2*uy2;      
-   float uz2 = -sinb*ux      + 0       + cosb*uz;
-         uz2 = uz2*uz2;
-   float MAG_sq = (ux2 + uy2 + uz2);
-   float MAG_sq2= MAG_sq*MAG_sq;
-   if (MAG_sq > cP.eps){
-         return a_s*( 1.0f + epsilon*(ux2*ux2 + uy2*uy2 + uz2*uz2) / MAG_sq2);}
-   else {return 1.0f;}
-}
 
 
 
@@ -582,7 +547,7 @@ void PhaseField::cudaSetup(params_MPI pM) {
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
 
     // create forcing field
-    
+
     cudaMalloc((void **)&(Mgpu.X_mac),  sizeof(float) * mac.Nx);
     cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
     cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
