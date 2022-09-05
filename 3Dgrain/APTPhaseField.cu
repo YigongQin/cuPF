@@ -431,8 +431,8 @@ void APTPhaseField::evolve(){
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
-   //for (int kt=0; kt<params.Mt/2; kt++){
-   for (int kt=0; kt<0; kt++){
+   for (int kt=0; kt<params.Mt/2; kt++){
+   //for (int kt=0; kt<0; kt++){
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
 
      t_cur_step = (2*kt+1)*params.dt*params.tau0;
