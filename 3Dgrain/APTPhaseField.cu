@@ -9,7 +9,6 @@
 #include "CycleTimer.h"
 #include "params.h"
 #include "helper.h"
-#include "PhaseField.h"
 #include "APTPhaseField.h"
 
 using namespace std;
@@ -28,8 +27,6 @@ using namespace std;
 #define APT_NUM_PF 5
   
 
-
-__constant__ GlobalConstants cP;
 
 
 __inline__ __device__ void 
@@ -255,23 +252,6 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
 } 
 
 
-
-
-void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny, int fnz, int NUM_PF){
-
-     int length = fnx*fny*fnz;
-     int blocksize_2d = 128; 
-     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
-
-     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx);
-
-     cudaMemcpy(meanx_host, meanx, fnz * sizeof(float),cudaMemcpyDeviceToHost);
-     while( (meanx_host[*cur_tip]/(NUM_PF*fnx*fny)>LS) && (*cur_tip<fnz-1) ) {*cur_tip+=1;}
-    // for (int ww=0; ww<fny; ww++){ printf("avex %f \n",meanx_host[ww]/fnx);}
-//      printf("currrent tip %d \n", *cur_tip);   
-     cudaMemset(meanx,0,fnz * sizeof(float));
-
-}
 
 
 APTPhaseField::~APTPhaseField() {
