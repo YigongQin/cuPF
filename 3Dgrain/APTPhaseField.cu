@@ -32,7 +32,23 @@ using namespace std;
 
 __constant__ GlobalConstants cP;
 
+__inline__ __device__ float
+kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
 
+   float a_s = 1.0f + 3.0f*cP.kin_delta;
+   float epsilon = -4.0f*cP.kin_delta/a_s;
+   float ux2 = cosa*cosb*ux  + sina*uy + cosa*sinb*uz;
+         ux2 = ux2*ux2;
+   float uy2 = -sina*cosb*ux + cosa*uy - sina*sinb*uz;
+         uy2 = uy2*uy2;      
+   float uz2 = -sinb*ux      + 0       + cosb*uz;
+         uz2 = uz2*uz2;
+   float MAG_sq = (ux2 + uy2 + uz2);
+   float MAG_sq2= MAG_sq*MAG_sq;
+   if (MAG_sq > cP.eps){
+         return a_s*( 1.0f + epsilon*(ux2*ux2 + uy2*uy2 + uz2*uz2) / MAG_sq2);}
+   else {return 1.0f;}
+}
 
 
 __global__ void
