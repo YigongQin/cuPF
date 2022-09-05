@@ -2,6 +2,7 @@
 #define __PHASEFIELD_H__
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include "cuPDE.h"
 #include "params.h"
 #include "QOI.h"

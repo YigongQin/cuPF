@@ -303,7 +303,7 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     printCudaInfo(pM.rank,device_id_innode);
     params.NUM_PF = APT_NUM_PF;
     NUM_PF = params.NUM_PF;
-    
+    printf("number of PFs %d \n", NUM_PF); 
     // allocate device memory and copy the data
     cudaMalloc((void **)&x_device, sizeof(float) * fnx);
     cudaMalloc((void **)&y_device, sizeof(float) * fny);
@@ -418,12 +418,14 @@ void APTPhaseField::evolve(){
 
    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
-
+             cudaMemset(alpha_m, 0, sizeof(int) * length);
+             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args);
+cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
-   for (int kt=0; kt<params.Mt/2; kt++){
-
+   //for (int kt=0; kt<params.Mt/2; kt++){
+   for (int kt=0; kt<0; kt++){
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args, max_area);
 
      t_cur_step = (2*kt+1)*params.dt*params.tau0;

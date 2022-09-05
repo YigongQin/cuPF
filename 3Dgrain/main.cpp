@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     };
 
     
-    while ((opt = getopt_long(argc, argv, "b:f:r:s:c?", long_options, NULL)) != EOF) {
+    while ((opt = getopt_long(argc, argv, "b:f:a:s:c?", long_options, NULL)) != EOF) {
 
         switch (opt) {
         case 'c':
@@ -71,12 +71,12 @@ int main(int argc, char** argv)
     }
 
     
-
-    PhaseField* pf_solver; // initialize the pointer to the class
-    pf_solver = new PhaseField();
+    PhaseField* pf_solver;
     if (APTon){
-        APTPhaseField* pf_solver;
+        printf("use APT algorithm\n");
         pf_solver = new APTPhaseField();
+    }else{
+    pf_solver = new PhaseField();
     }
     pf_solver->mac.folder = mac_folder;
     pf_solver->parseInputParams(fileName);
