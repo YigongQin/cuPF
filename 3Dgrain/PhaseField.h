@@ -47,6 +47,7 @@ public:
 
 };
 
-void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, float* tip_y, float* frac, float* z, int* aseq, int* ntip, int* left_coor);
+void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
+  float* tip_z, int* cross_sec, float* frac, float* z, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time);
 
 #endif

@@ -50,6 +50,15 @@ kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float
    else {return 1.0f;}
 }
 
+__global__ void
+set_minus1(float* u, int size){
+
+     int index = blockIdx.x * blockDim.x + threadIdx.x;
+     if(index<size) u[index] = -1.0f;
+
+}
+
+
 
 __global__ void
 APTcollect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
