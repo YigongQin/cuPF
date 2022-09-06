@@ -253,7 +253,7 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
               - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
         float dphi = rhs_psi / A2; 
         ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
-        if (phC  +  cP.dt * dphi <LS){
+        if (phC  +  cP.dt * dphi <-0.9999){
             aarg_new[C+arg_index*length] = -1;
         }else{
             aarg_new[C+arg_index*length] = local_args[arg_index];
