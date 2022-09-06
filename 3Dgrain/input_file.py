@@ -81,7 +81,7 @@ U = np.zeros(nx*ny*nz)
 dx_dim = 0.08
 gnx = int(Lx/dx_dim) + 1
 
-g1 = graph(size = (gnx, gnx), density = 2/Lx, noise=0.001) 
+g1 = graph(size = (gnx, gnx), density = 2/Lx, noise=0.001/Lx) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)

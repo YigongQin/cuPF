@@ -64,7 +64,7 @@ class graph:
        # self.region_coors = [] ## region corner coordinates
         self.density = density
         self.noise = noise
-        self.alpha_field = None
+        self.alpha_field = np.zeros((size[0], size[1]), dtype=int)
 
         
         
@@ -146,14 +146,18 @@ class graph:
     
     def plot_polygons(self, pic_size):
 
-        image = Image.new("L", (pic_size[0], pic_size[1]))       
+        image = Image.new("RGB", (pic_size[0], pic_size[1]))       
         draw = ImageDraw.Draw(image)
           
         # Add polygons 
         for i in range(len(self.regions)):
             reg = self.regions[i]
             poly = self.vertices[reg]
-            orientation = self.region_colors[i][0]
+            region_id = self.region_colors[i][0]
+            Rid = region_id//(255*255)
+            Gid = (region_id - Rid*255*255)//255
+            Bid = region_id - Rid*255*255 - Gid*255
+            orientation = tuple([Rid, Gid, Bid])
             p = []
 
             poly = np.asarray(poly*pic_size[0], dtype=int) 
@@ -162,8 +166,12 @@ class graph:
             
             draw.polygon(p, fill=orientation) 
 
-        self.alpha_field = np.array(image)
-    
+        img = np.asarray(image)
+        for i in range(pic_size[0]):
+            for j in range(pic_size[1]):
+                
+                self.alpha_field[i,j] = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]
+        
     
     
     def show_data_struct(self):
@@ -198,9 +206,10 @@ class graph:
 
 
 
-#g1 = graph(size = (125, 125), density = 0.2, noise=0.001, seed=1)  
+#size=100
+#s = int(size/0.08)+1
+#g1 = graph(size = (s, s), density = 2/size, noise=0.001/size, seed=1)  
 #g1.show_data_struct()     
-
 '''
 import pickle
 
