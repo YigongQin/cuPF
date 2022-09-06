@@ -186,7 +186,7 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
                         globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
                         target_index = aarg[globalC];
                         if (target_index==-1){
-                            break;
+                            continue;
                         }
                         // otherwise find/update the local_args and local_phs
                         for (arg_index = 0; arg_index<NUM_PF; arg_index++){
