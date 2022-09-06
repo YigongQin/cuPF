@@ -19,15 +19,6 @@ beta0 = 1e-7                    # linear coefficient
 mu_k = 0.217e6                         #um/s/K
 Tmelt = 933.3
 
-# simulation parameters 
-dx = 0.8                            # mesh width
-W0 = 0.1                    # interface thickness      um
-cfl = 0.8
-asp_ratio_yx = 1
-asp_ratio_zx = 4                    # aspect ratio
-moving_ratio = 0.5
-nts = 24          # number snapshots to save, Mt/nts must be int
-
 eps = 1e-8                       # divide-by-zero treatment
 alpha0 = 0                       # misorientation angle in degree
 U0 = -1                    # initial value for U, -1 < U0 < 0
@@ -51,15 +42,25 @@ eta = 0.0
 seed_val = 3                  # magnitude of noise
 noi_period = 200
 
+
+# simulation parameters
+dx = 0.8                            # mesh width
+W0 = 0.1                    # interface thickness      um
+cfl = 1.2
+asp_ratio_yx = 1
+asp_ratio_zx = 0.6                    # aspect ratio
+moving_ratio = 0.05
+nts = 24          # number snapshots to save, Mt/nts must be int
+Lx = 100
+
 nx = 13
 ny = 13
 nz = 13
 nt = 11
-Lx = 10
-Ly = 10
-Lz = 40
+Ly = Lx*asp_ratio_yx
+Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 30
+top = 50
 
 
 G = float(sys.argv[1]);
@@ -80,7 +81,7 @@ U = np.zeros(nx*ny*nz)
 dx_dim = 0.08
 gnx = int(Lx/dx_dim) + 1
 
-g1 = graph(size = (gnx, gnx), density = 0.2, noise=0.001) 
+g1 = graph(size = (gnx, gnx), density = 2/Lx, noise=0.001) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)
