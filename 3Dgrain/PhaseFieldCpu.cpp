@@ -17,7 +17,7 @@ void getParam(std::string lineText, std::string key, float& param){
     std::stringstream iss(lineText);
     std::string word;
     while (iss >> word){
-        //std::cout << word << std::endl;
+        //cout << word << endl;
         std::string myKey=key;
         if(word!=myKey) continue;
         iss>>word;
@@ -278,18 +278,22 @@ void PhaseField::cpuSetup(params_MPI &pM){
     if (pM.rank==0){ 
         // print params and mac information
 
-    std::cout<<"dx = "<<params.lxd/params.nx/params.W0<<std::endl;
-    std::cout<<"dy = "<<params.lyd/params.ny/params.W0<<std::endl;   
-    std::cout<<"dz = "<<params.lyd/params.ny/params.W0<<std::endl;  
+    cout<<"dx = "<<params.lxd/params.nx/params.W0<<endl;
+    cout<<"dy = "<<params.lyd/params.ny/params.W0<<endl;   
+    cout<<"dz = "<<params.lyd/params.ny/params.W0<<endl;  
 
 
-    std::cout<<"noise coeff = "<<params.dt_sqrt*params.hi*params.eta<<std::endl;
+    cout<<"noise coeff = "<<params.dt_sqrt*params.hi*params.eta<<endl;
 
 
-    std::cout<<"mac Nx = "<<mac.Nx<<std::endl;
-    std::cout<<"mac Ny = "<<mac.Ny<<std::endl;
-    std::cout<<"mac Nz = "<<mac.Nz<<std::endl;
-    std::cout<<"mac Nt = "<<mac.Nt<<std::endl;
+    cout<<"mac Nx = "<<mac.Nx<<endl;
+    cout<<"mac Ny = "<<mac.Ny<<endl;
+    cout<<"mac Nz = "<<mac.Nz<<endl;
+    cout<<"mac Nt = "<<mac.Nt<<endl;
+    cout<<"macro dimension = "<<mac.Nx*mac.Ny*mac.Nz<<endl;
+
+    cout<<"number of grains = "<<params.num_theta<<endl;
+    cout<<"number of time steps = "<<params.Mt<<endl;
 
     }
 
@@ -352,9 +356,9 @@ void PhaseField::cpuSetup(params_MPI &pM){
     alpha = new int[length];
     alpha_i_full = new int[full_length];
 
-  //  std::cout<<"x= ";
+  //  cout<<"x= ";
   //  for(int i=0; i<fnx; i++){
-  //      std::cout<<x[i]<<" ";
+  //      cout<<x[i]<<" ";
   //  }
     cout<< "rank "<< pM.rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
     cout<< "rank "<< pM.rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;
