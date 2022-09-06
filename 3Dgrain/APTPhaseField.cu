@@ -267,6 +267,61 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
 } 
 
 
+__global__ void 
+APTmove_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count){
+
+    int C = blockIdx.x * blockDim.x + threadIdx.x;
+    int i, j, k, PF_id;
+    int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
+    G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
+
+    if ( (i==0) && (j==0) && (k>0) && (k<fnz-2) && (PF_id==0) ) {
+        z_buff[k] = z[k+1];}
+
+    if ( (i==0) && (j==0) &&  (k==fnz-2) && (PF_id==0) ) {        
+        z_buff[k] = 2*z[fnz-2] - z[fnz-3];}
+
+    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-2) && (PF_id<NUM_PF) ) {     
+        ph_buff[C] = ph[C+fnx*fny];
+        arg_buff[C] = arg[C+fnx*fny];
+    }
+
+    if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k==fnz-2) && (PF_id<NUM_PF) ) {
+
+        ph_buff[C] = -1.0f;
+        arg_buff[C] = -1;
+    }
+
+    // add last layer of alpha to alpha_full[move_count]
+    if ( (i<fnx) && (j<fny) && (k==1) && (PF_id==0) ) {
+
+        alpha_full[move_count*fnx*fny+C] = alpha[C];
+        atomicAdd(loss_area+alpha[C]-1,1);
+        //printf("%d ", alpha[C]);
+    }
+
+
+}
+
+__global__ void
+APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg, float* z){
+
+  int C = blockIdx.x * blockDim.x + threadIdx.x; 
+  int i, j, k, PF_id;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
+  G2L_4D(C, i, j, k, PF_id, fnx, fny, fnz);
+
+  if ( (i == 0) && (j==0) && (k>0) && (k < fnz-1) && (PF_id==0) ){
+        z[k] = z_buff[k];}
+
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) && (PF_id<NUM_PF) ) { 
+        ph[C] = ph_buff[C];
+        arg[C] = arg_buff[C];
+    }
+
+
+}
+
 
 
 APTPhaseField::~APTPhaseField() {
@@ -451,6 +506,20 @@ void APTPhaseField::evolve(){
              //QoIs based on alpha field
              cur_tip=0;
              calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
+          }
+
+   if ( (2*kt+2)%TIPP==0) {
+             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
+             while (tip_front >=tip_thres){
+                APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+                APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
+                APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
+                move_count +=1;
+                tip_front-=1;
+
+             }
+
+          APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
           }
 
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
