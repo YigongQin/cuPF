@@ -228,8 +228,8 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
        if (phC>LS){
        sina = sint[PF_id+1];
        cosa = cost[PF_id+1];
-       sinb = sint[PF_id+1+NUM_PF];
-       cosb = cost[PF_id+1+NUM_PF];
+       sinb = sint[PF_id+1+cP.num_theta];
+       cosb = cost[PF_id+1+cP.num_theta];
        }else{
        sina = 0.0f;
        cosa = 1.0f;
