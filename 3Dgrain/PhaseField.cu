@@ -461,14 +461,12 @@ copy_frame(float* ph_buff, float* z_buff, float* ph, float* z){
 
 
 __global__ void
-ave_x(float* phi, float* meanx){
+ave_x(float* phi, float* meanx, int fnx, int fny, int fnz, int NUM_PF){
 
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, pf_id;
-  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
   G2L_4D(C, i, j, k, pf_id, fnx, fny, fnz);
- 
    if (C<fnx*fny*fnz*NUM_PF){
       atomicAdd(meanx+k,phi[C]);
 
@@ -484,10 +482,13 @@ void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx,
      int blocksize_2d = 128; 
      int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
 
-     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx);
+     ave_x<<<num_block_PF, blocksize_2d>>>(phi, meanx, fnx, fny, fnz, NUM_PF);
 
      cudaMemcpy(meanx_host, meanx, fnz * sizeof(float),cudaMemcpyDeviceToHost);
-     while( (meanx_host[*cur_tip]/(NUM_PF*fnx*fny)>LS) && (*cur_tip<fnz-1) ) {*cur_tip+=1;}
+     while( (meanx_host[*cur_tip]/(NUM_PF*fnx*fny)>LS) && (*cur_tip<fnz-1) ) {
+      *cur_tip+=1;
+      //printf("average ph %f along location %d\n", meanx_host[*cur_tip]/(NUM_PF*fnx*fny), *cur_tip);
+      }
     // for (int ww=0; ww<fny; ww++){ printf("avex %f \n",meanx_host[ww]/fnx);}
 //      printf("currrent tip %d \n", *cur_tip);   
      cudaMemset(meanx,0,fnz * sizeof(float));
