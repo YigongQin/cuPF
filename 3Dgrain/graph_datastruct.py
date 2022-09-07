@@ -21,7 +21,7 @@ def in_bound(x, y):
     else:
         return False
 
-def hexagonal_lattice(dx=0.05, noise=0.0001):
+def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     # Assemble a hexagonal lattice
     rows, cols = int(1/dx)+1, int(1/dx)
     print('cols, rows of grains', cols, rows)
@@ -41,10 +41,17 @@ def hexagonal_lattice(dx=0.05, noise=0.0001):
             if in_bound(x, y):
               in_points.append([x,y])
               points.append([x,y])
-              points.append([-x,y])
-              points.append([x,-y])
-              points.append([2-x,y])
-              points.append([x,2-y])
+              if BC == 'noflux':
+                  points.append([-x,y])
+                  points.append([x,-y])
+                  points.append([2-x,y])
+                  points.append([x,2-y])
+              if BC == 'periodic':
+                  points.append([x+1,y])
+                  points.append([x-1,y])
+                  points.append([x,y+1])
+                  points.append([x,y-1])                  
+                  
 
     return points, in_points
 
@@ -53,7 +60,7 @@ def hexagonal_lattice(dx=0.05, noise=0.0001):
 
         
 class graph:
-    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, randInit = True):
+    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, BC = 'periodic', randInit = True):
 
         self.imagesize = size
         self.vertices = [] ## vertices coordinates
@@ -64,6 +71,7 @@ class graph:
        # self.region_coors = [] ## region corner coordinates
         self.density = density
         self.noise = noise
+        self.BC = BC
         self.alpha_field = np.zeros((size[0], size[1]), dtype=int)
 
         
@@ -78,7 +86,7 @@ class graph:
         
     def inbound_random_voronoi(self):
 
-        mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise)
+        mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
         vor = Voronoi(mirrored_seeds)     
     
         regions = []
@@ -204,12 +212,12 @@ class graph:
 
 
 
+if __name__ == '__main__':
 
-
-#size=100
-#s = int(size/0.08)+1
-#g1 = graph(size = (s, s), density = 2/size, noise=0.001/size, seed=1)  
-#g1.show_data_struct()     
+    size=100
+    s = int(size/0.08)+1
+    g1 = graph(size = (s, s), density = 2/size, noise=0.001/size, seed=1, BC='noflux')  
+    g1.show_data_struct()     
 '''
 import pickle
 
