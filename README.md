@@ -19,7 +19,7 @@ line_model: ./phase_field INPUT_FILE MACRO_INPUTS_DIR
 DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS_DIR 
      
      
-<img width="556" alt="timing" src="https://user-images.githubusercontent.com/62076142/119079589-00022f00-b9be-11eb-837f-288778b5244c.png">
+
 ![scaling](https://user-images.githubusercontent.com/62076142/119079655-23c57500-b9be-11eb-844f-21b30837c56c.png)
 
 
