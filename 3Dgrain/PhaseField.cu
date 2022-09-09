@@ -337,16 +337,16 @@ rhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t,
 
 
 
-void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int num_grains, \
-  float* tip_z, int* cross_sec, float* frac, float* z, int* ntip, int* extra_area, int* tip_final, int* total_area, int* loss_area, int move_count, int all_time){
+void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int kt, float* z, int* loss_area, int move_count){
 
      // cur_tip here inludes the halo
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, num_grains = params.num_theta, all_time = params.nts+1;
      bool contin_flag = true;
 
      while(contin_flag){
        // at this line
-        *cur_tip += 1;
-        int offset_z = fnx*fny*(*cur_tip);
+        cur_tip += 1;
+        int offset_z = fnx*fny*cur_tip;
         //int zeros = 0;
         for (int j=1; j<fny-1; j++){
           for (int i=1; i<fnx-1; i++){
@@ -355,11 +355,10 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int 
              if (alpha[C]==0) {contin_flag=false;break;}
         }}
      }
-     *cur_tip -=1;
-     tip_z[kt] = z[*cur_tip];
-     ntip[kt] = *cur_tip+move_count;
-     printf("frame %d, ntip %d, tip %f\n", kt, ntip[kt], tip_z[kt]);
-     memcpy(cross_sec + kt*fnx*fny, alpha + *cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+     cur_tip -=1;
+     q->tip_y[kt] = z[*cur_tip];
+     printf("frame %d, ntip %d, tip %f\n", kt, cur_tip+move_count, q->tip_y[kt]);
+     memcpy(q->cross_sec + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
 
      for (int k = 1; k<fnz-1; k++){
        int offset_z = fnx*fny*k; 
@@ -367,48 +366,17 @@ void calc_qois(int* cur_tip, int* alpha, int fnx, int fny, int fnz, int kt, int 
          for (int i = 1; i<fnx-1; i++){
             int C = offset_z + fnx*j + i;
               if (alpha[C]>0){ 
-                for (int time = kt; time<all_time; time++){tip_final[time*num_grains+alpha[C]-1] = k+move_count;} 
-                total_area[kt*num_grains+alpha[C]-1]+=1;
-                if (k > *cur_tip) {extra_area[kt*num_grains+alpha[C]-1]+=1; }}
+                for (int time = kt; time<all_time; time++){q->tip_final[time*num_grains+alpha[C]-1] = k+move_count;} 
+                q->total_area[kt*num_grains+alpha[C]-1]+=1;
+                if (k > cur_tip) {q->extra_area[kt*num_grains+alpha[C]-1]+=1; }}
          }
        }
      }
      for (int j = 0; j<num_grains; j++){ 
-     total_area[kt*num_grains+j]+=loss_area[j];}
+     q->total_area[kt*num_grains+j]+=loss_area[j];}
 
 }
 
-void calc_frac( int* alpha, int fnx, int fny, int fnz, int nts, int num_grains, float* tip_y, float* frac, float* z, int* aseq, int* ntip, int* left_coor){
-     
-     int* counts= (int*) malloc(num_grains* sizeof(int));
-
-     for (int kt=0; kt<nts+1;kt++){
-     memset(counts, 0, num_grains*sizeof(int));
-     int cur_tip = ntip[kt];
-     printf("cur_tip, %d\n",cur_tip);
-       // pointer points at the first grid
-
-     int summa=0;
-     int offest_z = fnx*fny*cur_tip;
-     for (int j=1; j<fny-1;j++){
-       for (int i=1; i<fnx-1;i++){
-            int C = offest_z + fnx*j + i;
-            if (alpha[C]>0){counts[alpha[C]-1]+=1;}
-      }
-     }
-     for (int j=0; j<num_grains;j++){
-
-       frac[kt*num_grains+j] = counts[j]*1.0/((fnx-2)*(fny-2));
-       summa += counts[j];//frac[kt*num_grains+j];
-       printf("grainID %d, counts %d, the current fraction: %f\n", j, counts[j], frac[kt*num_grains+j]);
-     }
-     if (summa<(fnx-2)*(fny-2)) {printf("the summation %d is off\n", summa);exit(1);}
-     //if ((summa<fnx-2) && (summa>=fnx-2-ZERO)){
-     //   for (int grainj = 0; grainj<num_grains; grainj++) {frac[kt*num_grains+grainj]*= (fnx-2)*1.0f/summa; printf("grainID %d, the current fraction: %f\n", grainj, frac[kt*num_grains+grainj]);}
-     //}
-     printf("summation %d\n", summa);     
-     }
-}
 
 __global__ void 
 move_frame(float* ph_buff, float* z_buff, float* ph, float* z, int* alpha, int* alpha_full, int* loss_area, int move_count){
@@ -610,7 +578,7 @@ void PhaseField::evolve(){
   // printf(" ymax %f \n",y[fny-2] ); 
    float* meanx_host=(float*) malloc(fnz* sizeof(float));
 
-   int* ntip=(int*) malloc((params.nts+1)* sizeof(int));
+
    int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
    int* d_loss_area;
    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
@@ -650,7 +618,7 @@ void PhaseField::evolve(){
    rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
-   calc_qois(&cur_tip, alpha, fnx, fny, fnz, 0, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
+   calc_qois(params, q, cur_tip, alpha, 0, z, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -672,7 +640,7 @@ void PhaseField::evolve(){
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(&cur_tip, alpha, fnx, fny, fnz, (2*kt+2)/kts, params.num_theta, q->tip_y, q->cross_sec, q->frac, z, ntip, q->extra_area, q->tip_final, q->total_area, loss_area, move_count, params.nts+1);
+             calc_qois(params, q, cur_tip, alpha, (2*kt+2)/kts, z, loss_area, move_count);
           }
      //if ( (2*kt+2)%params.ha_wd==0 )commu_BC(comm, SR_buffs, pM, 2*kt+1, params.ha_wd, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
