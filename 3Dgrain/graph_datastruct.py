@@ -60,7 +60,7 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, BC = 'periodic', randInit = True):
+    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, BC = 'noflux', randInit = True):
 
         self.imagesize = size
         self.vertices = [] ## vertices coordinates
