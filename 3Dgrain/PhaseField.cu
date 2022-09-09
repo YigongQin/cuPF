@@ -356,7 +356,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int kt,
         }}
      }
      cur_tip -=1;
-     q->tip_y[kt] = z[*cur_tip];
+     q->tip_y[kt] = z[cur_tip];
      printf("frame %d, ntip %d, tip %f\n", kt, cur_tip+move_count, q->tip_y[kt]);
      memcpy(q->cross_sec + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
 
