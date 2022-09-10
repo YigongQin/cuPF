@@ -85,6 +85,7 @@ g1 = graph(size = (gnx, gnx), density = 2/Lx, noise=0.001/Lx)
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)
+NN = len(g1.vertices)
 theta = g1.color_choices
 for i in range(nx*ny*nz*nt):
     
@@ -111,6 +112,7 @@ np.savetxt(mac_folder+'theta.txt', theta, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%d',delimiter='\n')
+np.savetxt(mac_folder+'NN.txt', np.asarray([NN]), fmt='%d',delimiter='\n')
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()
