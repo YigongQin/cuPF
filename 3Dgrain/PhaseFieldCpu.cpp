@@ -199,6 +199,7 @@ void PhaseField::parseInputParams(char* fileName){
     read_input(mac.folder+"/G.txt", &params.G);
     read_input(mac.folder+"/Rmax.txt", &params.R);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
+    read_input(mac.folder+"/NN.txt", &params.num_nodes);
     mac.theta_arr = new float[2*params.num_theta+1];
     mac.cost = new float[2*params.num_theta+1];
     mac.sint = new float[2*params.num_theta+1];
@@ -451,7 +452,6 @@ void PhaseField::initField(){
 void QOI::initQoI(GlobalConstants params){
     tip_y = new float[num_case*(params.nts+1)];
     frac = new float[num_case*(params.nts+1)*params.num_theta];
-    angles = new float[num_case*(2*params.num_theta+1)];
 
     cross_sec = new int[num_case*(params.nts+1)*params.fnx*params.fny];
     alpha = new int[valid_run*params.full_length];
