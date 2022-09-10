@@ -6,7 +6,8 @@ class QOI{
 public:
 	int num_case;
 	int valid_run;
-	int node_region_size, node_features = 7;
+	int node_region_size;
+	const int node_features = 7;
 	float *tip_y, *frac, *angles;
 	int *alpha, *extra_area, *total_area, *tip_final, *cross_sec, *node_region;
 
