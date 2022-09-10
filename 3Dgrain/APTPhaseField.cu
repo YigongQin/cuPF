@@ -325,7 +325,8 @@ APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg,
 void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* args_cpu, int kt, float* z, int* loss_area, int move_count){
 
      // cur_tip here inludes the halo
-     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, num_grains = params.num_theta, all_time = params.nts+1;
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length, \
+         num_grains = params.num_theta, NUM_PF = params.NUM_PF, all_time = params.nts+1;
      bool contin_flag = true;
 
      while(contin_flag){
@@ -362,11 +363,26 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
 
 
      // find the args that have active phs greater or equal 3, copy the args to q->node_region
+     int offset_z = fnx*fny*cur_tip;
+     int offset_node_region = q->node_region_size/all_time*kt;
+     int node_cnt = 0;
      for (int j = 1; j<fny-1; j++){ 
        for (int i = 1; i<fnx-1; i++){
-
-
-
+          int C = offset_z + j*fnx + i;
+          int neighbor_cnt = 0;
+          for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
+             int globalC = C + pf_id*length;
+             if (args_cpu[globalC]>-1) {neighbor_cnt++;}
+          } 
+          if (neighbor_cnt>=3){
+             q->node_region[offset_node_region + node_cnt*q->node_features] = i;
+             q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
+             for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
+                 int globalC = C + pf_id*length;
+                 q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_id] = args_cpu[globalC];
+             } 
+             node_cnt++;
+          }
        }
      }
 
