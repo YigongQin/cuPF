@@ -463,6 +463,7 @@ void QOI::initQoI(GlobalConstants params){
     int repeated_index = 9, graph_dim = 2, NUM_PF = 5;
     node_region_size = (params.nts+1)*repeated_index*params.num_nodes*(graph_dim + NUM_PF);
     node_region = new int[node_region_size];
+    memset(node_region, -1, sizeof(int) * node_region_size);
 }
 
 

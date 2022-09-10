@@ -86,6 +86,7 @@ print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)
 NN = len(g1.vertices)
+print('no. nodes', NN, 'no. regions', NG)
 theta = g1.color_choices
 for i in range(nx*ny*nz*nt):
     
