@@ -13,6 +13,7 @@ class APTPhaseField: public PhaseField {
 public:
 	int* active_args_old;
 	int* active_args_new;
+	int* args_cpu;
 
 	APTPhaseField(){};
 	virtual ~APTPhaseField();

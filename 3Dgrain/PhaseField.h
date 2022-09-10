@@ -51,6 +51,5 @@ public:
 
 __global__ void set_minus1(float* u, int size);
 __global__ void ave_x(float* phi, float* meanx, int fnx, int fny, int fnz, int NUM_PF);
-void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int kt, float* z, int* loss_area, int move_count);
 void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny, int fnz, int NUM_PF);
 #endif

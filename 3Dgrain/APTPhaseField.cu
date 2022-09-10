@@ -12,7 +12,7 @@
 #include "PhaseField.h"
 #include "APTPhaseField.h"
 #include "devicefunc.cu_inl"
-
+#include <unordered_map>
 using namespace std;
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
@@ -322,6 +322,56 @@ APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg,
 
 }
 
+void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* args_cpu, int kt, float* z, int* loss_area, int move_count){
+
+     // cur_tip here inludes the halo
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, num_grains = params.num_theta, all_time = params.nts+1;
+     bool contin_flag = true;
+
+     while(contin_flag){
+       // at this line
+        cur_tip += 1;
+        int offset_z = fnx*fny*cur_tip;
+        //int zeros = 0;
+        for (int j=1; j<fny-1; j++){
+          for (int i=1; i<fnx-1; i++){
+             int C = offset_z + j*fnx + i;
+             //if (alpha[C]==0){printf("find liquid at %d at line %d\n", i, cur_tip);contin_flag=false;break;}
+             if (alpha[C]==0) {contin_flag=false;break;}
+        }}
+     }
+     cur_tip -=1;
+     q->tip_y[kt] = z[cur_tip];
+     printf("frame %d, ntip %d, tip %f\n", kt, cur_tip+move_count, q->tip_y[kt]);
+     memcpy(q->cross_sec + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+
+     for (int k = 1; k<fnz-1; k++){
+       int offset_z = fnx*fny*k; 
+       for (int j = 1; j<fny-1; j++){ 
+         for (int i = 1; i<fnx-1; i++){
+            int C = offset_z + fnx*j + i;
+              if (alpha[C]>0){ 
+                for (int time = kt; time<all_time; time++){q->tip_final[time*num_grains+alpha[C]-1] = k+move_count;} 
+                q->total_area[kt*num_grains+alpha[C]-1]+=1;
+                if (k > cur_tip) {q->extra_area[kt*num_grains+alpha[C]-1]+=1; }}
+         }
+       }
+     }
+     for (int j = 0; j<num_grains; j++){ 
+     q->total_area[kt*num_grains+j]+=loss_area[j];}
+
+
+     // find the args that have active phs greater or equal 3, copy the args to q->node_region
+     for (int j = 1; j<fny-1; j++){ 
+       for (int i = 1; i<fnx-1; i++){
+
+
+        
+       }
+     }
+
+
+}
 
 
 APTPhaseField::~APTPhaseField() {
@@ -380,6 +430,8 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     cudaMalloc((void **)&active_args_new,    sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
+    args_cpu = new int[length * NUM_PF];
+    memset(args_cpu, -1, sizeof(args_cpu));
 
     cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
     cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
@@ -479,10 +531,10 @@ void APTPhaseField::evolve(){
    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
    cudaMemset(alpha_m, 0, sizeof(int) * length);
-  // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   calc_qois(params, q, cur_tip, alpha, 0, z, loss_area, move_count);
+   cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
+   calc_qois(params, q, cur_tip, alpha, args_cpu, 0, z, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -500,11 +552,12 @@ void APTPhaseField::evolve(){
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(params, q, cur_tip, alpha, (2*kt+2)/kts, z, loss_area, move_count);
+             calc_qois(params, q, cur_tip, alpha, args_cpu, (2*kt+2)/kts, z, loss_area, move_count);
           }
 
    if ( (2*kt+2)%TIPP==0) {

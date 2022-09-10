@@ -65,22 +65,24 @@ std::string to_stringp(const T a_value, int n )
     return out.str();
 }
 
-void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
+void h5write_1d(hid_t h5_file, const char* name, void* data, std::string dtype){
 
     herr_t  status;
     hid_t dataspace, h5data=0;
     hsize_t dim[1];
-    dim[0] = length;
     
-    dataspace = H5Screate_simple(1, dim, NULL);
+    
 
     if (dtype.compare("int") ==0){
-
+        dim[0] = sizeof(data)/sizeof(int);
+        dataspace = H5Screate_simple(1, dim, NULL);
         h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(h5data, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
     }
     else if (dtype.compare("float") ==0){
+        dim[0] = sizeof(data)/sizeof(float);
+        dataspace = H5Screate_simple(1, dim, NULL);
         h5data = H5Dcreate2(h5_file, name, H5T_NATIVE_FLOAT_g, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(h5data, H5T_NATIVE_FLOAT_g, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
 
@@ -451,13 +453,16 @@ void PhaseField::initField(){
 void QOI::initQoI(GlobalConstants params){
     tip_y = new float[num_case*(params.nts+1)];
     frac = new float[num_case*(params.nts+1)*params.num_theta];
-    angles = new float[num_case*(2*params.num_theta+1)];
 
     cross_sec = new int[num_case*(params.nts+1)*params.fnx*params.fny];
     alpha = new int[valid_run*params.full_length];
     extra_area = new int[num_case*(params.nts+1)*params.num_theta];
     total_area  = new int[num_case*(params.nts+1)*params.num_theta];
     tip_final   = new int[num_case*(params.nts+1)*params.num_theta];
+
+    // graph related QoIs
+    int repeated_index = 9, graph_dim = 2, NUM_PF = 5;
+    node_region = new int[(params.nts+1)*repeated_index*params.num_nodes*(graph_dim + NUM_PF)];
 }
 
 
@@ -488,14 +493,14 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "y_coordinates", y, fny, "float");
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
 
-    h5write_1d(h5_file, "y_t",       q->tip_y,   q->num_case*(params.nts+1), "float");
-    h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
+    h5write_1d(h5_file, "y_t",       q->tip_y,  "float");
+    h5write_1d(h5_file, "fractions", q->frac,  "float");
+    h5write_1d(h5_file, "angles",    mac.theta_arr, "float");
 
-    h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "tip_y_f", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "cross_sec", q->cross_sec,  q->num_case*(params.nts+1)*fnx*fny, "int");
+    h5write_1d(h5_file, "extra_area", q->extra_area,  "int");
+    h5write_1d(h5_file, "total_area", q->total_area,  "int");
+    h5write_1d(h5_file, "tip_y_f", q->tip_final,   "int");
+    h5write_1d(h5_file, "cross_sec", q->cross_sec,  "int");
 
     H5Fclose(h5_file);
 

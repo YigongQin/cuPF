@@ -7,7 +7,7 @@ public:
 	int num_case;
 	int valid_run;
 	float *tip_y, *frac, *angles;
-	int *alpha, *extra_area, *total_area, *tip_final, *cross_sec;
+	int *alpha, *extra_area, *total_area, *tip_final, *cross_sec, *node_region;
 
 	QOI(){};
 	virtual ~QOI(){};
