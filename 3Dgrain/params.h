@@ -3,7 +3,7 @@
 #include <string>
 struct GlobalConstants {
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, ha_wd;
-  int Mt, nts, num_theta, NUM_PF; 
+  int Mt, nts, num_theta, NUM_PF, num_nodes; 
   float lx, lxd, lyd, lzd, tmax;
   float xmin, ymin, zmin; // MPI-related
   float asp_ratio_yx, asp_ratio_zx, moving_ratio;
