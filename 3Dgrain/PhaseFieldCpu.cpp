@@ -251,10 +251,10 @@ void PhaseField::parseInputParams(char* fileName){
     params.a_12 = 4.0*params.a_s*params.epsilon;
     params.dt_sqrt = sqrt(params.dt);
 
-    params.nx = (int) (params.lxd/params.dx/params.W0);//global cells 
-    params.ny = (int) (params.asp_ratio_yx*params.nx);
-    params.nz = (int) (params.moving_ratio*params.nx);
-    params.nz_full = (int) (params.asp_ratio_zx*params.nx);
+    params.nx = (int) round(params.lxd/params.dx/params.W0);//global cells 
+    params.ny = (int) round(params.asp_ratio_yx*params.nx);
+    params.nz = (int) round(params.moving_ratio*params.nx);
+    params.nz_full = (int) round(params.asp_ratio_zx*params.nx);
     params.lxd = params.nx*dxd;
     params.lyd = params.ny*dxd;
     params.lzd = params.nz*dxd;
@@ -280,8 +280,10 @@ void PhaseField::cpuSetup(params_MPI &pM){
 
     cout<<"dx = "<<params.lxd/params.nx/params.W0<<endl;
     cout<<"dy = "<<params.lyd/params.ny/params.W0<<endl;   
-    cout<<"dz = "<<params.lyd/params.ny/params.W0<<endl;  
-
+    cout<<"dz = "<<params.lyd/params.nz/params.W0<<endl;  
+    cout<<"nx = "<<params.nx<<endl;
+    cout<<"ny = "<<params.ny<<endl;
+    cout<<"nz = "<<params.nz<<endl;
 
     cout<<"noise coeff = "<<params.dt_sqrt*params.hi*params.eta<<endl;
 
@@ -469,7 +471,7 @@ void PhaseField::output(params_MPI pM){
     "_Mt"+to_string(params.Mt)+"_grains"+to_string(params.num_theta)+"_frames"+to_string(params.nts)+\
     "_anis"+to_stringp(params.kin_delta,3)+"_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
-    out_file = "/scratch1/07428/ygqin/graph/" +out_file;
+    out_file = "/scratch/07428/ygqin/graph/" +out_file;
     cout<< "save dir" << out_file <<endl;
 
     hid_t  h5_file; 
@@ -488,7 +490,7 @@ void PhaseField::output(params_MPI pM){
 
     h5write_1d(h5_file, "y_t",       q->tip_y,   q->num_case*(params.nts+1), "float");
     h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    q->angles, q->num_case*(2*params.num_theta+1), "float");
+    h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
     h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
