@@ -68,7 +68,7 @@ APTcollect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
    int max_loc_f = C + length*argmax; 
    if (PFs[max_loc_f]>LS){
       phi[C] = PFs[max_loc_f]; 
-      alpha_m[C] = active_args[max_loc_f] +1;
+      alpha_m[C] = active_args[max_loc_f];
     }
    }
 
@@ -84,7 +84,7 @@ APTini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
   if ( C<cP.length ) {
     if ( phi[C]>LS){
       PFs[C] = phi[C];
-      active_args[C] = alpha_m[C]-1;
+      active_args[C] = alpha_m[C];
     }
 
   }
@@ -226,10 +226,10 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
 
        float cosa, sina, cosb, sinb;
        if (phC>LS){
-       sina = sint[PF_id+1];
-       cosa = cost[PF_id+1];
-       sinb = sint[PF_id+1+cP.num_theta];
-       cosb = cost[PF_id+1+cP.num_theta];
+       sina = sint[PF_id];
+       cosa = cost[PF_id];
+       sinb = sint[PF_id+cP.num_theta];
+       cosb = cost[PF_id+cP.num_theta];
        }else{
        sina = 0.0f;
        cosa = 1.0f;
