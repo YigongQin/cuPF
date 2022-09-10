@@ -12,7 +12,7 @@
 #include "PhaseField.h"
 #include "APTPhaseField.h"
 #include "devicefunc.cu_inl"
-#include <unordered_map>
+
 using namespace std;
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
@@ -366,7 +366,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
        for (int i = 1; i<fnx-1; i++){
 
 
-        
+
        }
      }
 

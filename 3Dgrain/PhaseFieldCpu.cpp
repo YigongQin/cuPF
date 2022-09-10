@@ -68,7 +68,7 @@ std::string to_stringp(const T a_value, int n )
 void h5write_1d(hid_t h5_file, const char* name, void* data, std::string dtype){
 
     herr_t  status;
-    hid_t dataspace, h5data=0;
+    hid_t dataspace=0, h5data=0;
     hsize_t dim[1];
     
     
