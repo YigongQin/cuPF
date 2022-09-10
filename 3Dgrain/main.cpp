@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 
     int opt;
     char* fileName=argv[1]; 
-    string mac_folder;
+    string mac_folder = "line_AM";
     bool APTon = false;
     bool checkCorrectness = false;
     int seed_val;
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);
-    pf_solver->params.seed_val = seed_val;
+   // pf_solver->params.seed_val = seed_val;
 
     // start the region of gathering lots of runs
     for (int run=0;run<pf_solver->q->num_case;run++){
