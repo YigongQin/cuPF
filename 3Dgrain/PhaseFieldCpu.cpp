@@ -461,7 +461,8 @@ void QOI::initQoI(GlobalConstants params){
 
     // graph related QoIs
     int repeated_index = 9, graph_dim = 2, NUM_PF = 5;
-    node_region = new int[(params.nts+1)*repeated_index*params.num_nodes*(graph_dim + NUM_PF)];
+    node_region_size = (params.nts+1)*repeated_index*params.num_nodes*(graph_dim + NUM_PF);
+    node_region = new int[node_region_size];
 }
 
 
@@ -500,6 +501,7 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "tip_y_f", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "cross_sec", q->cross_sec,  q->num_case*(params.nts+1)*fnx*fny, "int");
+    h5write_1d(h5_file, "node_region", q->node_region,  q->node_region_size, "int");
 
     H5Fclose(h5_file);
 
