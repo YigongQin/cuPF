@@ -431,7 +431,7 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
     args_cpu = new int[length * NUM_PF];
-    memset(args_cpu, -1, sizeof(args_cpu));
+    memset(args_cpu, -1, sizeof(int) * length * NUM_PF);
 
     cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
     cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
