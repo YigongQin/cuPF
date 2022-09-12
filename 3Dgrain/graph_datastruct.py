@@ -13,9 +13,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from math import pi
-
+from shapely.geometry.polygon import Polygon
+from shapely.geometry import Point
+eps = 1e-12
 def in_bound(x, y):
-    eps = 1e-12
+    
     if x>=-eps and x<=1+eps and y>=-eps and y<=1+eps:
         return True
     else:
@@ -51,7 +53,10 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
                   points.append([x-1,y])
                   points.append([x,y+1])
                   points.append([x,y-1])                  
-                  
+                  points.append([x+1,y+1])
+                  points.append([x-1,y-1])
+                  points.append([x-1,y+1])
+                  points.append([x+1,y-1])                     
 
     return points, in_points
 
@@ -60,7 +65,7 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd, seed = 1, BC = 'noflux', randInit = True):
+    def __init__(self, lxd, seed: int = 1, BC: str = 'periodic', randInit = True):
         mesh_size, grain_size = 0.08, 2
         self.lxd = lxd
         s = int(lxd/mesh_size)+1
@@ -80,13 +85,13 @@ class graph:
         
         if randInit:
             np.random.seed(seed)
-            self.inbound_random_voronoi()    
+            self.random_voronoi()
             self.plot_polygons(pic_size=self.imagesize)
             self.num_pf = len(self.regions)
             self.color_choices = np.zeros(2*self.num_pf+1)
             self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_pf)
         
-    def inbound_random_voronoi(self):
+    def random_voronoi(self):
 
         mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
         vor = Voronoi(mirrored_seeds)     
@@ -101,6 +106,8 @@ class graph:
         
         for region in vor.regions:
             flag = True
+            inboundpoints = 0
+            upper_bound = 2 if self.BC == 'periodic' else 1
             for index in region:
                 if index == -1:
                     flag = False
@@ -108,11 +115,17 @@ class graph:
                 else:
                     x = vor.vertices[index, 0]
                     y = vor.vertices[index, 1]
-                    if not in_bound(x,y):
+                    if x<=-eps or y<=-eps or x>=upper_bound+eps or y>=upper_bound+eps:
                         flag = False
                         break
+                    if x<=1+eps and y<=1+eps:
+                        inboundpoints +=1
+                           
+            
+                        
             if region != [] and flag:
-                
+                polygon =  Polygon(vor.vertices[region]) 
+                if inboundpoints ==0 and not polygon.contains(Point(1,1)): continue
                 '''
                 valid region propertities
                 '''
@@ -145,18 +158,13 @@ class graph:
     
         vor.filtered_points = seeds
         vor.filtered_regions = regions
+
     
     
-    def reconstruct_polygons(self):
         
-        ## reconstruct with modified 
-        
-        return
-    
-    
     def plot_polygons(self, pic_size):
 
-        image = Image.new("RGB", (pic_size[0], pic_size[1]))       
+        image = Image.new("RGB", (2*pic_size[0], 2*pic_size[1]))       
         draw = ImageDraw.Draw(image)
           
         # Add polygons 
@@ -177,12 +185,21 @@ class graph:
             draw.polygon(p, fill=orientation) 
 
         img = np.asarray(image)
+        s = pic_size[0]
         for i in range(pic_size[0]):
             for j in range(pic_size[1]):
-                
-                self.alpha_field[i,j] = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]
-        
-    
+                ii, jj, = i ,j
+                if img[i,j,2]==0:
+                    if img[i+s,j,2]>0:
+                        ii += s
+                    elif img[i,j+s,2]>0:
+                        jj += s
+                    elif img[i+s,j+s,2]>0:
+                        ii += s
+                        jj += s
+                    else:
+                        raise ValueError(i,j)
+                self.alpha_field[i,j] = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]    
     
     def show_data_struct(self):
         
@@ -192,22 +209,25 @@ class graph:
         
         ax[0].scatter(self.vertices[:,0], self.vertices[:,1],s=5)
         ax[0].axis("equal")
-        ax[0].set_xlim(0,1)
-        ax[0].set_ylim(0,1)
-        ax[0].set_xticks([])
-        ax[0].set_yticks([])
+        ax[0].set_title('Vertices'+str(len(self.vertices)))
+        #ax[0].set_xlim(0,1)
+        #ax[0].set_ylim(0,1)
+        #ax[0].set_xticks([])
+        #ax[0].set_yticks([])
         
         for x, y in self.edges:
             s = [self.vertices[x][0], self.vertices[y][0]]
             t = [self.vertices[x][1], self.vertices[y][1]]
             ax[1].plot(s, t, 'k')
         ax[1].axis("equal")
-        ax[1].set_xticks([])
-        ax[1].set_yticks([])
+        ax[1].set_title('Edges'+str(len(self.edges)))
+        #ax[1].set_xticks([])
+        #ax[1].set_yticks([])
         ax[2].imshow(self.color_choices[self.alpha_field+self.num_pf], origin='lower', cmap='coolwarm')
         ax[2].set_xticks([])
         ax[2].set_yticks([])
         
+        ax[2].set_title('Grains'+str(len(self.regions)))
         plt.savefig('./voronoi.png', dpi=400)
         
 
@@ -224,7 +244,7 @@ class graph_trajectory:
 if __name__ == '__main__':
 
     
-    g1 = graph(lxd = 100, seed=1, BC='noflux')  
+    g1 = graph(lxd = 10, seed=1)  
     g1.show_data_struct()     
     
     
@@ -234,7 +254,7 @@ if __name__ == '__main__':
     # 3) check the correctness of the node_region variable
     # 4) node matching and iteration for different time frames
     # 5) equi-spaced QoI sampling, change tip_y to tip_nz
-    # 6) Image to graph qoi computation 
+    # 6) Image to graph qoi computation/ check sum to 1
     
     
 '''

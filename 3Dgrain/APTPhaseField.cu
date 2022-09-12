@@ -90,10 +90,69 @@ APTini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
   }
 }
 
-
-
 __global__ void
 APTset_BC_3D(float* ph, int* active_args, int max_area){
+
+   // dimension with R^{2D} * PF
+
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
+  int pf = index/max_area;
+  int bc_idx = index- pf*max_area;     
+
+  int area_z = fnx*fny;
+  if ( (bc_idx<area_z) && (pf<NUM_PF) ){
+     int zj = bc_idx/fnx;
+     int zi = bc_idx - zj*fnx;
+
+     int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
+     int d_in  = L2G_4D(zi, zj, fnz-2, pf, fnx, fny, fnz);
+     int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
+     int u_in  = L2G_4D(zi, zj, 1, pf, fnx, fny, fnz);
+     ph[d_out] = ph[d_in];
+     ph[u_out] = ph[u_in];
+     active_args[d_out] = active_args[d_in];
+     active_args[u_out] = active_args[u_in];
+
+  }
+
+  int area_y = fnx*fnz;
+  if ( (bc_idx<area_y) && (pf<NUM_PF) ){
+     int zk = bc_idx/fnx;
+     int zi = bc_idx - zk*fnx;
+
+     int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
+     int b_in = L2G_4D(zi, fny-2, zk, pf, fnx, fny, fnz);
+     int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
+     int t_in = L2G_4D(zi, 1, zk, pf, fnx, fny, fnz);
+     ph[b_out] = ph[b_in];
+     ph[t_out] = ph[t_in];
+     active_args[b_out] = active_args[b_in];
+     active_args[t_out] = active_args[t_in];
+
+  }
+
+  int area_x = fny*fnz;
+  if ( (bc_idx<area_x) && (pf<NUM_PF) ){
+
+     int zk = bc_idx/fny;
+     int zj = bc_idx - zk*fny;
+
+     int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
+     int l_in = L2G_4D(fnx-2, zj, zk, pf, fnx, fny, fnz);
+     int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
+     int r_in = L2G_4D(1, zj, zk, pf, fnx, fny, fnz);
+     ph[l_out] = ph[l_in];
+     ph[r_out] = ph[r_in];
+     active_args[l_out] = active_args[l_in];
+     active_args[r_out] = active_args[r_in];     
+
+  }
+
+}
+
+__global__ void
+APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
 
    // dimension with R^{2D} * PF
 
