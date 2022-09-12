@@ -60,19 +60,21 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, size, density = 0.05, noise =0.00005, seed = 1, BC = 'noflux', randInit = True):
-
-        self.imagesize = size
+    def __init__(self, lxd, seed = 1, BC = 'noflux', randInit = True):
+        mesh_size, grain_size = 0.08, 2
+        self.lxd = lxd
+        s = int(lxd/mesh_size)+1
+        self.imagesize = (s, s)
         self.vertices = [] ## vertices coordinates
         self.edges = []  ## index linkage
         self.edge_colors = []  ## defined by region orientation 
         self.regions = [] ## index group
         self.region_colors = []  ##color
        # self.region_coors = [] ## region corner coordinates
-        self.density = density
-        self.noise = noise
+        self.density = grain_size/lxd
+        self.noise = 0.001/lxd
         self.BC = BC
-        self.alpha_field = np.zeros((size[0], size[1]), dtype=int)
+        self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
 
         
         
@@ -202,7 +204,7 @@ class graph:
         ax[1].axis("equal")
         ax[1].set_xticks([])
         ax[1].set_yticks([])
-        ax[2].imshow(self.color_choices[self.alpha_field], origin='lower', cmap='coolwarm')
+        ax[2].imshow(self.color_choices[self.alpha_field+self.num_pf], origin='lower', cmap='coolwarm')
         ax[2].set_xticks([])
         ax[2].set_yticks([])
         
@@ -210,14 +212,31 @@ class graph:
         
 
 
-
+class graph_trajectory:
+    def __init__(self, frames, seed):
+        self.frames = frames
+        self.trajectory = []
+        
+    def vertex_matching(self):
+        self.vert
+        
 
 if __name__ == '__main__':
 
-    size=100
-    s = int(size/0.08)+1
-    g1 = graph(size = (s, s), density = 2/size, noise=0.001/size, seed=1, BC='noflux')  
+    
+    g1 = graph(lxd = 100, seed=1, BC='noflux')  
     g1.show_data_struct()     
+    
+    
+    # TODO:
+    # 1) change to periodic BC
+    # 2) node identification with touching regions 
+    # 3) check the correctness of the node_region variable
+    # 4) node matching and iteration for different time frames
+    # 5) equi-spaced QoI sampling, change tip_y to tip_nz
+    # 6) Image to graph qoi computation 
+    
+    
 '''
 import pickle
 
