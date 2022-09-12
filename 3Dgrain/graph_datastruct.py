@@ -15,6 +15,7 @@ from scipy.spatial import Voronoi
 from math import pi
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
+from collections import defaultdict
 eps = 1e-12
 def in_bound(x, y):
     
@@ -22,6 +23,15 @@ def in_bound(x, y):
         return True
     else:
         return False
+    
+def translate_min_dist(s, t):
+    s0, s1 = s[0], t[0]
+    t0 ,t1 = s[1], t[1]
+    if s0 - s1 >0.5: s1 += 1
+    if s1 - s0 >0.5: s0 += 1
+    if t0 - t1 >0.5: t1 += 1
+    if t1 - t0 >0.5: t0 += 1  
+    return [s0 ,s1], [t0, t1]
 
 def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     # Assemble a hexagonal lattice
@@ -71,10 +81,12 @@ class graph:
         s = int(lxd/mesh_size)+1
         self.imagesize = (s, s)
         self.vertices = [] ## vertices coordinates
+        self.vertex_region = defaultdict(set) ## (vertex index, x coordiante, y coordinate)  -> (region1, region2, region3)
         self.edges = []  ## index linkage
-        self.edge_colors = []  ## defined by region orientation 
+        self.edge_region = []  ## defined by region orientation 
         self.regions = [] ## index group
-        self.region_colors = []  ##color
+        self.region_coors = []
+        self.region_label = []  ##color
        # self.region_coors = [] ## region corner coordinates
         self.density = grain_size/lxd
         self.noise = 0.001/lxd
@@ -96,12 +108,12 @@ class graph:
         mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
         vor = Voronoi(mirrored_seeds)     
     
-        regions = []
+       # regions = []
        # reordered_regions = []
        # vertices = []
         vert_map = {}
         vert_count = 0
-        alpha, beta = 0,0 
+        alpha = 0
        # edges = []
         
         for region in vor.regions:
@@ -130,14 +142,16 @@ class graph:
                 valid region propertities
                 '''
                 
-                regions.append(region)
+            #    regions.append(region)
                 reordered_region = []
-                alpha = alpha+1 #random.randint(1, self.num_pf)
-                beta = beta+1 #random.randint(1, self.num_pf)
-                self.region_colors.append((alpha, beta))
+                alpha += 1 
+                self.region_label.append(alpha)
                 
                 for index in region:
-                    point = tuple(vor.vertices[index])
+
+                  #  point = tuple(vor.vertices[index])
+                    x, y = round(vor.vertices[index][0]%1, 4), round(vor.vertices[index][1]%1, 4)
+                    point = (x, y)
                     if point not in vert_map:
                         self.vertices.append(point)
                         vert_map[point] = vert_count
@@ -145,19 +159,24 @@ class graph:
                         vert_count += 1
                     else:
                         reordered_region.append(vert_map[point])
+                                          
+                    
                 for i in range(len(reordered_region)):
-                    cur = vor.vertices[region[i]]
-                    nxt = vor.vertices[region[i+1]] if i<len(region)-1 else vor.vertices[region[0]]
+                    cur = self.vertices[reordered_region[i]]
+                    nxt = self.vertices[reordered_region[i+1]] if i<len(reordered_region)-1 else self.vertices[reordered_region[0]]
+                    cur, nxt = np.round(cur, 4), np.round(nxt, 4)
                     self.edges.append([vert_map[tuple(cur)], vert_map[tuple(nxt)]])
-                    self.edge_colors.append((alpha, beta))
+                    self.edge_region.append(alpha)
+                    self.vertex_region[reordered_region[i]].add(alpha)  
                 self.regions.append(reordered_region)
+                self.region_coors.append(np.array(vor.vertices)[region])
                     
 
         self.vertices = np.array(self.vertices)
 
     
-        vor.filtered_points = seeds
-        vor.filtered_regions = regions
+      #  vor.filtered_points = seeds
+      #  vor.filtered_regions = regions
 
     
     
@@ -169,9 +188,9 @@ class graph:
           
         # Add polygons 
         for i in range(len(self.regions)):
-            reg = self.regions[i]
-            poly = self.vertices[reg]
-            region_id = self.region_colors[i][0]
+            
+            poly = self.region_coors[i]
+            region_id = self.region_label[i]
             Rid = region_id//(255*255)
             Gid = (region_id - Rid*255*255)//255
             Bid = region_id - Rid*255*255 - Gid*255
@@ -216,14 +235,13 @@ class graph:
         #ax[0].set_yticks([])
         
         for x, y in self.edges:
-            s = [self.vertices[x][0], self.vertices[y][0]]
-            t = [self.vertices[x][1], self.vertices[y][1]]
+            s, t = translate_min_dist(self.vertices[x], self.vertices[y])
             ax[1].plot(s, t, 'k')
         ax[1].axis("equal")
         ax[1].set_title('Edges'+str(len(self.edges)))
         #ax[1].set_xticks([])
         #ax[1].set_yticks([])
-        ax[2].imshow(self.color_choices[self.alpha_field+self.num_pf], origin='lower', cmap='coolwarm')
+        ax[2].imshow(self.color_choices[self.alpha_field+self.num_pf], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
         ax[2].set_xticks([])
         ax[2].set_yticks([])
         
@@ -249,7 +267,6 @@ if __name__ == '__main__':
     
     
     # TODO:
-    # 1) change to periodic BC
     # 2) node identification with touching regions 
     # 3) check the correctness of the node_region variable
     # 4) node matching and iteration for different time frames
