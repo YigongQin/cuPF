@@ -12,7 +12,7 @@
 #include "PhaseField.h"
 #include "APTPhaseField.h"
 #include "devicefunc.cu_inl"
-
+#include<unordered_map>
 using namespace std;
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
@@ -434,15 +434,25 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
              if (args_cpu[globalC]>-1) {neighbor_cnt++;}
           } 
           if (neighbor_cnt>=3){
-             int alpha_occur = 1;
-             int center = alpha[C];
+
+             unordered_map<int, int> occur;
              for (int dj = -1; dj<=1; dj++){ 
                 for (int di = -1; di<=1; di++){
                    int NC = offset_z + (j+dj)*fnx + i+di;
-                   if (alpha[NC]!=center) alpha_occur += 1;
+                   if (occur.find(alpha[NC])!=occur.end){
+                     occur[alpha[NC]]++;
+                   }
+                   else{
+                     occur.insert({alpha[NC], 1});
+                   }
                  }
-             }                   
-             if (alpha_occur>=3){ 
+             }       
+             int alpha_occur=0, max_occur=0;
+             for (const auto & [ key, value ] : map) {
+                 alpha_occur++;
+                 max_occur += value;
+             }          
+             if (alpha_occur>=3 && max_occur<=5){ 
                  q->node_region[offset_node_region + node_cnt*q->node_features] = i;
                  q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
                  for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
