@@ -14,7 +14,6 @@ public:
 	int* active_args_old;
 	int* active_args_new;
 	int* args_cpu;
-	float* phi_cpu;
 
 	APTPhaseField(){};
 	virtual ~APTPhaseField();
