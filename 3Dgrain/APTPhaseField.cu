@@ -439,7 +439,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
              for (int dj = -1; dj<=1; dj++){ 
                 for (int di = -1; di<=1; di++){
                    int NC = offset_z + (j+dj)*fnx + i+di;
-                   if (occur.find(alpha[NC])!=occur.end){
+                   if (occur.find(alpha[NC])!=occur.end()){
                      occur[alpha[NC]]++;
                    }
                    else{
@@ -448,7 +448,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
                  }
              }       
              int alpha_occur=0, max_occur=0;
-             for (const auto & [ key, value ] : map) {
+             for (const auto & [ key, value ] : occur) {
                  alpha_occur++;
                  max_occur += value;
              }          
