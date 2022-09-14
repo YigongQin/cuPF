@@ -16,6 +16,9 @@ from math import pi
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 from collections import defaultdict
+import h5py
+import glob, re
+
 eps = 1e-12
 def in_bound(x, y):
     
@@ -36,7 +39,8 @@ def translate_min_dist(s, t):
 def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     # Assemble a hexagonal lattice
     rows, cols = int(1/dx)+1, int(1/dx)
-    print('cols, rows of grains', cols, rows)
+    print('cols and rows of grains: ', cols, rows)
+    shiftx, shifty = 0.1*dx, 0.25*dx
     points = []
     in_points = []
     randNoise = np.random.multivariate_normal(mean=np.zeros(2), cov=np.eye(2)*noise, size=rows*cols*5)
@@ -44,8 +48,8 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     for row in range(rows*2):
         for col in range(cols):
             count+=1
-            x = ( (col + (0.5 * (row % 2)))*np.sqrt(3) )*dx
-            y = row*0.5 *dx
+            x = ( (col + (0.5 * (row % 2)))*np.sqrt(3) )*dx + shiftx
+            y = row*0.5 *dx + shifty
          
             x += randNoise[count,0]
             y += randNoise[count,1]
@@ -81,27 +85,29 @@ class graph:
         s = int(lxd/mesh_size)+1
         self.imagesize = (s, s)
         self.vertices = [] ## vertices coordinates
-        self.vertex_region = defaultdict(set) ## (vertex index, x coordiante, y coordinate)  -> (region1, region2, region3)
+        self.vertex2region = defaultdict(set) ## (vertex index, x coordiante, y coordinate)  -> (region1, region2, region3)
         self.edges = []  ## index linkage
-        self.edge_region = []  ## defined by region orientation 
+        self.edge_in_region = []  ## defined by region orientation 
         self.regions = [] ## index group
         self.region_coors = []
         self.region_label = []  ##color
+        self.region_area = []
+        self.region_center = []
        # self.region_coors = [] ## region corner coordinates
         self.density = grain_size/lxd
         self.noise = 0.001/lxd
         self.BC = BC
         self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
-
+        self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
         
         
         if randInit:
             np.random.seed(seed)
             self.random_voronoi()
+            self.region_area = np.zeros(self.num_regions)
             self.plot_polygons(pic_size=self.imagesize)
-            self.num_pf = len(self.regions)
-            self.color_choices = np.zeros(2*self.num_pf+1)
-            self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_pf)
+            self.color_choices = np.zeros(2*self.num_regions+1)
+            self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_regions)
         
     def random_voronoi(self):
 
@@ -166,19 +172,19 @@ class graph:
                     nxt = self.vertices[reordered_region[i+1]] if i<len(reordered_region)-1 else self.vertices[reordered_region[0]]
                     cur, nxt = np.round(cur, 4), np.round(nxt, 4)
                     self.edges.append([vert_map[tuple(cur)], vert_map[tuple(nxt)]])
-                    self.edge_region.append(alpha)
-                    self.vertex_region[reordered_region[i]].add(alpha)  
+                    self.edge_in_region.append(alpha)
+                    self.vertex2region[reordered_region[i]].add(alpha)  
                 self.regions.append(reordered_region)
                 self.region_coors.append(np.array(vor.vertices)[region])
                     
 
         self.vertices = np.array(self.vertices)
-
+        self.num_regions = len(self.regions)
+            
     
       #  vor.filtered_points = seeds
       #  vor.filtered_regions = regions
 
-    
     
         
     def plot_polygons(self, pic_size):
@@ -209,6 +215,7 @@ class graph:
             for j in range(pic_size[1]):
                 ii, jj, = i ,j
                 if img[i,j,2]==0:
+
                     if img[i+s,j,2]>0:
                         ii += s
                     elif img[i,j+s,2]>0:
@@ -217,14 +224,21 @@ class graph:
                         ii += s
                         jj += s
                     else:
+                        #pass
                         raise ValueError(i,j)
-                self.alpha_field[i,j] = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]    
-    
+                alpha = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]   
+                self.alpha_field[i,j] = alpha 
+                self.region_area[alpha-1] += 1
+        for i in range(2*pic_size[0]):
+            for j in range(2*pic_size[1]):
+                alpha = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]   
+                self.alpha_field_dummy[i,j] = alpha 
+     
     def show_data_struct(self):
         
         
         
-        fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        fig, ax = plt.subplots(1, 4, figsize=(20, 5))
         
         ax[0].scatter(self.vertices[:,0], self.vertices[:,1],s=5)
         ax[0].axis("equal")
@@ -241,29 +255,71 @@ class graph:
         ax[1].set_title('Edges'+str(len(self.edges)))
         #ax[1].set_xticks([])
         #ax[1].set_yticks([])
-        ax[2].imshow(self.color_choices[self.alpha_field+self.num_pf], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
+        ax[2].imshow(self.color_choices[self.alpha_field+self.num_regions], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
         ax[2].set_xticks([])
         ax[2].set_yticks([])
-        
         ax[2].set_title('Grains'+str(len(self.regions)))
+        
+        view_size = int(0.6*self.alpha_field_dummy.shape[0])
+        ax[3].imshow(self.color_choices[self.alpha_field_dummy[:view_size,:view_size]+self.num_regions], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
+        ax[3].set_xticks([])
+        ax[3].set_yticks([])
+        
         plt.savefig('./voronoi.png', dpi=400)
         
 
 
-class graph_trajectory:
-    def __init__(self, frames, seed):
-        self.frames = frames
-        self.trajectory = []
+class graph_trajectory(graph):
+    def __init__(self, seed):
+        self.data_file = (glob.glob('*seed'+str(seed)+'*'))[0]
+        f = h5py.File(self.data_file, 'r')
+        x = np.asarray(f['x_coordinates'])
+        y = np.asarray(f['y_coordinates'])
+        z = np.asarray(f['z_coordinates']) 
+        number_list=re.findall(r"[-+]?\d*\.\d+|\d+", self.data_file)
+        self.frames = int(number_list[2])+1
+        super().__init__(lxd = int(x[-2]), seed = seed)
+        
+        self.num_vertex_features = 7
+        self.active_args = np.asarray(f['node_region'])
+        self.active_args = np.asarray(self.active_args).reshape((self.num_vertex_features, 9*len(self.vertices), self.frames ), order='F')
+        self.active_coors = self.active_args[:2,:,:]
+        self.active_args = self.active_args[2:,:,:]
+        self.region2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2region.items())
+     
+        self.vertex_traj = np.zeros((len(self.vertices), self.frames))
         
     def vertex_matching(self):
-        self.vert
-        
+        vertex_visited = set(np.arange(len(self.vertices)))
+        for frame in range(1):
+            for vertex in range(self.active_args.shape[1]): 
+                args = set(self.active_args[:,vertex,frame])
+                if -1 in args: args.remove(-1)
+                if args: 
+                    args = sorted(args)
+                    if len(args)>3: print(args)
+                    for combination in range(len(args)-2):
+                
+                        args = tuple(args[combination:combination+3])
 
+                        try:
+                           # print(self.region2vertex[args])
+                            if self.region2vertex[args] in vertex_visited: 
+                                vertex_visited.remove(self.region2vertex[args])
+                        except:
+                            print("cannot find matched vertices")
+        print(vertex_visited)
+        for i in list(vertex_visited):
+            print(self.vertices[i])
 if __name__ == '__main__':
 
     
     g1 = graph(lxd = 10, seed=1)  
     g1.show_data_struct()     
+    
+    #traj = graph_trajectory(seed = 1)
+    #traj.vertex_matching()
+    #traj.show_data_struct()
     
     
     # TODO:
