@@ -381,7 +381,7 @@ APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg,
 
 }
 
-void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* args_cpu, int kt, float* z, int* loss_area, int move_count){
+void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* args_cpu, float* phi, int kt, float* z, int* loss_area, int move_count){
 
      // cur_tip here inludes the halo
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length, \
@@ -431,7 +431,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
           int neighbor_cnt = 0;
           for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
              int globalC = C + pf_id*length;
-             if (args_cpu[globalC]>-1) {neighbor_cnt++;}
+             if (phi[globalC]>LS) {neighbor_cnt++;}
           } 
           if (neighbor_cnt>=3){
              q->node_region[offset_node_region + node_cnt*q->node_features] = i;
@@ -506,6 +506,7 @@ void APTPhaseField::cudaSetup(params_MPI pM) {
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
     args_cpu = new int[length * NUM_PF];
+    float* phi_cpu = new float[length * NUM_PF];
 
     cudaMemcpy(x_device, x, sizeof(float) * fnx, cudaMemcpyHostToDevice);
     cudaMemcpy(y_device, y, sizeof(float) * fny, cudaMemcpyHostToDevice);
@@ -608,7 +609,8 @@ void APTPhaseField::evolve(){
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-   calc_qois(params, q, cur_tip, alpha, args_cpu, 0, z, loss_area, move_count);
+   cudaMemcpy(phi_cpu, PFs_new, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
+   calc_qois(params, q, cur_tip, alpha, args_cpu, phi_cpu, 0, z, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -627,11 +629,12 @@ void APTPhaseField::evolve(){
              APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
+             cudaMemcpy(phi_cpu, PFs_old, NUM_PF*length * sizeof(float),cudaMemcpyDeviceToHost);
              cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(params, q, cur_tip, alpha, args_cpu, (2*kt+2)/kts, z, loss_area, move_count);
+             calc_qois(params, q, cur_tip, alpha, args_cpu, phi_cpu, (2*kt+2)/kts, z, loss_area, move_count);
           }
 
    if ( (2*kt+2)%TIPP==0) {
