@@ -434,13 +434,24 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
              if (args_cpu[globalC]>-1) {neighbor_cnt++;}
           } 
           if (neighbor_cnt>=3){
-             q->node_region[offset_node_region + node_cnt*q->node_features] = i;
-             q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
-             for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
-                 int globalC = C + pf_id*length;
-                 q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_id] = args_cpu[globalC];
-             } 
-             node_cnt++;
+             int alpha_occur = 1;
+             int center = alpha[C];
+             for (int dj = -1; dj<=1; dj++){ 
+                for (int di = -1; di<=1; di++){
+                   int NC = offset_z + (j+dj)*fnx + i+di;
+                   if (alpha[NC]!=center) alpha_occur += 1;
+                 }
+             }                   
+             if (alpha_occur>=3){ 
+                 q->node_region[offset_node_region + node_cnt*q->node_features] = i;
+                 q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
+                 for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
+                     int globalC = C + pf_id*length;
+                     q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_id] = args_cpu[globalC];
+                 } 
+                 node_cnt++;
+             }
+
           }
        }
      }
