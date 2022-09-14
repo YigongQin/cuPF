@@ -448,9 +448,9 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
                  }
              }       
              int alpha_occur=0, max_occur=0;
-             for (const auto & [ key, value ] : occur) {
+             for (auto & it : occur) {
                  alpha_occur++;
-                 max_occur += value;
+                 max_occur = max(max_occur, it.second);
              }          
              if (alpha_occur>=3 && max_occur<=5){ 
                  q->node_region[offset_node_region + node_cnt*q->node_features] = i;
