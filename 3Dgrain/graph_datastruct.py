@@ -36,6 +36,14 @@ def translate_min_dist(s, t):
     if t1 - t0 >0.5: t0 += 1  
     return [s0 ,s1], [t0, t1]
 
+def periodic_move(x, y, xc, yc):
+    if x<xc-0.5: x+=1
+    if x>xc+0.5: x-=1
+    if y<yc-0.5: y+=1
+    if y>yc+0.5: y-=1    
+    
+    return x, y
+
 def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     # Assemble a hexagonal lattice
     rows, cols = int(1/dx)+1, int(1/dx)
@@ -180,6 +188,7 @@ class graph:
 
         self.vertices = np.array(self.vertices)
         self.num_regions = len(self.regions)
+        self.num_vertices = self.vertices.shape[0]
             
     
       #  vor.filtered_points = seeds
@@ -242,7 +251,7 @@ class graph:
         
         ax[0].scatter(self.vertices[:,0], self.vertices[:,1],s=5)
         ax[0].axis("equal")
-        ax[0].set_title('Vertices'+str(len(self.vertices)))
+        ax[0].set_title('Vertices'+str(self.num_vertices))
         #ax[0].set_xlim(0,1)
         #ax[0].set_ylim(0,1)
         #ax[0].set_xticks([])
@@ -258,7 +267,7 @@ class graph:
         ax[2].imshow(self.color_choices[self.alpha_field+self.num_regions], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
         ax[2].set_xticks([])
         ax[2].set_yticks([])
-        ax[2].set_title('Grains'+str(len(self.regions)))
+        ax[2].set_title('Grains'+str(self.num_regions))
         
         view_size = int(0.6*self.alpha_field_dummy.shape[0])
         ax[3].imshow(self.color_choices[self.alpha_field_dummy[:view_size,:view_size]+self.num_regions], origin='lower', cmap='coolwarm', vmin=-pi/2, vmax=0)
@@ -273,58 +282,122 @@ class graph_trajectory(graph):
     def __init__(self, seed):
         self.data_file = (glob.glob('*seed'+str(seed)+'*'))[0]
         f = h5py.File(self.data_file, 'r')
-        x = np.asarray(f['x_coordinates'])
-        y = np.asarray(f['y_coordinates'])
-        z = np.asarray(f['z_coordinates']) 
+        self.x = np.asarray(f['x_coordinates'])
+        self.y = np.asarray(f['y_coordinates'])
+        self.z = np.asarray(f['z_coordinates']) 
+        self.lxd = int(self.x[-2])
+        self.x/=self.lxd; self.y/=self.lxd; self.z/=self.lxd
         number_list=re.findall(r"[-+]?\d*\.\d+|\d+", self.data_file)
         self.frames = int(number_list[2])+1
-        super().__init__(lxd = int(x[-2]), seed = seed)
+        super().__init__(lxd = self.lxd, seed = seed)
         
         self.num_vertex_features = 7
         self.active_args = np.asarray(f['node_region'])
-        self.active_args = np.asarray(self.active_args).reshape((self.num_vertex_features, 9*len(self.vertices), self.frames ), order='F')
+        self.active_args = self.active_args.\
+            reshape((self.num_vertex_features, 5*len(self.vertices), self.frames ), order='F')
         self.active_coors = self.active_args[:2,:,:]
         self.active_args = self.active_args[2:,:,:]
         self.region2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2region.items())
      
-        self.vertex_traj = np.zeros((len(self.vertices), self.frames))
-        
+        self.vertex_xtraj = np.zeros((self.num_vertices, self.frames))
+        self.vertex_ytraj = np.zeros((self.num_vertices, self.frames))
+        self.outx = []
+        self.outy = []
     def vertex_matching(self):
-        vertex_visited = set(np.arange(len(self.vertices)))
-        for frame in range(1):
+       
+        active_vertices = set(np.arange(self.num_vertices))
+     
+        for frame in range(5):
+            new_vertices = set()
+            vertex_xmap, vertex_ymap = defaultdict(list), defaultdict(list)
+            quadraples = {}
             for vertex in range(self.active_args.shape[1]): 
                 args = set(self.active_args[:,vertex,frame])
                 if -1 in args: args.remove(-1)
                 if args: 
                     args = sorted(args)
-                    if len(args)>3: print(args)
-                    for combination in range(len(args)-2):
-                
-                        args = tuple(args[combination:combination+3])
+                    if len(args)==4:
+                        
+                        if tuple(args) in quadraples:
+                            combination = quadraples[tuple(args)]
+                        else:
+                        
+                            print('find quadraple: ', args)
+                           
+                            touching_vert = []
+                            for k in self.region2vertex.keys():
+                                if set(k).issubset(args):
+                                    touching_vert.append(k)
+                            print('touching vertices',touching_vert, \
+                                  self.vertex_xtraj[self.region2vertex[touching_vert[0]],frame-1],\
+                                  self.vertex_xtraj[self.region2vertex[touching_vert[1]],frame-1],\
+                                  self.vertex_ytraj[self.region2vertex[touching_vert[0]],frame-1],\
+                                  self.vertex_ytraj[self.region2vertex[touching_vert[1]],frame-1]                                     
+                                      )
+                            vert1, vert2 = touching_vert
+                            vert1, vert2 = set(vert1), set(vert2)
+                            joint = list(vert1.intersection(vert2))
+                            union = vert1.union(vert2)
+                            newvert1, newvert2 = list(union), list(union)
+                            newvert1.remove(joint[0]); newvert2.remove(joint[1])
+                            combination = [ tuple(sorted(newvert1)),\
+                                            tuple(sorted(newvert2)) ]
+                            print('vertices neighbor switched', combination)
+                            self.region2vertex[combination[0]] = self.region2vertex.pop(touching_vert[0])
+                            self.region2vertex[combination[1]] = self.region2vertex.pop(touching_vert[1])
+                            quadraples[tuple(args)] = combination
+                        
+                    else:
+                        combination = [tuple(args)]
+                        for k in quadraples.keys():
+                            if set(args).issubset(set(k)):
+                                combination = []
+                    for subargs in combination:
 
                         try:
-                           # print(self.region2vertex[args])
-                            if self.region2vertex[args] in vertex_visited: 
-                                vertex_visited.remove(self.region2vertex[args])
+                            vert = self.region2vertex[subargs]
                         except:
-                            print("cannot find matched vertices")
-        print(vertex_visited)
-        for i in list(vertex_visited):
-            print(self.vertices[i])
+                            raise KeyError('cannot find matched vertices for tuple' , subargs, 'at time: ', frame)
+                            
+                        new_vertices.add(vert)
+                        xp, yp = self.x[self.active_coors[0,vertex,frame]], self.y[self.active_coors[1,vertex,frame]]
+                        if frame>0:
+                            xp, yp = periodic_move(xp, yp, \
+                            self.vertex_xtraj[vert, frame-1], self.vertex_ytraj[vert, frame-1])
+                        vertex_xmap[vert].append(xp)
+                        vertex_ymap[vert].append(yp)
+                      #  self.outx.append(self.x[self.active_coors[0,vertex,frame]])
+                      #  self.outy.append(self.y[self.active_coors[1,vertex,frame]])
+            print("time ", frame, "eliminated vertices ", active_vertices.difference(new_vertices))
+            active_vertices = new_vertices
+            print('current number of vertices %d'%len(active_vertices))
+
+            for i in active_vertices:
+                cluster_x, cluster_y = vertex_xmap[i], vertex_ymap[i]
+                
+               # print(cluster_x, i, self.vertex2region[i])
+ 
+                self.vertex_xtraj[i, frame] = sum(cluster_x)/len(cluster_x) 
+                self.vertex_ytraj[i, frame] = sum(cluster_y)/len(cluster_y) 
+
+        self.vertices[:,0] = self.vertex_xtraj[:,frame]
+        self.vertices[:,1] = self.vertex_ytraj[:,frame]
+      #  print(vertex_visited)
+      #  for i in list(vertex_visited):
+        #    print(self.vertices[i])
 if __name__ == '__main__':
 
     
-    g1 = graph(lxd = 10, seed=1)  
-    g1.show_data_struct()     
+    #g1 = graph(lxd = 10, seed=1)  
+    #g1.show_data_struct()     
     
-    #traj = graph_trajectory(seed = 1)
-    #traj.vertex_matching()
-    #traj.show_data_struct()
-    
+    traj = graph_trajectory(seed = 1)
+    traj.show_data_struct()
+    traj.vertex_matching()
+    traj.show_data_struct()
+    #print(traj.vertex_xtraj[:,0], traj.vertex_ytraj[:,0])
     
     # TODO:
-    # 2) node identification with touching regions 
-    # 3) check the correctness of the node_region variable
     # 4) node matching and iteration for different time frames
     # 5) equi-spaced QoI sampling, change tip_y to tip_nz
     # 6) Image to graph qoi computation/ check sum to 1
