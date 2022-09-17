@@ -456,6 +456,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
                  for (auto & it: occur){
 
                      q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_count] = it.first;
+                     pf_count++;
                  } 
                  node_cnt++;
              }
