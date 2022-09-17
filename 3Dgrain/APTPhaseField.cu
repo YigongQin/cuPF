@@ -429,16 +429,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
      for (int j = 1; j<fny-1; j++){ 
        for (int i = 1; i<fnx-1; i++){
           int C = offset_z + j*fnx + i;
-          int neighbor_cnt = 0;
-          unordered_set<int> active_phs;
-          for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
-             int globalC = C + pf_id*length;
-             if (args_cpu[globalC]>-1) {
-                neighbor_cnt++;
-                active_phs.insert(args_cpu[globalC]);
-             }
-          } 
-          if (neighbor_cnt>=3){
+          
 
              unordered_map<int, int> occur;
              for (int dj = -1; dj<=1; dj++){ 
@@ -457,9 +448,8 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
              for (auto & it : occur) {
                  alpha_occur++;
                  max_occur = max(max_occur, it.second);
-                 include_flag = include_flag && (active_phs.find(it.first) != active_phs.end());
              }          
-             if (alpha_occur==neighbor_cnt && max_occur<=5 && include_flag){ 
+             if (alpha_occur==neighbor_cnt && max_occur<=5 ){ 
                  q->node_region[offset_node_region + node_cnt*q->node_features] = i;
                  q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
                  for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
@@ -469,7 +459,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
                  node_cnt++;
              }
 
-          }
+          
        }
      }
 
