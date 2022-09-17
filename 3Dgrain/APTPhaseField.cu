@@ -452,9 +452,10 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
              if (alpha_occur>=3 && max_occur<=5 ){ 
                  q->node_region[offset_node_region + node_cnt*q->node_features] = i;
                  q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
-                 for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
-                     int globalC = C + pf_id*length;
-                     q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_id] = args_cpu[globalC];
+                 int pf_count = 0;
+                 for (auto & it: occur){
+
+                     q->node_region[offset_node_region + node_cnt*q->node_features + 2 + pf_count] = it.first;
                  } 
                  node_cnt++;
              }
