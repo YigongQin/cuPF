@@ -13,6 +13,7 @@
 #include "APTPhaseField.h"
 #include "devicefunc.cu_inl"
 #include<unordered_map>
+#include<unordered_set>
 using namespace std;
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
@@ -429,9 +430,13 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
        for (int i = 1; i<fnx-1; i++){
           int C = offset_z + j*fnx + i;
           int neighbor_cnt = 0;
+          unordered_set<int> active_phs;
           for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
              int globalC = C + pf_id*length;
-             if (args_cpu[globalC]>-1) {neighbor_cnt++;}
+             if (args_cpu[globalC]>-1) {
+                neighbor_cnt++;
+                active_phs.insert(args_cpu[globalC]);
+             }
           } 
           if (neighbor_cnt>=3){
 
@@ -448,11 +453,13 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
                  }
              }       
              int alpha_occur=0, max_occur=0;
+             bool include_flag = true;
              for (auto & it : occur) {
                  alpha_occur++;
                  max_occur = max(max_occur, it.second);
+                 include_flag = include_flag && (active_phs.find(it.first) != active_phs.end());
              }          
-             if (alpha_occur>=3 && max_occur<=5){ 
+             if (alpha_occur==neighbor_cnt && max_occur<=5 && include_flag){ 
                  q->node_region[offset_node_region + node_cnt*q->node_features] = i;
                  q->node_region[offset_node_region + node_cnt*q->node_features +1] = j;
                  for (int pf_id = 0; pf_id < NUM_PF; pf_id++){
