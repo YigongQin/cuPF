@@ -34,4 +34,6 @@ https://user-images.githubusercontent.com/62076142/189384626-9093423b-6516-4eb5-
 Grain-scale simulation
 ![3Dview](https://user-images.githubusercontent.com/62076142/189384211-b82a2127-dd0f-4581-9a7e-67f8576419e9.png)
 
+Please cite the paper https://www.sciencedirect.com/science/article/pii/S0927025622000660 if you are using the codes in this repository.
+
 
