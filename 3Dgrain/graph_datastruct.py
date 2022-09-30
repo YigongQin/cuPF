@@ -128,7 +128,7 @@ class graph:
         self.lxd = lxd
         s = int(lxd/mesh_size)+1
         self.imagesize = (s, s)
-        self.vertices = [] ## vertices coordinates
+        self.vertices = defaultdict(list) ## vertices coordinates
         self.vertex2joint = defaultdict(set) ## (vertex index, x coordiante, y coordinate)  -> (region1, region2, region3)
         self.vertex_neighbor = defaultdict(set)
         self.edges = set()  ## index linkage
@@ -204,7 +204,7 @@ class graph:
                     x, y = round(vor.vertices[index][0]%1, 4), round(vor.vertices[index][1]%1, 4)
                     point = (x, y)
                     if point not in vert_map:
-                        self.vertices.append(point)
+                        self.vertices[vert_count] = point
                         vert_map[point] = vert_count
                         reordered_region.append(vert_count)
                         vert_count += 1
@@ -230,9 +230,9 @@ class graph:
             
             self.vertex_neighbor[i].add(j)
 
-        self.vertices = np.array(self.vertices)
+       # self.vertices = np.array(self.vertices)
         self.num_regions = len(self.regions)
-        self.num_vertices = self.vertices.shape[0]
+        self.num_vertices = len(self.vertices)
             
     
       #  vor.filtered_points = seeds
@@ -294,7 +294,9 @@ class graph:
         
         fig, ax = plt.subplots(2, 3, figsize=(15, 10))
         
-        ax[0,0].scatter(self.vertices[:,0], self.vertices[:,1],s=5)
+        vertices = list(self.vertices.values())
+        x, y = zip(*vertices)
+        ax[0,0].scatter(list(x), list(y), s=5)
         ax[0,0].axis("equal")
         ax[0,0].set_title('Vertices'+str(len(self.vertex_neighbor)))
         #ax[0].set_xlim(0,1)
@@ -340,7 +342,7 @@ class graph:
         ax[1,2].set_yticks([])
         ax[1,2].set_title('error'+'%d'%(error*100)+'%')                 
                
-       # plt.savefig('./voronoi.png', dpi=400)
+        plt.savefig('./voronoi.png', dpi=400)
        
     def update(self):
         
@@ -364,12 +366,15 @@ class graph:
         for k, v in self.joint2vertex.items():
             for region in set(k):
                 self.regions[region].append(v)
+                
                 self.region_coors[region].append(self.vertices[v])
         
         for region, verts in self.region_coors.items():
+        #    assert len(verts)>1, ('one vertex is not a grain ', region, self.regions[region])
             inbound = [verts[0][0]>-eps, verts[0][1]>-eps]
             moved_region = []
             for i in range(1, len(verts)):
+                
                 verts[i] = periodic_move(verts[i], verts[i-1])
                 inbound = [i and (j>-eps) for i, j in zip(inbound, verts[i])]
             for vert in verts:
@@ -446,23 +451,45 @@ class graph_trajectory(graph):
             # deal with eliminated grain
             
             ###==================###
-            
+            visited = set()
             for elm_grain in eliminated_grains:
-                
+                if elm_grain in visited:
+                    continue
                 old_vert = []
-                todelete = []
+                todelete = set()
                 junction = set()
                 for k, v in self.joint2vertex.items():
                     if elm_grain in set(k):
                         junction.update(set(k))
                         old_vert.append(self.joint2vertex[k])
-                        todelete.append(k)
+                        todelete.add(k)
                         
+
+                '''        
+                if len(junction) == 3:
+                    
+                    self.joint2vertex[tuple(sorted(junction))] = old_vert[-1]
+                    print('the new joint', tuple(sorted(junction)), 'inherit the vert', old_vert[-1])
+                    old_vert.pop()
+                
+                else:
+                
+                cur_junction = junction.copy()
+                for neighbor in cur_junction:
+                    if neighbor in eliminated_grains:
+                        visited.add(neighbor)
+                        for k, v in self.joint2vertex.items():
+                            if neighbor in set(k):
+                                junction.update(set(k))
+                                if self.joint2vertex[k] not in old_vert:
+                                    old_vert.append(self.joint2vertex[k])
+                                todelete.add(k)
+                 '''       
                 junction.remove(elm_grain)        
                 print('%dth grain eliminated with no. of sides %d'%(elm_grain, len(todelete)), junction)
                 for k in todelete:
-                    del self.joint2vertex[k]
-                        
+                    del self.joint2vertex[k]   
+                    
                 
                 for k, v in cur_joint.items():
                     if set(k).issubset(junction) and k not in self.joint2vertex:
@@ -470,7 +497,7 @@ class graph_trajectory(graph):
                         print('the new joint', k, 'inherit the vert', old_vert[-1])
                         old_vert.pop()
                 
-              #  assert len(old_vert) == 2
+             #   assert len(old_vert) == 2
                         
             ###===================####
             
@@ -523,25 +550,28 @@ class graph_trajectory(graph):
                     print('E2 neighor switching: ', old_junction_i, old_junction_j, ' --> ', new_junction_i, new_junction_j)
                     
                 
-           
+            old_vertices = self.vertices.copy()
+            self.vertices.clear()
             for joint in self.joint2vertex.keys():
                 if joint in cur_joint:
                     vert = self.joint2vertex[joint]
                     new_vert.add(vert)
                     coors = cur_joint[joint]
-                    coors = [periodic_move(i, self.vertices[vert]) for i in coors]
+                    coors = [periodic_move(i, old_vertices[vert]) for i in coors]
                     cluster_x, cluster_y = zip(*coors)
-                    
+
                     self.vertices[vert] = (sum(cluster_x)/len(cluster_x), sum(cluster_y)/len(cluster_y))
 
                 else:
-                    print(colored('unmatched joint detected: ', 'red'), joint)
+                    vert = self.joint2vertex[joint]
+                    self.vertices[vert] = old_vertices[vert]
+                    print(colored('unmatched joint detected: ', 'red'), joint, self.joint2vertex[joint])
             for joint in cur_joint.keys():
                 if joint not in self.joint2vertex:
                     print(colored('unused joint detected: ', 'green'), joint)
 
             
-            
+           
             print('number of E1 %d, number of E2 %d'%(len(eliminated_grains), len(switching_event)))
             print('====================================')
                     
@@ -576,10 +606,10 @@ class graph_trajectory(graph):
             
             for q, coors in quadraples:
               #  print('qudraple: ', q)
-              #  for k in self.joint2vertex.keys():
-              #      if set(k).issubset(q):
+                for k in self.joint2vertex.keys():
+                    if set(k).issubset(q):
                    #     print('classified to triple', k)
-               #         cur_joint[k].append(coors)
+                        cur_joint[k].append(coors)
                 for k in cur_joint.keys():
                     if set(k).issubset(q):
                    #     print('classified to triple', k)
