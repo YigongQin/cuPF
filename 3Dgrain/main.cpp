@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
     int opt;
     string inputfile = argv[1]; 
-    string mac_folder = "line_AM";
+    string mac_folder = "forcing/case";
     bool APTon = true;
     bool checkCorrectness = false;
     int seed_val;
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     // run the python initialization for temperature and orientation field
     string cmd = "python3 " + inputfile + " " + to_string(seed_val);
     int result = system(cmd.c_str()); 
-    assert(result != -1);
+    assert(result == 0);
 
     PhaseField* pf_solver;
     if (APTon){

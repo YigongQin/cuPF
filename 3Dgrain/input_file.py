@@ -66,8 +66,8 @@ R_list = np.array([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.7, 1.8, 1.84, 1.86, 1
 
 
 seed = int(sys.argv[1])
-Gid = seed%len(G_list)
-Rid = seed//len(G_list)
+Gid = 15 #seed%len(G_list)
+Rid = 4 #seed//len(G_list)
 
 G = G_list[Gid]
 Rmax = 1e6*R_list[Rid]
@@ -106,7 +106,7 @@ for i in range(nx*ny*nz*nt):
     if ti==0:
        psi[i] = z0 - z[zi]      
         
-mac_folder = './grids/line_AM/' + str(seed)
+mac_folder = './forcing/case' + str(seed) + '/'
 
 isExist = os.path.exists(mac_folder)
 
