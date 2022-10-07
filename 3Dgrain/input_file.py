@@ -39,7 +39,6 @@ nuc_rad = 0.3      # 0.2 um radius of a nucleai
 
 ## noise
 eta = 0.0  
-seed_val = 1                  # magnitude of noise
 noi_period = 200
 
 
@@ -63,8 +62,19 @@ BC = Lx/(nx-3)
 top = 30
 
 
-G = float(sys.argv[1]);
-Rmax = 1e6*float(sys.argv[2]);
+G_list = np.array([0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6, 7, 8.5, 10])
+R_list = np.array([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.7, 1.8, 1.84, 1.86, 1.92, 1.96, 2])
+
+
+seed = int(sys.argv[1])
+Gid = seed%len(G_list)
+Rid = seed//len(G_list)
+
+G = G_list[Gid]
+Rmax = 1e6*R_list[Rid]
+print('samples in G, R domain: ', len(G_list), len(R_list))
+print('sampled G, R values: ', G, Rmax)
+
 z0 = 2
 
 x = np.linspace(0-BC,Lx+BC,nx)
@@ -74,11 +84,10 @@ t = np.linspace(0,top/Rmax,nt)
 tmax = t[-1]
 
 T = np.zeros(nx*ny*nz*nt)
-#alpha = np.zeros(nx*ny*nz)
 psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
-g1 = graph(lxd = Lx, seed = seed_val) 
+g1 = graph(lxd = Lx, seed = seed) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 alpha = g1.alpha_field
 NG = len(g1.regions)

@@ -1,0 +1,1 @@
+for i in {1..4}; do echo "./phase_field input_file -a 1 -s $i";done > cmdfile

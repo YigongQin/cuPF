@@ -9,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iterator>
+#include <assert.h>
 #include "params.h"
 #include "PhaseField.h"
 #include "APTPhaseField.h"
@@ -36,9 +37,9 @@ int main(int argc, char** argv)
 
 
     int opt;
-    char* fileName=argv[1]; 
+    char* inputfile = argv[1]; 
     string mac_folder = "line_AM";
-    bool APTon = false;
+    bool APTon = true;
     bool checkCorrectness = false;
     int seed_val;
     static struct option long_options[] = {
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
             mac_folder = optarg;
             break;
         case 'a':
-            APTon = true;
+            APTon = false;
             break;
         case 's':
             seed_val = atoi(optarg);
@@ -70,7 +71,11 @@ int main(int argc, char** argv)
         }
     }
 
-    
+    // run the python initialization for temperature and orientation field
+    string cmd = "python3 " + inputfile + " " + to_string(seed_val);
+    int result = system(cmd); 
+    assert(result != -1);
+
     PhaseField* pf_solver;
     if (APTon){
         printf("use APT algorithm\n");
@@ -78,8 +83,9 @@ int main(int argc, char** argv)
     }else{
     pf_solver = new PhaseField();
     }
-    pf_solver->mac.folder = mac_folder;
-    pf_solver->parseInputParams(fileName);
+    pf_solver->mac.folder = mac_folder + to_string(seed_val);
+    pf_solver->params.seed_val = seed_val;
+    pf_solver->parseInputParams(inputfile);
     pf_solver->q = new QOI();
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 

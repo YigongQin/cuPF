@@ -104,7 +104,7 @@ void PhaseField::parseInputParams(char* fileName){
     float ictype;
     float ha_wd;
     float temp_Nx, temp_Ny, temp_Nz, temp_Nt;
-    float seed_val, nprd;
+    float nprd;
     ifstream parseFile(fileName);
     string lineText;
     while (parseFile.good()){
@@ -140,8 +140,8 @@ void PhaseField::parseInputParams(char* fileName){
         params.nts = (int)nts;
         getParam(lineText, "ictype", ictype);
         params.ictype = (int)ictype;
-       getParam(lineText, "seed_val", seed_val);
-        params.seed_val = (int)seed_val;
+    //   getParam(lineText, "seed_val", seed_val);
+    //    params.seed_val = (int)seed_val;
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
         getParam(lineText, "kin_delta", params.kin_delta);
