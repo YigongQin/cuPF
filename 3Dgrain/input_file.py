@@ -1,7 +1,6 @@
 import numpy as np
-import scipy.io as sio
 import h5py
-import sys
+import sys, os
 from graph_datastruct import graph
 
 Dh = 8.43e7                     # heat diffusion
@@ -107,7 +106,15 @@ for i in range(nx*ny*nz*nt):
     if ti==0:
        psi[i] = z0 - z[zi]      
         
-mac_folder = 'line_AM/'    
+mac_folder = './grids/line_AM/' + str(seed)
+
+isExist = os.path.exists(mac_folder)
+
+if not isExist:
+  
+  # Create a new directory because it does not exist 
+  os.makedirs(mac_folder)
+  
 np.savetxt(mac_folder+'x.txt', x, fmt='%1.4e',delimiter='\n') 
 np.savetxt(mac_folder+'y.txt', y, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'z.txt', z, fmt='%1.4e',delimiter='\n')
