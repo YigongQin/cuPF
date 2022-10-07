@@ -460,7 +460,7 @@ void QOI::initQoI(GlobalConstants params){
     tip_final   = new int[num_case*(params.nts+1)*params.num_theta];
 
     // graph related QoIs
-    int repeated_index = 9;
+    int repeated_index = 5;
     node_features = 7;
     node_region_size = (params.nts+1)*repeated_index*params.num_nodes*node_features;
     node_region = new int[node_region_size];
