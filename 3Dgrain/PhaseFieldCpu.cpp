@@ -98,7 +98,7 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 }
 
 
-void PhaseField::parseInputParams(char* fileName){
+void PhaseField::parseInputParams(string fileName){
 
     float nts;
     float ictype;

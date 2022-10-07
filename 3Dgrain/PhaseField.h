@@ -40,7 +40,7 @@ public:
 
 	PhaseField(){};
 	virtual ~PhaseField();
-	void parseInputParams(char* fileName);
+	void parseInputParams(string fileName);
 	void cpuSetup(params_MPI &pM);
 	void initField();
 	virtual void cudaSetup(params_MPI pM); // setup cuda for every GPU
