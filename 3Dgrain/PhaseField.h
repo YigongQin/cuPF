@@ -16,6 +16,7 @@ public:
 	Mac_input Mgpu;
 	GlobalConstants params;
 	QOI* q;
+        string out_folder;
 	// define the scale/resolution of the problem first
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
 

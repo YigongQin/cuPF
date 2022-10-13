@@ -26,12 +26,13 @@
 #SBATCH -A ASC21002       # Allocation name (req'd if you have more than 1)
 
 # Other commands must follow all #SBATCH directives...
-module load python3
 #export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
 module load launcher_gpu
 module list
 pwd
 date
+
+bash createcmd
 
 export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins
 export LAUNCHER_RMI=SLURM

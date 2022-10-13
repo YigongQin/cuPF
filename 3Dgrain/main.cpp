@@ -39,6 +39,7 @@ int main(int argc, char** argv)
     int opt;
     string inputfile = argv[1]; 
     string mac_folder = "forcing/case";
+    string out_folder = "/scratch/07428/ygqin/graph/"; 
     bool APTon = true;
     bool checkCorrectness = false;
     int seed_val;
@@ -68,6 +69,9 @@ int main(int argc, char** argv)
         case 's':
             seed_val = atoi(optarg);
             break;
+        case 'o':
+            out_folder = out_folder + optarg;
+            break;
         }
     }
 
@@ -84,6 +88,7 @@ int main(int argc, char** argv)
     pf_solver = new PhaseField();
     }
     pf_solver->mac.folder = mac_folder + to_string(seed_val);
+    pf_solver->out_folder = out_folder;
     pf_solver->params.seed_val = seed_val;
     pf_solver->parseInputParams(inputfile);
     pf_solver->q = new QOI();

@@ -480,7 +480,7 @@ void PhaseField::output(params_MPI pM){
     "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt)+\
     "_train"+to_string(q->num_case-q->valid_run)+"_test"+to_string(q->valid_run);
     string out_file = out_format+ "_rank"+to_string(pM.rank)+".h5";
-    out_file = "/scratch/07428/ygqin/graph/" +out_file;
+    out_file = out_folder + '/' + out_file;
     cout<< "save dir" << out_file <<endl;
 
     hid_t  h5_file; 

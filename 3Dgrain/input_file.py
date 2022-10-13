@@ -66,9 +66,10 @@ R_list = np.array([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.7, 1.8, 1.84, 1.86, 1
 
 
 seed = int(sys.argv[1])
-Gid = 15 #seed%len(G_list)
-Rid = 4 #seed//len(G_list)
-
+Gid = 15
+Rid = 4
+#Gid = seed%len(G_list)
+#Rid = seed//len(G_list)
 G = G_list[Gid]
 Rmax = 1e6*R_list[Rid]
 print('samples in G, R domain: ', len(G_list), len(R_list))
