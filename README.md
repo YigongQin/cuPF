@@ -1,6 +1,22 @@
 # PF_cpp
 Phase field simulation written in C++, CUDA. Scaling: CUDA-aware MPI. 
 
+## Cite
+
+If you are using the codes in this repository, please cite the following paper
+```
+@article{qin2022dendrite,
+  title={Dendrite-resolved, full-melt-pool phase-field simulations to reveal non-steady-state effects and to test an approximate model},
+  author={Qin, Yigong and Bao, Yuanxun and DeWitt, Stephen and Radhakrishnan, Balasubramanian and Biros, George},
+  journal={Computational Materials Science},
+  volume={207},
+  pages={111262},
+  year={2022},
+  publisher={Elsevier}
+  url = {https://www.sciencedirect.com/science/article/pii/S0927025622000660}
+}
+```
+
 ## Build
 
 Compiler: xl   
@@ -34,21 +50,7 @@ Grain-scale simulation
 ```
 ![3Dview](https://user-images.githubusercontent.com/62076142/189384211-b82a2127-dd0f-4581-9a7e-67f8576419e9.png)
 
-## Citation
 
-If you are using the codes in this repository, please cite the following paper
-```
-@article{qin2022dendrite,
-  title={Dendrite-resolved, full-melt-pool phase-field simulations to reveal non-steady-state effects and to test an approximate model},
-  author={Qin, Yigong and Bao, Yuanxun and DeWitt, Stephen and Radhakrishnan, Balasubramanian and Biros, George},
-  journal={Computational Materials Science},
-  volume={207},
-  pages={111262},
-  year={2022},
-  publisher={Elsevier}
-  url = {https://www.sciencedirect.com/science/article/pii/S0927025622000660}
-}
-```
 
 ## Reference
 ```
