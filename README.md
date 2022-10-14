@@ -1,5 +1,5 @@
 # PF_cpp
-Phase field simulation written in C++ and CUDA 
+Phase field simulation written in C++ CUDA 
 
 # Build
 
