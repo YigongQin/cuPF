@@ -1,7 +1,7 @@
 # PF_cpp
 Phase field simulation written in C++, CUDA. Scaling: CUDA-aware MPI. 
 
-# Build
+## Build
 
 Compiler: xl   
 MPI: spectrum MPI (CUDA-aware)  
