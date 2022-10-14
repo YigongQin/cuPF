@@ -1,6 +1,5 @@
 # PF_cpp
 Phase field simulation written in C++ and CUDA 
-Model comes from a nonlinear transformed Echebarria's model https://journals.aps.org/pre/abstract/10.1103/PhysRevE.70.061604  
 
 # Build
 
@@ -48,3 +47,11 @@ If you are using the codes in this repository, please cite the following paper
   url = {https://www.sciencedirect.com/science/article/pii/S0927025622000660}
 }
 ```
+
+# Reference
+```
+[1] Blas Echebarria, Roger Folch, Alain Karma, and Mathis Plapp. Quantitative phase-field model of alloy solidification. Physical Review E, 70(6):061604, 2004.
+[2] D. Tourret and A. Karma. Three-dimensional dendritic needle network model for alloy solidifi- cation. Acta Materialia, 120:240–254, 2016.
+```
+# Author
+This software was primarily written by Yigong Qin who is advised by Prof. George Biros.
