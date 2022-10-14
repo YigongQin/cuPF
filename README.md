@@ -23,17 +23,25 @@ MPI scaling
 
 <img width="556" alt="timing" src="https://user-images.githubusercontent.com/62076142/119079655-23c57500-b9be-11eb-844f-21b30837c56c.png">
 
-
+# Example
 Dentrite-scale simulation
 
-
-
 https://user-images.githubusercontent.com/62076142/189384626-9093423b-6516-4eb5-9464-cf358a0a4ce4.mp4
-
 
 Grain-scale simulation
 ![3Dview](https://user-images.githubusercontent.com/62076142/189384211-b82a2127-dd0f-4581-9a7e-67f8576419e9.png)
 
-Please cite the paper "Dendrite-resolved, full-melt-pool phase-field simulations to reveal non-steady-state effects and to test an approximate model" https://www.sciencedirect.com/science/article/pii/S0927025622000660 if you are using the codes in this repository.
+# Citation
 
+If you are using the codes in this repository, please cite the following paper
 
+@article{qin2022dendrite,
+  title={Dendrite-resolved, full-melt-pool phase-field simulations to reveal non-steady-state effects and to test an approximate model},
+  author={Qin, Yigong and Bao, Yuanxun and DeWitt, Stephen and Radhakrishnan, Balasubramanian and Biros, George},
+  journal={Computational Materials Science},
+  volume={207},
+  pages={111262},
+  year={2022},
+  publisher={Elsevier}
+  url = {https://www.sciencedirect.com/science/article/pii/S0927025622000660}
+}
