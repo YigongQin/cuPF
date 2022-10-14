@@ -25,11 +25,13 @@ DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS_DIR
 <img width="556" alt="timing" src="https://user-images.githubusercontent.com/62076142/119079655-23c57500-b9be-11eb-844f-21b30837c56c.png">
 
 # Example
+```
 Dentrite-scale simulation
-
+```
 https://user-images.githubusercontent.com/62076142/189384626-9093423b-6516-4eb5-9464-cf358a0a4ce4.mp4
-
+```
 Grain-scale simulation
+```
 ![3Dview](https://user-images.githubusercontent.com/62076142/189384211-b82a2127-dd0f-4581-9a7e-67f8576419e9.png)
 
 # Citation
