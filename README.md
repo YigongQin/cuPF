@@ -34,7 +34,7 @@ Grain-scale simulation
 # Citation
 
 If you are using the codes in this repository, please cite the following paper
-'''
+```
 @article{qin2022dendrite,
   title={Dendrite-resolved, full-melt-pool phase-field simulations to reveal non-steady-state effects and to test an approximate model},
   author={Qin, Yigong and Bao, Yuanxun and DeWitt, Stephen and Radhakrishnan, Balasubramanian and Biros, George},
@@ -45,4 +45,4 @@ If you are using the codes in this repository, please cite the following paper
   publisher={Elsevier}
   url = {https://www.sciencedirect.com/science/article/pii/S0927025622000660}
 }
-'''
+```
