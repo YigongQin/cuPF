@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     int opt;
     string inputfile = argv[1]; 
     string mac_folder = "forcing/case";
-    string out_folder = "/scratch/07428/ygqin/graph/"; 
+    string out_folder = "/scratch1/07428/ygqin/graph/"; 
     bool APTon = true;
     bool checkCorrectness = false;
     int seed_val;
@@ -47,14 +47,15 @@ int main(int argc, char** argv)
         {"help",     0, 0,  '?'},
         {"check",    0, 0,  'c'},
         {"bench",    1, 0,  'b'},
-        {"file",     1, 0,  'f'},
-        {"apton",    1, 0,  'a'},
-        {"size",     1, 0,  's'},
+        {"macfile",  1, 0,  'f'},
+        {"APTon",    1, 0,  'a'},
+        {"seed",     1, 0,  's'},
+        {"output",   1, 0,  'o'},
         {0 ,0, 0, 0}
     };
 
     
-    while ((opt = getopt_long(argc, argv, "b:f:a:s:c?", long_options, NULL)) != EOF) {
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:c?", long_options, NULL)) != EOF) {
 
         switch (opt) {
         case 'c':
