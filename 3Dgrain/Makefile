@@ -40,7 +40,7 @@ GENCODE_FLAGS   := $(GENCODE_SM70) # For Pascal architecture
 ################################################################################
 NVCC_LDFLAGS=-L$(CUDA_PATH)/lib64/ -lcudart -Wl,-rpath=$(CUDA_PATH)/lib64
 NVCC=$(CUDA_PATH)/bin/nvcc -ccbin=$(MPICXX) 
-NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS)
+NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++11
 
 #CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
