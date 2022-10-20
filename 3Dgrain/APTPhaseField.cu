@@ -38,11 +38,11 @@ kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float
 
    float a_s = 1.0f + 3.0f*cP.kin_delta;
    float epsilon = -4.0f*cP.kin_delta/a_s;
-   float ux2 = cosa*cosb*ux  + sina*uy + cosa*sinb*uz;
+   float ux2 = cosa*cosb*ux  + sina*uy - cosa*sinb*uz;
          ux2 = ux2*ux2;
-   float uy2 = -sina*cosb*ux + cosa*uy - sina*sinb*uz;
+   float uy2 = -sina*cosb*ux + cosa*uy + sina*sinb*uz;
          uy2 = uy2*uy2;      
-   float uz2 = -sinb*ux      + 0       + cosb*uz;
+   float uz2 = sinb*ux      + 0       + cosb*uz;
          uz2 = uz2*uz2;
    float MAG_sq = (ux2 + uy2 + uz2);
    float MAG_sq2= MAG_sq*MAG_sq;
