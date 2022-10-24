@@ -24,8 +24,14 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 from collections import defaultdict
 import h5py
-import glob, re, math
+import glob, re, math, os, argparse
 from termcolor import colored
+import dill
+
+def angle_norm(angular):
+
+    return - ( 2*(angular + pi/2)/(pi/2) - 1 )
+
 eps = 1e-12
 def in_bound(x, y):
     
@@ -123,9 +129,10 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd, seed: int = 1, BC: str = 'periodic', randInit = True):
+    def __init__(self, lxd: float = 10, seed: int = 1, BC: str = 'periodic', randInit: bool = True):
         mesh_size, grain_size = 0.08, 2
         self.lxd = lxd
+        self.seed = seed
         s = int(lxd/mesh_size)+1
         self.imagesize = (s, s)
         self.vertices = defaultdict(list) ## vertices coordinates
@@ -143,17 +150,33 @@ class graph:
         self.BC = BC
         self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
         self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
-        
+        self.error_layer = 0
         
         if randInit:
             np.random.seed(seed)
             self.random_voronoi()
-          #  self.region_area = np.zeros(self.num_regions)
-            self.plot_polygons()
+            self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
+            self.update()
+            self.num_regions = len(self.regions)
+            self.num_vertices = len(self.vertices)
             self.alpha_pde = self.alpha_field
-            self.color_choices = np.zeros(2*self.num_regions+1)
-            self.color_choices[1:] = -pi/2*np.random.random_sample(2*self.num_regions)
-        
+            cur_grain, counts = np.unique(self.alpha_pde, return_counts=True)
+            self.area_counts = dict(zip(cur_grain, counts))
+
+            
+            # sample orientations
+            ux = np.random.randn(self.num_regions)
+            uy = np.random.randn(self.num_regions)
+            uz = np.random.randn(self.num_regions)
+            self.theta_x = np.zeros(1 + self.num_regions)
+            self.theta_z = np.zeros(1 + self.num_regions)
+            self.theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
+            self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+
+    
+    def compute_error_layer(self):
+        self.error_layer = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
+    
     def random_voronoi(self):
 
         mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
@@ -213,32 +236,22 @@ class graph:
                                           
                     
                 for i in range(len(reordered_region)):
-                    cur = self.vertices[reordered_region[i]]
-                    nxt = self.vertices[reordered_region[i+1]] if i<len(reordered_region)-1 else self.vertices[reordered_region[0]]
-                    cur, nxt = np.round(cur, 4), np.round(nxt, 4)
-                    if (vert_map[tuple(cur)], vert_map[tuple(nxt)]) in self.edges:
-                        self.edges.add((vert_map[tuple(nxt)], vert_map[tuple(cur)]))
-                    else:
-                        self.edges.add((vert_map[tuple(cur)], vert_map[tuple(nxt)]))
-                    self.edge_in_region.append(alpha)
-                    self.vertex2joint[reordered_region[i]].add(alpha)  
-                self.regions.update({alpha: reordered_region})
-                self.region_coors.update({alpha: list(np.array(vor.vertices)[region])})
-                
-                 
-        for i, j in self.edges:
-            
-            self.vertex_neighbor[i].add(j)
 
-       # self.vertices = np.array(self.vertices)
-        self.num_regions = len(self.regions)
-        self.num_vertices = len(self.vertices)
+                    self.vertex2joint[reordered_region[i]].add(alpha)  
+
             
     
       #  vor.filtered_points = seeds
       #  vor.filtered_regions = regions
         
     def plot_polygons(self):
+        """
+        Input: region_coors
+        Output: alpha_field, just index
+
+        """
+        
+        
         s = self.imagesize[0]
         image = Image.new("RGB", (2*s, 2*s))       
         draw = ImageDraw.Draw(image)
@@ -287,6 +300,8 @@ class graph:
             for j in range(2*s):
                 alpha = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]   
                 self.alpha_field_dummy[i,j] = alpha 
+                
+        
      
     def show_data_struct(self):
         
@@ -321,33 +336,37 @@ class graph:
         
         view_size = int(0.6*self.alpha_field_dummy.shape[0])
         field = self.alpha_field_dummy[:view_size,:view_size]
-        field = self.color_choices[field+self.num_regions*(field>0)]
-        ax[0,2].imshow((field/pi*180 + 90 )*(field<0), origin='lower', cmap=newcmp, vmin=0, vmax=90)
+        field = self.theta_z[field]
+        ax[0,2].imshow((field/pi*180)*(field>0), origin='lower', cmap=newcmp, vmin=0, vmax=90)
         ax[0,2].set_xticks([])
         ax[0,2].set_yticks([])
         ax[0,2].set_title('Grains'+str(len(self.regions))) 
 
-        ax[1,0].imshow(self.color_choices[self.alpha_field+self.num_regions], origin='lower', cmap=newcmp, vmin=-pi/2, vmax=0)
+        ax[1,0].imshow(self.theta_z[self.alpha_field]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
         ax[1,0].set_xticks([])
         ax[1,0].set_yticks([])
         ax[1,0].set_title('vertex model reconstructed') 
-        ax[1,1].imshow(self.color_choices[self.alpha_pde+self.num_regions], origin='lower', cmap=newcmp, vmin=-pi/2, vmax=0)
+        ax[1,1].imshow(self.theta_z[self.alpha_pde]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
         ax[1,1].set_xticks([])
         ax[1,1].set_yticks([])
         ax[1,1].set_title('pde')         
         
-        error = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
+        
         ax[1,2].imshow(1*(self.alpha_pde!=self.alpha_field),cmap='Reds',origin='lower')
         ax[1,2].set_xticks([])
         ax[1,2].set_yticks([])
-        ax[1,2].set_title('error'+'%d'%(error*100)+'%')                 
+        ax[1,2].set_title('error'+'%d'%(self.error_layer*100)+'%')                 
                
         plt.savefig('./voronoi.png', dpi=400)
        
     def update(self):
         
-        # input is joint2vertex and self.vertices
+        """
+        Input: joint2vertex, vertices
+        Output: edges, region_coors
+        """
         
+        # form edge
         self.vertex2joint = dict((v, k) for k, v in self.joint2vertex.items())
         self.vertex_neighbor.clear()
         for k1, v1 in self.joint2vertex.items():
@@ -360,6 +379,7 @@ class graph:
             for i in v:
                 self.edges.add((k, i))
         
+        # form region
         self.regions.clear()
         self.region_coors.clear()
         self.region_center.clear()
@@ -388,51 +408,138 @@ class graph:
                 key = lambda x: counterclock(x, self.region_center[region]))        
                      
         
+        self.plot_polygons()
+
+    def GNN_update(self, X: np.ndarray):
+        
+        for joint, coors in self.vertices.items():
+            self.vertices[joint] = X[joint]
+            
+        self.update()
 
 class graph_trajectory(graph):
-    def __init__(self, seed):
-        self.data_file = (glob.glob('*seed'+str(seed)+'*'))[0]
+    def __init__(self, lxd: float = 10, seed: int = 1, frames: int = 1, physical_params = {}):   
+        super().__init__(lxd = lxd, seed = seed)
+        
+        self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
+        self.frames = frames
+        self.joint_traj = []
+        self.events = np.zeros((2, self.frames), dtype=int)
+        
+        self.show = False
+        self.states = []
+        self.physical_params = physical_params
+
+    def load_trajectory(self, rawdat_dir: str = './'):
+       
+        
+        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+'_*'))[0]
         f = h5py.File(self.data_file, 'r')
         self.x = np.asarray(f['x_coordinates'])
         self.y = np.asarray(f['y_coordinates'])
         self.z = np.asarray(f['z_coordinates']) 
-        self.lxd = int(self.x[-2])
-        self.x/=self.lxd; self.y/=self.lxd; self.z/=self.lxd
+
+        assert int(self.lxd) == int(self.x[-2])
+        
+        self.x /= self.lxd; self.y /= self.lxd; self.z /= self.lxd
         fnx, fny = len(self.x), len(self.y)
+
+        assert len(self.x) -2 == self.imagesize[0]
+        assert len(self.y) -2 == self.imagesize[1]  
+        
         number_list=re.findall(r"[-+]?\d*\.\d+|\d+", self.data_file)
-        self.frames = int(number_list[2])+1
+        data_frames = int(number_list[2])+1
+        
+        self.physical_params = {'G':float(number_list[3]), 'R':float(number_list[4])}
         self.alpha_pde_frames = np.asarray(f['cross_sec'])
-        self.alpha_pde_frames = self.alpha_pde_frames.reshape((fnx, fny, self.frames),order='F')[1:-1,1:-1,:]
+        self.alpha_pde_frames = self.alpha_pde_frames.reshape((fnx, fny, data_frames),order='F')[1:-1,1:-1,:]        
         
-        
-        super().__init__(lxd = self.lxd, seed = seed)
-        
-        self.num_vertex_features = 7
+        self.extraV_frames = np.asarray(f['extra_area'])
+        self.extraV_frames = self.extraV_frames.reshape((self.num_regions, data_frames), order='F')        
+     
+        self.num_vertex_features = 7  ## first 2 are x,y coordinates, next 5 are possible phase
         self.active_args = np.asarray(f['node_region'])
         self.active_args = self.active_args.\
-            reshape((self.num_vertex_features, 5*len(self.vertices), self.frames ), order='F')
+            reshape((self.num_vertex_features, 5*len(self.vertices), data_frames ), order='F')
         self.active_coors = self.active_args[:2,:,:]
         self.active_args = self.active_args[2:,:,:]
-        self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
-     
-        self.vertex_xtraj = -np.ones((self.num_vertices, self.frames))
-        self.vertex_ytraj = -np.ones((self.num_vertices, self.frames))
-        self.joint_traj = []
         
-        self.events = np.zeros((2, self.frames), dtype=int)
+        
+ 
+
+
+        
+        for frame in range(self.frames):
+           
+            cur_joint = defaultdict(list)
+            quadraples = []
+            for vertex in range(self.active_args.shape[1]): 
+                args = set(self.active_args[:,vertex,frame])
+                xp, yp = self.x[self.active_coors[0,vertex,frame]], self.y[self.active_coors[1,vertex,frame]]
+                if -1 in args: args.remove(-1)
+                if not args: continue
+                if len(args)>3: 
+                    quadraples.append([set(args),(xp, yp)])
+                    continue
+                
+                args = tuple(sorted(args))
+                cur_joint[args].append((xp,yp))
+
+                      
+            ## deal with quadraples here
+            
+            for q, coors in quadraples:
+              #  print('qudraple: ', q)
+                for k in self.joint2vertex.keys():
+                    if set(k).issubset(q):
+                   #     print('classified to triple', k)
+                        cur_joint[k].append(coors)
+                for k in cur_joint.keys():
+                    if set(k).issubset(q):
+                   #     print('classified to triple', k)
+                        cur_joint[k].append(coors) 
+                        
+            self.joint_traj.append(cur_joint)
+            
+            
+            # check loaded information
+            
+            self.alpha_pde = self.alpha_pde_frames[:,:,frame].T
+            cur_grain = set(np.unique(self.alpha_pde))
+            cur_covered_grain = set()
+            for i in cur_joint.keys():
+                cur_covered_grain.update(set(i))
+            count = 0
+            for k1, v1 in cur_joint.items():
+                for k2, v2 in cur_joint.items(): 
+                    if k1!=k2 and len( set(k1).intersection(set(k2)) ) >= 2:
+                        count += 1
+            
+            print('====================================')
+            print('load frame %d'%frame)
+            print('number of grains %d'%len(cur_grain))
+            print('number of region junctions covered %d'%len(cur_covered_grain))
+            print('number of junctions %d'%len(cur_joint))
+            print('number of links %d'%count)
+            
+            
+        self.vertex_matching()
+        
         
     def vertex_matching(self):
         
         # compare the cur_joint with the laset joint 
         
-        all_vert = set(np.arange(self.num_vertices))
+     
         all_grain = set(np.arange(self.num_regions)+1)
         for frame in range(self.frames):
             print('summary of frame %d'%frame)
             cur_joint = self.joint_traj[frame]
           #  self.alpha_field = self.alpha_pde_frames[:,:,frame].T
             self.alpha_pde = self.alpha_pde_frames[:,:,frame].T
-            cur_grain = set(np.unique(self.alpha_pde))
+            cur_grain, counts = np.unique(self.alpha_pde, return_counts=True)
+            self.area_counts = dict(zip(cur_grain, counts))
+            cur_grain = set(cur_grain)
             #cur_grain = set()
             #for i in cur_joint.keys():
             #    cur_grain.update(set(i))
@@ -578,65 +685,11 @@ class graph_trajectory(graph):
             self.events[0,frame] = len(eliminated_grains)
             self.events[1,frame] = len(switching_event)
             self.update()
-            self.plot_polygons()
-            self.show_data_struct()
+            self.form_states_tensor(frame)
+            if self.show == True:
+                self.show_data_struct()
             
-    def load_joint(self):
-       
-        
-     
-        for frame in range(self.frames):
-           
-            cur_joint = defaultdict(list)
-            quadraples = []
-            for vertex in range(self.active_args.shape[1]): 
-                args = set(self.active_args[:,vertex,frame])
-                xp, yp = self.x[self.active_coors[0,vertex,frame]], self.y[self.active_coors[1,vertex,frame]]
-                if -1 in args: args.remove(-1)
-                if not args: continue
-                if len(args)>3: 
-                    quadraples.append([set(args),(xp, yp)])
-                    continue
-                
-                args = tuple(sorted(args))
-                cur_joint[args].append((xp,yp))
 
-                      
-            ## deal with quadraples here
-            
-            for q, coors in quadraples:
-              #  print('qudraple: ', q)
-                for k in self.joint2vertex.keys():
-                    if set(k).issubset(q):
-                   #     print('classified to triple', k)
-                        cur_joint[k].append(coors)
-                for k in cur_joint.keys():
-                    if set(k).issubset(q):
-                   #     print('classified to triple', k)
-                        cur_joint[k].append(coors) 
-                        
-            self.joint_traj.append(cur_joint)
-            
-            
-            # check loaded information
-            
-            self.alpha_pde = self.alpha_pde_frames[:,:,frame].T
-            cur_grain = set(np.unique(self.alpha_pde))
-            cur_covered_grain = set()
-            for i in cur_joint.keys():
-                cur_covered_grain.update(set(i))
-            count = 0
-            for k1, v1 in cur_joint.items():
-                for k2, v2 in cur_joint.items(): 
-                    if k1!=k2 and len( set(k1).intersection(set(k2)) ) >= 2:
-                        count += 1
-            
-            print('====================================')
-            print('load frame %d'%frame)
-            print('number of grains %d'%len(cur_grain))
-            print('number of region junctions covered %d'%len(cur_covered_grain))
-            print('number of junctions %d'%len(cur_joint))
-            print('number of links %d'%count)
 
 
     def show_events(self):
@@ -648,26 +701,220 @@ class graph_trajectory(graph):
         ax.plot(self.events[1])
         ax.legend('grain elimination', 'neighbor switching')
         
+    def form_states_tensor(self, frame):
+        
+        hg = GrainHeterograph()
+        grain_state = np.zeros((self.num_regions, len(hg.features['grain'])))
+        joint_state = np.zeros((self.num_vertices, len(hg.features['joint'])))
+        
+        
+        s = self.imagesize[0]
+        
+
+        
+        for grain, coor in self.region_center.items():
+            grain_state[grain-1, 0] = coor[0]
+            grain_state[grain-1, 1] = coor[1]
+
+        grain_state[:, 2] = frame/self.frames
+
+        grain_state[:, 3] = np.array(list(self.area_counts.values())) /s**2
+        if frame>0:
+            grain_state[:, 4] = self.extraV_frames[:, frame]/s**3
+        
+        
+        grain_state[:, 5] = np.cos(self.theta_x[1:])
+        grain_state[:, 6] = np.sin(self.theta_x[1:])
+        grain_state[:, 7] = np.cos(self.theta_z[1:])
+        grain_state[:, 8] = np.sin(self.theta_z[1:])
+        
+        
+        for joint, coor in self.vertices.items():
+            joint_state[joint, 0] = coor[0]
+            joint_state[joint, 1] = coor[1]
+        
+        joint_state[:, 2] = frame/self.frames
+        joint_state[:, 3] = 1 - np.log10(self.physical_params['G'])/2
+        joint_state[:, 4] = self.physical_params['R']/2
+        
+        
+        gj_edge = []
+        for grains, joint in self.joint2vertex.items():
+            for grain in grains:
+                gj_edge.append([grain-1, joint])
+        
+        jg_edge = [[joint, grain] for grain, joint in gj_edge]
+        jj_edge = [[src, dst] for src, dst in self.edges]
+        
+        hg.feature_dicts.update({'grain':grain_state})
+        hg.feature_dicts.update({'joint':joint_state})
+        hg.edge_index_dicts.update({hg.edge_type[0]:np.array(gj_edge).T})
+        hg.edge_index_dicts.update({hg.edge_type[1]:np.array(jg_edge).T})
+        hg.edge_index_dicts.update({hg.edge_type[2]:np.array(jj_edge).T})
+        
+        hg.physical_params = self.physical_params
+        hg.physical_params.update({'seed':self.seed})
+        
+        self.states.append(hg)
+
+
+        
+                
+class GrainHeterograph:
+    def __init__(self):
+        self.features = {'grain':['x', 'y', 'z', 'area', 'extraV', 'cosx', 'sinx', 'cosz', 'sinz'],
+                         'joint':['x', 'y', 'z', 'G', 'R']}
+        self.mask = {'grain':None, 'joint':None}
+        
+        self.features_grad = {'grain':['darea'], 'joint':['dx', 'dy']}
+        
+    
+        self.targets = {'grain':['darea', 'extraV'], 'joint':['dx', 'dy'],}
+                    #    'grain_event':'elimination', 'edge_event':'rotation'}    
+        
+        self.edge_type = [('grain', 'push', 'joint'), \
+                          ('joint', 'pull', 'grain'), \
+                          ('joint', 'connect', 'joint')]
+            
+        self.feature_dicts = {}
+        self.target_dicts = {}
+        self.edge_index_dicts = {}
+        self.edge_weight_dicts = {}
+        self.additional_feature_keys = {}
+        
+        self.physical_params = {}
+
+    def form_gradient(self, prev, nxt):
+        
+        
+        
+        """
+            
+        Gradients for next prediction
+            
+        """        
+        
+        if nxt is not None:
+
+        
+            darea = nxt.feature_dicts['grain'][:,3:4] - self.feature_dicts['grain'][:,3:4]
+            
+            self.target_dicts['grain'] = np.hstack((darea, nxt.feature_dicts['grain'][:,4:5]))
+                                         
+            self.target_dicts['joint'] = nxt.feature_dicts['joint'][:,:2] - \
+                                         self.feature_dicts['joint'][:,:2]
+        
+        #    self.target_dicts['grain_event'] = 1*( (nxt.mask['grain'] - self.mask['grain']) == 1 )
+        
+        #    self.target_dicts['edge_event'] = nxt.edge_rotation
+        
+                                        
+        """
+            
+        Gradients of history
+            
+        """
+        
+        
+                                     
+        if prev is None:
+            prev_grad_grain = 0*self.feature_dicts['grain'][:,:1]
+            prev_grad_joint = 0*self.feature_dicts['joint'][:,:2]
+                    
+        else:
+            prev_grad_grain = self.feature_dicts['grain'][:,3:4] - prev.feature_dicts['grain'][:,3:4] 
+            prev_grad_joint = self.feature_dicts['joint'][:,:2] - prev.feature_dicts['joint'][:,:2]             
+        
+        self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], prev_grad_grain))
+
+        self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], prev_grad_joint)) 
+                
+
+        
+        for nodes, features in self.features.items():
+            self.features[nodes] = self.features[nodes] + self.features_grad[nodes]  
+            assert len(self.features[nodes]) == self.feature_dicts[nodes].shape[1]
+        
+        
 if __name__ == '__main__':
 
     
     #g1 = graph(lxd = 10, seed=1)  
-    #g1.show_data_struct()     
+    #g1.show_data_struct()  
+    parser = argparse.ArgumentParser("Generate heterograph data")
+    parser.add_argument("--mode", type=str, default = 'check')
+    parser.add_argument("--rawdat_dir", type=str, default = './')
+    parser.add_argument("--train_dir", type=str, default = './data/')
+    parser.add_argument("--test_dir", type=str, default = './test/')
+    parser.add_argument("--seed", type=int, default = 1)
+    args = parser.parse_args()
     
-    traj = graph_trajectory(seed = 1)
-    traj.update()
-    traj.show_data_struct()
-    traj.frames = 25
-    traj.load_joint()
-    traj.vertex_matching()
-    #traj.show_data_struct()
-    #print(traj.vertex_xtraj[:,0], traj.vertex_ytraj[:,0])
+    
+    if args.mode == 'train':
+    
+        if not os.path.exists(args.train_dir):
+            os.makedirs(args.train_dir)
+  
+        for seed in [args.seed]:
+            
+            train_samples = []
+            
+            traj = graph_trajectory(seed = seed, frames = 4)
+          #  traj.update()
+          #  traj.show_data_struct()
+      
+            traj.load_trajectory(rawdat_dir = args.rawdat_dir)
+           # traj.vertex_matching()
+            #traj.show_data_struct()
+            #print(traj.vertex_xtraj[:,0], traj.vertex_ytraj[:,0])
+            
+            
+            # set gradient as output and add to features
+            
+            hg0 = traj.states[0]
+            hg4 = traj.states[traj.frames - 1]
+          #  print(hg0.feature_dicts['grain'][:,:1])
+            hg0.form_gradient(prev = None, nxt = hg4)
+            
+            train_samples.append(hg0)
+        
+       
+            with open(args.train_dir + 'case' + str(seed) + '.pkl', 'wb') as outp:
+                dill.dump(train_samples, outp)
+
+    if args.mode == 'test':   
+        if not os.path.exists(args.test_dir):
+            os.makedirs(args.test_dir) 
+        
+    # creating testing dataset
+        for seed in [1]:
+            
+            test_samples = []
+            
+            traj = graph_trajectory(seed = seed, frames = 1, physical_params={'G':5, 'R':1})
+            traj.load_trajectory(rawdat_dir = args.rawdat_dir)
+            hg0 = traj.states[0]
+            hg0.form_gradient(prev = None, nxt = None)
+            test_samples.append(hg0)
+          #  hg0.graph = graph(seed = seed)
+            with open(args.test_dir + 'case' + str(seed) + '.pkl', 'wb') as outp:
+                dill.dump(test_samples, outp)
+     
+        
+    if args.mode == 'check':
+        seed = 1
+        g1 = graph(lxd = 20, seed=1) 
+        g1.show_data_struct()
+       # traj = graph_trajectory(seed = seed, frames = 25)
+       # traj.load_trajectory(rawdat_dir = args.rawdat_dir)
+    
     
     # TODO:
     # 4) node matching and iteration for different time frames
     # 5) equi-spaced QoI sampling, change tip_y to tip_nz
     # 6) Image to graph qoi computation/ check sum to 1
-    
+    # 7) run 2000 simulations and create one-to-one prediction
+    # 8) 1 layer architecture and train loop
     
 '''
 import pickle
