@@ -27,6 +27,7 @@ import h5py
 import glob, re, math, os, argparse
 from termcolor import colored
 import dill
+import itertools
 
 def angle_norm(angular):
 
@@ -40,14 +41,6 @@ def in_bound(x, y):
     else:
         return False
     
-def translate_min_dist(s, t):
-    s0, s1 = s[0], t[0]
-    t0 ,t1 = s[1], t[1]
-    if s0 - s1 >0.5: s1 += 1
-    if s1 - s0 >0.5: s0 += 1
-    if t0 - t1 >0.5: t1 += 1
-    if t1 - t0 >0.5: t0 += 1  
-    return [s0 ,s1], [t0, t1]
 
 def periodic_move(p, pc):
     x,  y  = p
@@ -58,6 +51,13 @@ def periodic_move(p, pc):
     if y>yc+0.5: y-=1    
     
     return (x, y)
+
+def relative_angle(p1, p2):
+    
+    p1 = periodic_move(p1, p2)
+    
+    return np.arctan2(p2[1]-p1[1], p2[0]-p1[0])
+
 
 def linked_edge_by_junction(j1, j2):
     
@@ -129,8 +129,8 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd: float = 10, seed: int = 1, BC: str = 'periodic', randInit: bool = True):
-        mesh_size, grain_size = 0.08, 2
+    def __init__(self, lxd: float = 25, seed: int = 1, BC: str = 'periodic', randInit: bool = True):
+        mesh_size, grain_size = 0.08, 5
         self.lxd = lxd
         self.seed = seed
         s = int(lxd/mesh_size)+1
@@ -156,10 +156,11 @@ class graph:
             np.random.seed(seed)
             self.random_voronoi()
             self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
+            self.alpha_pde = self.alpha_field
             self.update()
             self.num_regions = len(self.regions)
             self.num_vertices = len(self.vertices)
-            self.alpha_pde = self.alpha_field
+            
             cur_grain, counts = np.unique(self.alpha_pde, return_counts=True)
             self.area_counts = dict(zip(cur_grain, counts))
 
@@ -176,6 +177,7 @@ class graph:
     
     def compute_error_layer(self):
         self.error_layer = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
+        print('error', self.error_layer)
     
     def random_voronoi(self):
 
@@ -287,8 +289,8 @@ class graph:
                         ii += s
                         jj += s
                     else:
-                        #pass
-                        raise ValueError(i,j)
+                        pass
+                       # raise ValueError(i,j)
                 alpha = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]   
                 self.alpha_field[i,j] = alpha 
                 self.region_area[alpha] += 1
@@ -351,7 +353,6 @@ class graph:
         ax[1,1].set_yticks([])
         ax[1,1].set_title('pde')         
         
-        
         ax[1,2].imshow(1*(self.alpha_pde!=self.alpha_field),cmap='Reds',origin='lower')
         ax[1,2].set_xticks([])
         ax[1,2].set_yticks([])
@@ -366,18 +367,12 @@ class graph:
         Output: edges, region_coors
         """
         
-        # form edge
+        
         self.vertex2joint = dict((v, k) for k, v in self.joint2vertex.items())
-        self.vertex_neighbor.clear()
-        for k1, v1 in self.joint2vertex.items():
-            for k2, v2 in self.joint2vertex.items(): 
-                if k1!=k2 and len( set(k1).intersection(set(k2)) ) >= 2:
-                    self.vertex_neighbor[v1].add(v2) 
-                    
+        self.vertex_neighbor.clear()                    
         self.edges.clear()
-        for k, v in self.vertex_neighbor.items():
-            for i in v:
-                self.edges.add((k, i))
+                    
+
         
         # form region
         self.regions.clear()
@@ -400,15 +395,36 @@ class graph:
             for vert in verts:
                 vert = [i + 1*(not j) for i, j in zip(vert, inbound)]
                 moved_region.append(vert)
-            self.region_coors[region] = moved_region
+        
             x, y = zip(*moved_region)
          
             self.region_center[region] = [np.mean(x), np.mean(y)]
-            self.region_coors[region] = sorted(moved_region, \
-                key = lambda x: counterclock(x, self.region_center[region]))        
-                     
+            
+            
+            vert_in_region = self.regions[region]
+            
+            sort_index = sorted(range(len(moved_region)), \
+                key = lambda x: counterclock(moved_region[x], self.region_center[region]))  
+            
+                
+            self.region_coors[region] = [moved_region[i] for i in sort_index]
+            
+            sorted_vert = [vert_in_region[i] for i in sort_index]
+            self.regions[region] = sorted_vert
+          #  print(sort_index, vert_in_region)
+            for i in range(len(sorted_vert)):
+                
+                link = (sorted_vert[i-1], sorted_vert[i]) if i >0 else (sorted_vert[len(sorted_vert)-1], sorted_vert[i])
+                self.edges.add(link)
+                
+        # form edge             
+
+        for src, dst in self.edges:
+            self.vertex_neighbor[src].add(dst)
+
         
         self.plot_polygons()
+        self.compute_error_layer()
 
     def GNN_update(self, X: np.ndarray):
         
@@ -418,7 +434,7 @@ class graph:
         self.update()
 
 class graph_trajectory(graph):
-    def __init__(self, lxd: float = 10, seed: int = 1, frames: int = 1, physical_params = {}):   
+    def __init__(self, lxd: float = 25, seed: int = 1, frames: int = 1, physical_params = {}):   
         super().__init__(lxd = lxd, seed = seed)
         
         self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
@@ -457,71 +473,146 @@ class graph_trajectory(graph):
         self.extraV_frames = np.asarray(f['extra_area'])
         self.extraV_frames = self.extraV_frames.reshape((self.num_regions, data_frames), order='F')        
      
-        self.num_vertex_features = 7  ## first 2 are x,y coordinates, next 5 are possible phase
+        self.num_vertex_features = 8  ## first 2 are x,y coordinates, next 5 are possible phase
         self.active_args = np.asarray(f['node_region'])
         self.active_args = self.active_args.\
             reshape((self.num_vertex_features, 5*len(self.vertices), data_frames ), order='F')
         self.active_coors = self.active_args[:2,:,:]
-        self.active_args = self.active_args[2:,:,:]
+        self.active_max = self.active_args[2,:,:]
+        self.active_args = self.active_args[3:,:,:]
         
-        
- 
 
-
+        prev_joint = {k:[0,0,100] for k, v in self.joint2vertex.items()}
         
         for frame in range(self.frames):
            
             cur_joint = defaultdict(list)
-            quadraples = []
+            quadraples = defaultdict(list)
             for vertex in range(self.active_args.shape[1]): 
+                max_neighbor = self.active_max[vertex, frame]
                 args = set(self.active_args[:,vertex,frame])
                 xp, yp = self.x[self.active_coors[0,vertex,frame]], self.y[self.active_coors[1,vertex,frame]]
                 if -1 in args: args.remove(-1)
                 if not args: continue
-                if len(args)>3: 
-                    quadraples.append([set(args),(xp, yp)])
-                    continue
-                
                 args = tuple(sorted(args))
-                cur_joint[args].append((xp,yp))
+                
+                if len(args)==4: 
+                    if args not in quadraples or max_neighbor<quadraples[args][2]:    
+                        quadraples[args] = [xp, yp, max_neighbor]
+                   # quadraples.append([list(args),[xp, yp, max_neighbor]])
+                    continue
+                if len(args)>4:
+                    print(colored('find more than qudraples', 'red'))
+                
+                if args not in cur_joint or max_neighbor<cur_joint[args][2]:    
+                    cur_joint[args] = [xp, yp, max_neighbor]
 
                       
             ## deal with quadraples here
             
-            for q, coors in quadraples:
-              #  print('qudraple: ', q)
-                for k in self.joint2vertex.keys():
-                    if set(k).issubset(q):
-                   #     print('classified to triple', k)
-                        cur_joint[k].append(coors)
-                for k in cur_joint.keys():
-                    if set(k).issubset(q):
-                   #     print('classified to triple', k)
-                        cur_joint[k].append(coors) 
+            for q, coors in quadraples.items():
+                q_list = list(q)
+              #  print(q_list)
+                for comb in [[0,1,2],[0,1,3],[0,2,3],[1,2,3]]:
+                    arg = tuple([q_list[i] for i in comb])
+
+                    if arg not in prev_joint and arg in cur_joint:
+                        del cur_joint[arg]
+
                         
-            self.joint_traj.append(cur_joint)
-            
+
             
             # check loaded information
             
             self.alpha_pde = self.alpha_pde_frames[:,:,frame].T
             cur_grain = set(np.unique(self.alpha_pde))
-            cur_covered_grain = set()
-            for i in cur_joint.keys():
-                cur_covered_grain.update(set(i))
-            count = 0
-            for k1, v1 in cur_joint.items():
-                for k2, v2 in cur_joint.items(): 
-                    if k1!=k2 and len( set(k1).intersection(set(k2)) ) >= 2:
-                        count += 1
             
-            print('====================================')
+            
+            grain_set = set()
+            for k in cur_joint.keys():
+                grain_set.update(set(k))
+            
+            
+            missing = set()
+            miss_case = defaultdict(int)
+            
+            def clean_data():
+               # jj_link = 0
+                total_missing = 0
+                for k1 in cur_joint.keys():
+                    num_link = 0
+                    for k2 in cur_joint.keys(): 
+                        if k1!=k2 and len( set(k1).intersection(set(k2)) ) == 2:
+                            num_link += 1
+                #            jj_link += 1
+                          #  print(jj_link, k1, k2)
+                    if num_link <3:
+                        missing.update(set(k1))
+                        miss_case.update({k1:3-num_link})
+                        total_missing += 3-num_link
+                     #   print('find missing junction link', k1, 3-num_link)
+                return total_missing   
+            
+            total_missing = clean_data()
+      
+            #q_pool = []
+            for q, coor in quadraples.items():
+                if set(q).issubset(missing):
+                    possible = list(itertools.combinations(list(q), 3))
+                    miss_case_sum = 0
+                    max_case = 0
+                    
+                    for i, j in miss_case.items():
+                        if len(set(i).intersection(set(q)))>=2:
+                            miss_case_sum += j
+                            max_case = max(max_case, j)
+                    if miss_case_sum>2:
+                        print('using quadraples to find missing link', q)
+                        print('miss links', miss_case_sum)        
+                    if miss_case_sum == 3:
+                        for c in miss_case.keys():
+                            if c in possible:
+                                possible.remove(c)
+                        for ans in list(itertools.combinations(possible, max_case)):
+                            print('try ans', ans)
+                            for a in ans:
+                                cur_joint[a] = coor
+                            cur = clean_data()
+                            if cur == total_missing -3:
+                                print('fixed!')
+                                total_missing = cur
+                                break
+                            else:
+                                for a in ans:
+                                    del cur_joint[a]
+                                    
+                    if miss_case_sum == 4:
+                        for ans in list(itertools.combinations(possible, 2)):
+                            print('try ans', ans)
+                            for a in ans:
+                                cur_joint[a] = coor
+                            cur = clean_data()
+                            if cur == total_missing -4:
+                                print('fixed!')
+                                total_missing = cur
+                                break
+                            else:
+                                for a in ans:
+                                    del cur_joint[a]                        
+                    
+
+            self.joint_traj.append(cur_joint)
+            prev_joint = cur_joint
+            
+            
             print('load frame %d'%frame)
-            print('number of grains %d'%len(cur_grain))
-            print('number of region junctions covered %d'%len(cur_covered_grain))
+            print('number of grains pixel %d'%len(cur_grain))
+            print('number of grains junction %d'%len(grain_set))
             print('number of junctions %d'%len(cur_joint))
-            print('number of links %d'%count)
-            
+          #  print('estimated number of junction-junction links %d'%jj_link) 
+            # when it approaches the end, 3*junction is not accurate
+            print('====================================')
+            print('\n')
             
         self.vertex_matching()
         
@@ -539,6 +630,8 @@ class graph_trajectory(graph):
             self.alpha_pde = self.alpha_pde_frames[:,:,frame].T
             cur_grain, counts = np.unique(self.alpha_pde, return_counts=True)
             self.area_counts = dict(zip(cur_grain, counts))
+
+            self.area_counts = {i:self.area_counts[i] if i in self.area_counts else 0 for i in range(self.num_regions)}
             cur_grain = set(cur_grain)
             #cur_grain = set()
             #for i in cur_joint.keys():
@@ -570,28 +663,7 @@ class graph_trajectory(graph):
                         junction.update(set(k))
                         old_vert.append(self.joint2vertex[k])
                         todelete.add(k)
-                        
-
-                '''        
-                if len(junction) == 3:
-                    
-                    self.joint2vertex[tuple(sorted(junction))] = old_vert[-1]
-                    print('the new joint', tuple(sorted(junction)), 'inherit the vert', old_vert[-1])
-                    old_vert.pop()
-                
-                else:
-                
-                cur_junction = junction.copy()
-                for neighbor in cur_junction:
-                    if neighbor in eliminated_grains:
-                        visited.add(neighbor)
-                        for k, v in self.joint2vertex.items():
-                            if neighbor in set(k):
-                                junction.update(set(k))
-                                if self.joint2vertex[k] not in old_vert:
-                                    old_vert.append(self.joint2vertex[k])
-                                todelete.add(k)
-                 '''       
+      
                 junction.remove(elm_grain)        
                 print('%dth grain eliminated with no. of sides %d'%(elm_grain, len(todelete)), junction)
                 for k in todelete:
@@ -650,6 +722,15 @@ class graph_trajectory(graph):
                     old_junction_i, old_junction_j = quadraples[e2]
                     new_junction_i, new_junction_j = quadraples_new[e2]
 
+                    old_i_x, old_j_x = self.vertices[self.joint2vertex[old_junction_i]], \
+                                        self.vertices[self.joint2vertex[old_junction_j]] 
+                    new_i_x, new_j_x = cur_joint[new_junction_i][:2], \
+                                        cur_joint[new_junction_j][:2]                   
+                    
+                   # print(relative_angle(old_i_x, old_j_x), relative_angle(new_i_x, new_j_x))
+                    if abs(relative_angle(old_i_x, old_j_x) - relative_angle(new_i_x, new_j_x))>pi/2:
+                    #    print(colored('switch junction for less rotation', 'green'), new_junction_i, new_junction_j)
+                        new_junction_i, new_junction_j = new_junction_j, new_junction_i
                     
                     self.joint2vertex[new_junction_i] = self.joint2vertex.pop(old_junction_i)
                     self.joint2vertex[new_junction_j] = self.joint2vertex.pop(old_junction_j)
@@ -663,11 +744,8 @@ class graph_trajectory(graph):
                 if joint in cur_joint:
                     vert = self.joint2vertex[joint]
                     new_vert.add(vert)
-                    coors = cur_joint[joint]
-                    coors = [periodic_move(i, old_vertices[vert]) for i in coors]
-                    cluster_x, cluster_y = zip(*coors)
-
-                    self.vertices[vert] = (sum(cluster_x)/len(cluster_x), sum(cluster_y)/len(cluster_y))
+                    coors = cur_joint[joint][:2]
+                    self.vertices[vert] = periodic_move(coors, old_vertices[vert])
 
                 else:
                     vert = self.joint2vertex[joint]
@@ -690,7 +768,7 @@ class graph_trajectory(graph):
                 self.show_data_struct()
             
 
-
+            
 
     def show_events(self):
         
@@ -752,6 +830,19 @@ class graph_trajectory(graph):
         hg.edge_index_dicts.update({hg.edge_type[1]:np.array(jg_edge).T})
         hg.edge_index_dicts.update({hg.edge_type[2]:np.array(jj_edge).T})
         
+        
+        joint_grain_neighbor = -np.ones((self.num_vertices,3), dtype=int)
+        joint_joint_neighbor = -np.ones((self.num_vertices,3), dtype=int)
+        for k, v in self.vertex_neighbor.items():
+            if len(v)<3: print(colored('find a junction not 3-3 type', 'red'))
+            joint_joint_neighbor[k][:len(v)] = np.array(list(v))
+        
+        for k, v in self.joint2vertex.items():
+            joint_grain_neighbor[v] = np.array(list(k))
+        
+        hg.neighbor_dicts.update({('joint','joint'):joint_joint_neighbor})
+        hg.neighbor_dicts.update({('joint','grain'):joint_grain_neighbor})
+        
         hg.physical_params = self.physical_params
         hg.physical_params.update({'seed':self.seed})
         
@@ -769,8 +860,8 @@ class GrainHeterograph:
         self.features_grad = {'grain':['darea'], 'joint':['dx', 'dy']}
         
     
-        self.targets = {'grain':['darea', 'extraV'], 'joint':['dx', 'dy'],}
-                    #    'grain_event':'elimination', 'edge_event':'rotation'}    
+        self.targets = {'grain':['darea', 'extraV'], 'joint':['dx', 'dy']}
+        self.events = {'grain_event':'elimination', 'edge_event':'rotation'}    
         
         self.edge_type = [('grain', 'push', 'joint'), \
                           ('joint', 'pull', 'grain'), \
@@ -781,6 +872,7 @@ class GrainHeterograph:
         self.edge_index_dicts = {}
         self.edge_weight_dicts = {}
         self.additional_feature_keys = {}
+        self.neighbor_dicts = {}
         
         self.physical_params = {}
 
@@ -903,7 +995,7 @@ if __name__ == '__main__':
         
     if args.mode == 'check':
         seed = 1
-        g1 = graph(lxd = 20, seed=1) 
+        g1 = graph(lxd = 25, seed=1) 
         g1.show_data_struct()
        # traj = graph_trajectory(seed = seed, frames = 25)
        # traj.load_trajectory(rawdat_dir = args.rawdat_dir)
@@ -1010,3 +1102,26 @@ if frame>0:
 return
 
 '''    
+
+                        
+
+'''        
+if len(junction) == 3:
+    
+    self.joint2vertex[tuple(sorted(junction))] = old_vert[-1]
+    print('the new joint', tuple(sorted(junction)), 'inherit the vert', old_vert[-1])
+    old_vert.pop()
+
+else:
+
+cur_junction = junction.copy()
+for neighbor in cur_junction:
+    if neighbor in eliminated_grains:
+        visited.add(neighbor)
+        for k, v in self.joint2vertex.items():
+            if neighbor in set(k):
+                junction.update(set(k))
+                if self.joint2vertex[k] not in old_vert:
+                    old_vert.append(self.joint2vertex[k])
+                todelete.add(k)
+ ''' 

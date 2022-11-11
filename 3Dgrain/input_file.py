@@ -47,9 +47,9 @@ W0 = 0.1                    # interface thickness      um
 cfl = 1.2
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
-moving_ratio = 0.5
+moving_ratio = 0.2
 nts = 24          # number snapshots to save, Mt/nts must be int
-Lx = 10
+Lx = 25
 
 nx = 13
 ny = 13
@@ -58,7 +58,7 @@ nt = 11
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 30
+top = 60
 
 
 G_list = np.array([0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6, 7, 8.5, 10])
