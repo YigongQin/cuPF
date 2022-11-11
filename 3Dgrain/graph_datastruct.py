@@ -129,8 +129,8 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd: float = 25, seed: int = 1, BC: str = 'periodic', randInit: bool = True):
-        mesh_size, grain_size = 0.08, 5
+    def __init__(self, lxd: float = 20, seed: int = 1, BC: str = 'periodic', randInit: bool = True):
+        mesh_size, grain_size = 0.08, 4
         self.lxd = lxd
         self.seed = seed
         s = int(lxd/mesh_size)+1
@@ -434,7 +434,7 @@ class graph:
         self.update()
 
 class graph_trajectory(graph):
-    def __init__(self, lxd: float = 25, seed: int = 1, frames: int = 1, physical_params = {}):   
+    def __init__(self, lxd: float = 20, seed: int = 1, frames: int = 1, physical_params = {}):   
         super().__init__(lxd = lxd, seed = seed)
         
         self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
@@ -995,7 +995,7 @@ if __name__ == '__main__':
         
     if args.mode == 'check':
         seed = 1
-        g1 = graph(lxd = 25, seed=1) 
+        g1 = graph(lxd = 20, seed=1) 
         g1.show_data_struct()
        # traj = graph_trajectory(seed = seed, frames = 25)
        # traj.load_trajectory(rawdat_dir = args.rawdat_dir)

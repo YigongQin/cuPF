@@ -47,9 +47,9 @@ W0 = 0.1                    # interface thickness      um
 cfl = 1.2
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
-moving_ratio = 0.2
+moving_ratio = 0.25
 nts = 24          # number snapshots to save, Mt/nts must be int
-Lx = 25
+Lx = 20
 
 nx = 13
 ny = 13
