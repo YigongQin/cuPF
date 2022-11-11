@@ -429,7 +429,7 @@ void PhaseField::initField(){
       if (phi[id]>LS){
 
         alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.ha_wd)+(i-1)];
-       if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<<alpha[id]<<endl;
+       if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<"found alpha out of bounds at "<<(j-1)*(fnx-2*params.ha_wd)+(i-1)<< " alpha "<<alpha[id]<<endl;
        }
 
       else {alpha[id]=0;}
