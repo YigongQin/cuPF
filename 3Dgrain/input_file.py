@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 import sys, os
 from graph_datastruct import graph
-
+from math import pi
 Dh = 8.43e7                     # heat diffusion
 c_infty = 3
 m_slope = 2.6                    # liquidus slope K/wt    
@@ -89,11 +89,13 @@ U = np.zeros(nx*ny*nz)
 
 g1 = graph(lxd = Lx, seed = seed) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
+rot = 0 # rotation
 alpha = g1.alpha_field
+alpha = np.rot90(alpha, rot)
 NG = len(g1.regions)
 NN = len(g1.vertices)
 print('no. nodes', NN, 'no. regions', NG)
-theta = np.hstack([g1.theta_x, g1.theta_z[1:]])
+theta = np.hstack([0, g1.theta_x[1:]+rot*pi/2, g1.theta_z[1:]])
 for i in range(nx*ny*nz*nt):
     
     xi = i%nx
