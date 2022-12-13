@@ -309,7 +309,7 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
                repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
            }
         }
-        float rhs_psi = diff * cP.hi*cP.hi*cP.hi + (1.0f-phC*phC)*phC \
+        float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
               - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
         float dphi = rhs_psi / A2; 
         ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
