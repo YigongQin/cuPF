@@ -95,7 +95,7 @@ alpha = np.rot90(alpha, rot)
 NG = len(g1.regions)
 NN = len(g1.vertices)
 print('no. nodes', NN, 'no. regions', NG)
-theta = np.hstack([0, g1.theta_x[1:]+rot*pi/2, g1.theta_z[1:]])
+theta = np.hstack([0, g1.theta_x[1:]-rot*pi/2, g1.theta_z[1:]])
 for i in range(nx*ny*nz*nt):
     
     xi = i%nx
