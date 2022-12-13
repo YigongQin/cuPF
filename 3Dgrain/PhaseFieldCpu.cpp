@@ -281,7 +281,7 @@ void PhaseField::cpuSetup(params_MPI &pM){
 
     cout<<"dx = "<<params.lxd/params.nx/params.W0<<endl;
     cout<<"dy = "<<params.lyd/params.ny/params.W0<<endl;   
-    cout<<"dz = "<<params.lyd/params.nz/params.W0<<endl;  
+    cout<<"dz = "<<params.lzd/params.nz/params.W0<<endl;  
     cout<<"nx = "<<params.nx<<endl;
     cout<<"ny = "<<params.ny<<endl;
     cout<<"nz = "<<params.nz<<endl;
