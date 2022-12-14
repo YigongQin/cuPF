@@ -669,6 +669,7 @@ void APTPhaseField::evolve(){
 
     if ( (move_count + lowsl -1)*params.W0*params.dx > params.z0 + params.top*(sams+1)/params.nts) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
+             printf("threshold %f \n", params.z0 + params.top*(sams+1)/params.nts);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
              cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
@@ -687,10 +688,10 @@ void APTPhaseField::evolve(){
 
    if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
-             lowsl = 1;
-             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
-             sample_heights(lowsl, alpha, fnx, fny, fnz);
+             //lowsl = 1;
+             //APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+             //cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             //sample_heights(lowsl, alpha, fnx, fny, fnz);
 
              while (tip_front >=tip_thres){
                 APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
@@ -701,7 +702,13 @@ void APTPhaseField::evolve(){
 
              }
 
-          APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+            APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+            lowsl = 1;
+            APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+            cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+            sample_heights(lowsl, alpha, fnx, fny, fnz);
+
+
           }
 
      t_cur_step = (2*kt+2)*params.dt*params.tau0;
