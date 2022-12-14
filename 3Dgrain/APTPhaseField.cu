@@ -679,8 +679,8 @@ void APTPhaseField::evolve(){
              cur_tip=0;
              calc_qois(params, q, cur_tip, alpha, args_cpu, (2*kt+2)/kts, z, loss_area, move_count);
              sams += 1;
-             if (sams==param.nts){
-                printf("sample all %d heights\n", param.nts);
+             if (sams==params.nts){
+                printf("sample all %d heights\n", params.nts);
                 break;
              }
           }
