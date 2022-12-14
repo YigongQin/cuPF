@@ -667,7 +667,7 @@ void APTPhaseField::evolve(){
  
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
 
-    if ( (move_count + lowsl)*params.W0*params.dx > params.z0 + params.top*(sams+1)/params.nts) {
+    if ( (move_count + lowsl -1)*params.W0*params.dx > params.z0 + params.top*(sams+1)/params.nts) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
@@ -715,7 +715,7 @@ void APTPhaseField::evolve(){
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", 2*kt, endTime-startTime);
-
+   params.Mt = 2*kt;
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
