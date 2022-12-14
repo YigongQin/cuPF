@@ -677,7 +677,7 @@ void APTPhaseField::evolve(){
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             calc_qois(params, q, cur_tip, alpha, args_cpu, (2*kt+2)/kts, z, loss_area, move_count);
+             calc_qois(params, q, cur_tip, alpha, args_cpu, sams+1, z, loss_area, move_count);
              sams += 1;
              if (sams==params.nts){
                 printf("sample all %d heights\n", params.nts);
