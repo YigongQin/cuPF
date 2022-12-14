@@ -93,7 +93,7 @@ APTini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
 
 __global__ void
 APTset_BC_3D(float* ph, int* active_args, int max_area){
-
+   // periodic x-y plance, no flux in z 
    // dimension with R^{2D} * PF
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -107,9 +107,9 @@ APTset_BC_3D(float* ph, int* active_args, int max_area){
      int zi = bc_idx - zj*fnx;
 
      int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
-     int d_in  = L2G_4D(zi, zj, fnz-2, pf, fnx, fny, fnz);
+     int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
      int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
-     int u_in  = L2G_4D(zi, zj, 1, pf, fnx, fny, fnz);
+     int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
      ph[d_out] = ph[d_in];
      ph[u_out] = ph[u_in];
      active_args[d_out] = active_args[d_in];
