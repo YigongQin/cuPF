@@ -47,7 +47,7 @@ W0 = 0.1                    # interface thickness      um
 cfl = 1.2
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
-moving_ratio = 0.25
+moving_ratio = 0.5
 nts = 24          # number snapshots to save, Mt/nts must be int
 Lx = 20
 
@@ -68,8 +68,8 @@ R_list = np.array([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.7, 1.8, 1.84, 1.86, 1
 seed = int(sys.argv[1])
 Gid = 15
 Rid = 4
-#Gid = seed%len(G_list)
-#Rid = seed//len(G_list)
+Gid = seed%len(G_list)
+Rid = seed//len(G_list)
 G = G_list[Gid]
 Rmax = 1e6*R_list[Rid]
 print('samples in G, R domain: ', len(G_list), len(R_list))
@@ -130,6 +130,9 @@ np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%d',delimiter='\n')
 np.savetxt(mac_folder+'NN.txt', np.asarray([NN]), fmt='%d',delimiter='\n')
+np.savetxt(mac_folder+'z0.txt', np.asarray([z0]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
+
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
 hf.create_dataset('Temp', data=T)
 hf.close()

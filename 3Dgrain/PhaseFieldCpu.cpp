@@ -268,9 +268,8 @@ void PhaseField::parseInputParams(string fileName){
 
     params.pts_cell = (int) (params.nuc_rad/dxd);
 
-    
-
-    
+    read_input(mac.folder+"/z0.txt", &params.z0);
+    read_input(mac.folder+"/top.txt", &params.top);
 
 }
 

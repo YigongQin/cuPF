@@ -469,6 +469,26 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
 
 }
 
+void sample_heights(int& cur_tip, int* alpha, int fnx, int fny, int fnz){
+
+     bool contin_flag = true;
+
+     while(contin_flag){
+
+        cur_tip += 1;
+        int offset_z = fnx*fny*cur_tip;
+
+        for (int j=1; j<fny-1; j++){
+          for (int i=1; i<fnx-1; i++){
+             int C = offset_z + j*fnx + i;
+             if (alpha[C]==0) {contin_flag=false;break;}
+        }}
+     }
+     cur_tip -=1;
+
+}
+
+
 
 APTPhaseField::~APTPhaseField() {
     if (x){
@@ -581,6 +601,9 @@ void APTPhaseField::evolve(){
    int tip_front = 1;
    int tip_thres = (int) ((1-BLANK)*fnz);
    printf("max tip can go: %d\n", tip_thres); 
+   int sams = 0, lowsl = 1;
+
+   // create arrays for moving-frame
    float* meanx;
    cudaMalloc((void **)&meanx, sizeof(float) * fnz);
    cudaMemset(meanx,0, sizeof(float) * fnz);
@@ -632,7 +655,9 @@ void APTPhaseField::evolve(){
    calc_qois(params, q, cur_tip, alpha, args_cpu, 0, z, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
-   for (int kt=0; kt<params.Mt/2; kt++){
+   int kt = 0;
+   while (kt < 200000){
+   //for (int kt=0; kt<params.Mt/2; kt++){
    //for (int kt=0; kt<0; kt++){
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
 
@@ -642,7 +667,7 @@ void APTPhaseField::evolve(){
  
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
 
-    if ( (2*kt+2)%kts==0) {
+    if ( (move_count + lowsl)*params.W0*params.dx > params.z0 + params.top*(sams+1)/params.nts) {
              //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
              cudaMemset(alpha_m, 0, sizeof(int) * length);
              APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
@@ -653,10 +678,20 @@ void APTPhaseField::evolve(){
              //QoIs based on alpha field
              cur_tip=0;
              calc_qois(params, q, cur_tip, alpha, args_cpu, (2*kt+2)/kts, z, loss_area, move_count);
+             sams += 1;
+             if (sams==param.nts){
+                printf("sample all %d heights\n", param.nts);
+                break;
+             }
           }
 
    if ( (2*kt+2)%TIPP==0) {
              tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
+             lowsl = 1;
+             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+             sample_heights(lowsl, alpha, fnx, fny, fnz);
+
              while (tip_front >=tip_thres){
                 APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
                 APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
@@ -673,13 +708,13 @@ void APTPhaseField::evolve(){
      APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args_old, active_args_new,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
-
+     kt++;
    }
 
 
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
-   printf("time for %d iterations: %f s\n", params.Mt, endTime-startTime);
+   printf("time for %d iterations: %f s\n", 2*kt, endTime-startTime);
 
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);

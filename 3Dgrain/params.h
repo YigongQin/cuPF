@@ -23,6 +23,7 @@ struct GlobalConstants {
   float Tmelt, Ti, Tliq, Tsol;
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
 
+  float z0, top;
 };
 
 struct params_MPI{
