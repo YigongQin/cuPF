@@ -48,7 +48,7 @@ cfl = 1.2
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
 moving_ratio = 0.5
-nts = 24          # number snapshots to save, Mt/nts must be int
+nts = 100          # number snapshots to save, Mt/nts must be int
 Lx = 20
 
 nx = 13
@@ -58,7 +58,7 @@ nt = 11
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 60
+top = 50
 
 
 G_list = np.array([0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6, 7, 8.5, 10])
@@ -87,7 +87,16 @@ T = np.zeros(nx*ny*nz*nt)
 psi = np.zeros(nx*ny*nz)
 U = np.zeros(nx*ny*nz)
 
-g1 = graph(lxd = Lx, seed = seed) 
+
+'''create graph'''
+try:
+    g1 = graph(lxd = Lx, seed = seed, noise = 0.01) 
+except:    
+    print('seed %d failed with noise 0.01, try 0'%seed)
+    g1 = graph(lxd = Lx, seed = seed)
+
+
+# g1 = graph(lxd = Lx, seed = seed) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 rot = 0 # rotation
 alpha = g1.alpha_field
@@ -96,6 +105,7 @@ NG = len(g1.regions)
 NN = len(g1.vertices)
 print('no. nodes', NN, 'no. regions', NG)
 theta = np.hstack([0, g1.theta_x[1:]-rot*pi/2, g1.theta_z[1:]])
+
 for i in range(nx*ny*nz*nt):
     
     xi = i%nx
