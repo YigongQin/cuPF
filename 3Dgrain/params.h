@@ -24,6 +24,7 @@ struct GlobalConstants {
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
 
   float z0, top;
+  int num_samples;
 };
 
 struct params_MPI{

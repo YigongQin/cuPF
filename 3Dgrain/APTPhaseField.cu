@@ -421,10 +421,17 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
      for (int j = 0; j<num_grains; j++){ 
      q->total_area[kt*num_grains+j]+=loss_area[j];}
 
+}
 
+void junctions(GlobalConstants params, QOI* q, int* alpha){
      // find the args that have active phs greater or equal 3, copy the args to q->node_region
+     int fnx = params.fnx, fny = params.fny;
+     int start = (int) (params.z0/params.dx/params.W0);
+
+     for (int cur_tip = start;  cur_tip<start + params.num_samples; cur_tip++){
+
      int offset_z = fnx*fny*cur_tip;
-     int offset_node_region = q->node_region_size/all_time*kt;
+     int offset_node_region = q->node_region_size/params.num_samples*(cur_tip - start);
      int node_cnt = 0;
      for (int j = 1; j<fny-1; j++){ 
        for (int i = 1; i<fnx-1; i++){
@@ -464,6 +471,7 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
 
           
        }
+     }
      }
 
 
@@ -730,6 +738,7 @@ void APTPhaseField::evolve(){
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha_i_full+move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+   junctions(params, q, alpha_i_full);
  //  calc_frac(alpha, fnx, fny, fnz, params.nts, params.num_theta, tip_y, frac, z, aseq, ntip, left_coor);
 
 }

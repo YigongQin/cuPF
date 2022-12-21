@@ -461,7 +461,9 @@ void QOI::initQoI(GlobalConstants params){
     // graph related QoIs
     int repeated_index = 5;
     node_features = 8;
-    node_region_size = (params.nts+1)*repeated_index*params.num_nodes*node_features;
+    params.num_samples = (int) (params.top/params.dx/params.W0); // (params.nts+1);
+    params.num_samples = 100*(params.num_samples/100);
+    node_region_size = params.num_samples*repeated_index*params.num_nodes*node_features;
     node_region = new int[node_region_size];
     for (int i = 0; i < node_region_size; i++){
         node_region[i] = -1;
