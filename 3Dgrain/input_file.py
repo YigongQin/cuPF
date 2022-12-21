@@ -48,7 +48,7 @@ cfl = 1.2
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
 moving_ratio = 0.5
-nts = 100          # number snapshots to save, Mt/nts must be int
+nts = 24          # number snapshots to save, Mt/nts must be int
 Lx = 20
 
 nx = 13
@@ -61,13 +61,12 @@ BC = Lx/(nx-3)
 top = 50
 
 
-G_list = np.array([0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6, 7, 8.5, 10])
-R_list = np.array([0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.7, 1.8, 1.84, 1.86, 1.92, 1.96, 2])
+G_list = np.linspace(0.5, 10, 20)
+R_list = np.linspace(0.2, 2, 19)
 
 
 seed = int(sys.argv[1])
-Gid = 15
-Rid = 4
+
 Gid = seed%len(G_list)
 Rid = seed//len(G_list)
 G = G_list[Gid]
