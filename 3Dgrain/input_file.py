@@ -44,12 +44,12 @@ noi_period = 200
 # simulation parameters
 dx = 0.8                            # mesh width
 W0 = 0.1                    # interface thickness      um
-cfl = 1.2
+cfl = 1.5
 asp_ratio_yx = 1
 asp_ratio_zx = 4                    # aspect ratio
-moving_ratio = 0.5
+moving_ratio = 0.2
 nts = 24          # number snapshots to save, Mt/nts must be int
-Lx = 20
+Lx = 40
 
 nx = 13
 ny = 13
@@ -58,7 +58,7 @@ nt = 11
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 50
+top = 40
 
 
 G_list = np.linspace(0.5, 10, 20)
