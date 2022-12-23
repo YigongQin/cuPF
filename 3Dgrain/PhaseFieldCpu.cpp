@@ -451,7 +451,7 @@ void PhaseField::initField(){
 
 
 void QOI::initQoI(GlobalConstants params){
-    tip_y = new float[num_case*(params.nts+1)];
+    tip_y = new int[num_case*(params.nts+1)];
     frac = new float[num_case*(params.nts+1)*params.num_theta];
 
     cross_sec = new int[num_case*(params.nts+1)*params.fnx*params.fny];
