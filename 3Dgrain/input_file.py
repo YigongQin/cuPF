@@ -46,9 +46,9 @@ dx = 0.8                            # mesh width
 W0 = 0.1                    # interface thickness      um
 cfl = 1.5
 asp_ratio_yx = 1
-asp_ratio_zx = 4                    # aspect ratio
+asp_ratio_zx = 2                    # aspect ratio
 moving_ratio = 0.2
-nts = 24          # number snapshots to save, Mt/nts must be int
+nts = 120          # number snapshots to save, Mt/nts must be int
 Lx = 40
 
 nx = 13
@@ -58,7 +58,7 @@ nt = 11
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 40
+top = 48
 
 
 G_list = np.linspace(0.5, 10, 20)
