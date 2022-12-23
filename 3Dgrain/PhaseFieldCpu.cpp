@@ -270,8 +270,8 @@ void PhaseField::parseInputParams(string fileName){
 
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/top.txt", &params.top);
-    params.num_samples = (int) (params.top/params.dx/params.W0); // (params.nts+1);
-    params.num_samples = 100*(params.num_samples/100);
+  //  params.num_samples = (int) (params.top/params.dx/params.W0); // (params.nts+1);
+  //  params.num_samples = 100*(params.num_samples/100);
 
 }
 
@@ -464,7 +464,7 @@ void QOI::initQoI(GlobalConstants params){
     int repeated_index = 5;
     node_features = 8;
 
-    node_region_size = params.num_samples*repeated_index*params.num_nodes*node_features;
+    node_region_size = (params.nts+1)*repeated_index*params.num_nodes*node_features;
     node_region = new int[node_region_size];
     for (int i = 0; i < node_region_size; i++){
         node_region[i] = -1;
@@ -499,13 +499,13 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "y_coordinates", y, fny, "float");
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
 
-    h5write_1d(h5_file, "y_t",       q->tip_y,   q->num_case*(params.nts+1), "float");
+    h5write_1d(h5_file, "tip_y",       q->tip_y,   q->num_case*(params.nts+1), "int");
     h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
     h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
-    h5write_1d(h5_file, "tip_y_f", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");
+    h5write_1d(h5_file, "tip_final", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "cross_sec", q->cross_sec,  q->num_case*(params.nts+1)*fnx*fny, "int");
     h5write_1d(h5_file, "node_region", q->node_region,  q->node_region_size, "int");
 

@@ -402,9 +402,9 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
         }}
      }
      cur_tip -=1;
-     q->tip_y[kt] = z[cur_tip];
-     printf("frame %d, ntip %d, tip %f\n", kt, cur_tip+move_count, q->tip_y[kt]);
-     memcpy(q->cross_sec + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+     q->tip_y[kt] = cur_tip + move_count; //z[cur_tip];
+     printf("frame %d, ntip %d, tip %f\n", kt, q->tip_y[kt], z[cur_tip]);
+     
 
      for (int k = 1; k<fnz-1; k++){
        int offset_z = fnx*fny*k; 
@@ -426,12 +426,15 @@ void calc_qois(GlobalConstants params, QOI* q, int &cur_tip, int* alpha, int* ar
 void junctions(GlobalConstants params, QOI* q, int* alpha){
      // find the args that have active phs greater or equal 3, copy the args to q->node_region
      int fnx = params.fnx, fny = params.fny;
-     int start = (int) (params.z0/params.dx/params.W0);
+   //  int start = (int) (params.z0/params.dx/params.W0);
+  //   for (int cur_tip = start;  cur_tip<start + params.num_samples; cur_tip++){
+     for (int kt = 0; kt<params.nts+1; kt++){
 
-     for (int cur_tip = start;  cur_tip<start + params.num_samples; cur_tip++){
-
+     int cur_tip = q->tip_y[kt];
      int offset_z = fnx*fny*cur_tip;
-     int offset_node_region = q->node_region_size/params.num_samples*(cur_tip - start);
+     memcpy(q->cross_sec + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+
+     int offset_node_region = q->node_region_size/(params.nts+1)*kt;
      int node_cnt = 0;
      for (int j = 1; j<fny-1; j++){ 
        for (int i = 1; i<fnx-1; i++){
