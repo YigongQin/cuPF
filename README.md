@@ -17,22 +17,21 @@ If you are using the codes in this repository, please cite the following paper
 }
 ```
 
-## Build
+## Usage
 
-Compiler: xl   
-MPI: spectrum MPI (CUDA-aware)  
+# 3D grain simulation
+module load cuda
+make
+./phase_field input_file -s SEED
 
+# Dendrites simulation
+./phase_field INPUT_FILE MACRO_INPUTS_DIR  
+
+# CUDA-aware MPI
 module load xl cuda spectrum_mpi  
-export CUDA_PATH=$TACC_CUDA_DIR  
+export CUDA_PATH=$CUDA_DIR  
 export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
-
-Before running micro code, generate input files in MACRO_INPUTS_DIR:  
-mkdir MACRO_INPUTS_DIR            (change the dir in the new_Ini_DNS.py file)  
-python3 new_Ini_DNS.py MACRO_MAT_FILE
-
-Compile: make  
-line_model: ./phase_field INPUT_FILE MACRO_INPUTS_DIR  
-DNS: ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS_DIR 
+ibrun -n NUM_GPUS ./phase_field INPUT_FILE MACRO_INPUTS_DIR 
      
 ## Performance/scaling
  
