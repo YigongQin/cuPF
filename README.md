@@ -19,15 +19,15 @@ If you are using the codes in this repository, please cite the following paper
 
 ## Usage
 
-# 3D grain simulation
+### 3D grain simulation
 module load cuda
 make
 ./phase_field input_file -s SEED
 
-# Dendrites simulation
+### Dendrites simulation
 ./phase_field INPUT_FILE MACRO_INPUTS_DIR  
 
-# CUDA-aware MPI
+### CUDA-aware MPI
 module load xl cuda spectrum_mpi  
 export CUDA_PATH=$CUDA_DIR  
 export MY_SPECTRUM_OPTIONS="--gpu --aff on" 
