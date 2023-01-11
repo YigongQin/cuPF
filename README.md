@@ -21,7 +21,7 @@ If you are using the codes in this repository, please cite the following paper
 
 ### 3D grain simulation
 cd 3Dgrain  
-module load cuda. 
+module load cuda   
 make  
 ./phase_field input_file -s SEED  
 
