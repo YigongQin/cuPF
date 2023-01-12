@@ -1,1 +1,1 @@
-for i in {0..299}; do echo "./phase_field input_file.py -s ${i} -o sameGR"; done > cmdfile
+for i in {0..379}; do echo "./phase_field input_file.py -s ${i} -o LGR"; done > cmdfile
