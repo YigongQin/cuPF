@@ -61,8 +61,8 @@ BC = Lx/(nx-3)
 top = 48
 
 
-G_list = np.linspace(0.5, 10, 20)
-R_list = np.linspace(0.2, 2, 19)
+G_list = np.linspace(10, 0.5, 39)
+R_list = np.linspace(2, 0.2, 37)
 
 
 seed = int(sys.argv[1])
