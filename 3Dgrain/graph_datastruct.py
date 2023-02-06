@@ -561,9 +561,9 @@ class GrainHeterograph:
         
         self.physical_params = {}
 
-    def form_gradient(self, prev, nxt):
+    def form_gradient(self, prev, nxt, event_list):
         
-        
+        self.event_list = event_list
         
         """
             
@@ -582,7 +582,7 @@ class GrainHeterograph:
             self.target_dicts['joint'] = self.targets_scaling['joint']*\
                self.subtract(nxt.feature_dicts['joint'][:,:2], self.feature_dicts['joint'][:,:2], 'next')
                # (nxt.feature_dicts['joint'][:,:2] - self.feature_dicts['joint'][:,:2])
-            self.target_dicts['edge_event'] = nxt.edge_rotation        
+           # self.target_dicts['edge_event'] = nxt.edge_rotation        
             
             self.additional_features['nxt'] = nxt.edge_index_dicts
             
@@ -597,13 +597,44 @@ class GrainHeterograph:
                     else:
                         self.mask['joint'][i,0] = 0
                       #  print('not matched', i, self.vertex2joint[i])
-            print('maximum movement', np.max(np.absolute(self.mask['joint']*self.target_dicts['joint'])))
-            print('maximum grain change', np.max(np.absolute(self.target_dicts['grain'])))
+                      
+            self.gradient_max = {'joint':np.max(np.absolute(self.mask['joint']*self.target_dicts['joint'])),\
+                                   'grain':np.max(np.absolute(self.target_dicts['grain']))}   
+                
+            self.gradient_scale = {'joint':np.mean(np.absolute(self.mask['joint']*self.target_dicts['joint'])),\
+                                   'grain':np.mean(np.absolute(self.target_dicts['grain']))}     
+                
+            print('maximum gradient', self.gradient_max)
+            
             assert np.all(self.mask['joint']*self.target_dicts['joint']>-1) \
                and np.all(self.mask['joint']*self.target_dicts['joint']<1)
             assert np.all(self.target_dicts['grain']>-1) and (np.all(self.target_dicts['grain']<1))
 
-                                        
+            
+            self.edges = [[src, dst] for src, dst in self.edges if src>-1 and dst>-1]
+            self.target_dicts['edge_event'] = -100*np.ones(len(self.edges), dtype=int)
+ 
+            for i, pair in enumerate(self.edges):
+                if pair in nxt.edges:
+                    if tuple(pair) in event_list:
+                        self.target_dicts['edge_event'][i] = 1
+                    else:
+                        self.target_dicts['edge_event'][i] = 0
+                    
+            print('number of positive/negative events', \
+                  sum(self.target_dicts['edge_event']>0), sum(self.target_dicts['edge_event']==0))
+            
+                
+            self.target_dicts['grain_event'] = np.zeros(len(self.mask['grain']), dtype=int)    
+            for i in range(len(self.mask['grain'])):
+                if self.mask['grain'][i] == 1 and nxt.mask['grain'][i] == 0:
+                    self.target_dicts['grain_event'][i] = 1
+                
+            print('number of grain events', np.sum(self.target_dicts['grain_event']))
+            
+           # del self.edges
+           # del self.vertex2joint
+                       
         """
             
         Gradients of history
@@ -624,15 +655,15 @@ class GrainHeterograph:
                # (self.feature_dicts['joint'][:,:2] - prev.feature_dicts['joint'][:,:2])             
         
         self.feature_dicts['grain'][:,4] *= self.targets_scaling['grain']
-        self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], prev_grad_grain))
+        self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], self.span/120 + 0*prev_grad_grain[:,:1], prev_grad_grain))
 
-        self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], prev_grad_joint)) 
+        self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], self.span/120 + 0*prev_grad_joint[:,:1], prev_grad_joint)) 
                 
 
         
         for nodes, features in self.features.items():
             self.features[nodes] = self.features[nodes] + self.features_grad[nodes]  
-            assert len(self.features[nodes]) == self.feature_dicts[nodes].shape[1]
+            assert len(self.features[nodes]) + 1 == self.feature_dicts[nodes].shape[1]
 
 
     @staticmethod
