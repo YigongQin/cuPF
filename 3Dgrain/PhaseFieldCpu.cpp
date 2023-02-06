@@ -498,11 +498,15 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "x_coordinates", x, fnx, "float");
     h5write_1d(h5_file, "y_coordinates", y, fny, "float");
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
+    h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
+
+    if (save_bulk){
+        h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
+    }
+
 
     h5write_1d(h5_file, "tip_y",       q->tip_y,   q->num_case*(params.nts+1), "int");
     h5write_1d(h5_file, "fractions", q->frac,   q->num_case*(params.nts+1)*params.num_theta, "float");
-    h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
-
     h5write_1d(h5_file, "extra_area", q->extra_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "total_area", q->total_area,   q->num_case*(params.nts+1)*params.num_theta, "int");
     h5write_1d(h5_file, "tip_final", q->tip_final,   q->num_case*(params.nts+1)*params.num_theta, "int");

@@ -42,6 +42,7 @@ int main(int argc, char** argv)
     string out_folder = "/scratch1/07428/ygqin/graph/"; 
     bool APTon = true;
     bool checkCorrectness = false;
+    bool save_bulk = false;
     int seed_val;
     static struct option long_options[] = {
         {"help",     0, 0,  '?'},
@@ -73,6 +74,9 @@ int main(int argc, char** argv)
         case 'o':
             out_folder = out_folder + optarg;
             break;
+        case 'b':
+            save_bulk = true;    
+            cout << "save bulk data" << endl;
         }
     }
 
@@ -96,6 +100,7 @@ int main(int argc, char** argv)
     pf_solver->q->num_case = 1;  //set parameters of realizations
     pf_solver->q->valid_run = 1; 
     pf_solver->cpuSetup(pM);
+    pf_solver->save_bulk = save_bulk;
    // pf_solver->params.seed_val = seed_val;
 
     // start the region of gathering lots of runs

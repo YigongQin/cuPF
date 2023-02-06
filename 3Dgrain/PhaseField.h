@@ -37,7 +37,7 @@ public:
 	int* alpha_m;
 	int* d_alpha_full;
 	int* argmax;
-
+	bool save_bulk;
 
 	PhaseField(){};
 	virtual ~PhaseField();
