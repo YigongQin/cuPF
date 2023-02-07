@@ -60,17 +60,26 @@ Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
 top = 48
 
+mode = 'train'
+if len(sys.argv)>2:
+    mode = sys.argv[2]
 
-G_list = np.linspace(10, 0.5, 39)
-R_list = np.linspace(2, 0.2, 37)
+if mode == 'train':    
+   G_list = np.linspace(10, 0.5, 39)
+   R_list = np.linspace(2, 0.2, 37)
+   seed = int(sys.argv[1])
+   Gid = seed%len(G_list)
+   Rid = seed//len(G_list)
+   G = G_list[Gid]
+   Rmax = 1e6*R_list[Rid]
 
+if mode == 'test':
+   np.random.seed(seed)
+   seed = np.random.randint(10000, 20000)
+   G = np.random.random()*(10-0.5) + 0.5
+   Rmax = np.random.random()*(2-0.2) + 0.2
+   Rmax *= 1e6
 
-seed = int(sys.argv[1])
-
-Gid = seed%len(G_list)
-Rid = seed//len(G_list)
-G = G_list[Gid]
-Rmax = 1e6*R_list[Rid]
 print('samples in G, R domain: ', len(G_list), len(R_list))
 print('sampled G, R values: ', G, Rmax)
 
