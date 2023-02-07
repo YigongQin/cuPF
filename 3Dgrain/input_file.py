@@ -63,7 +63,8 @@ top = 48
 
 seed = int(sys.argv[1])
 ''' for test use seed > 10000'''
-if seed<10000:    
+if seed<10000:  
+   ''' grid sampling'''  
    G_list = np.linspace(10, 0.5, 39)
    R_list = np.linspace(2, 0.2, 37)
    
@@ -72,13 +73,15 @@ if seed<10000:
    G = G_list[Gid]
    Rmax = 1e6*R_list[Rid]
 
+   print('samples in G, R domain: ', len(G_list), len(R_list))
+
 else:
    np.random.seed(seed)
    G = np.random.random()*(10-0.5) + 0.5
    Rmax = np.random.random()*(2-0.2) + 0.2
    Rmax *= 1e6
 
-print('samples in G, R domain: ', len(G_list), len(R_list))
+
 print('sampled G, R values: ', G, Rmax)
 
 z0 = 2
