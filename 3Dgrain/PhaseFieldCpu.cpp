@@ -501,6 +501,8 @@ void PhaseField::output(params_MPI pM){
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
     if (save_bulk){
+        //for (int i = 0; i<full_length; i++){
+        //cout << alpha_i_full[i] << endl;}
         h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
     }
 

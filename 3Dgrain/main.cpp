@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iterator>
 #include <assert.h>
+#include <iostream>
 #include "params.h"
 #include "PhaseField.h"
 #include "APTPhaseField.h"
