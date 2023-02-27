@@ -81,6 +81,9 @@ else:
    Rmax = np.random.random()*(2-0.2) + 0.2
    Rmax *= 1e6
 
+if seed == 54320:
+    G = 10
+    Rmax = 2e6
 
 print('sampled G, R values: ', G, Rmax)
 
@@ -98,14 +101,9 @@ U = np.zeros(nx*ny*nz)
 
 
 '''create graph'''
-try:
-    g1 = graph(lxd = Lx, seed = seed, noise = 0.01) 
-except:    
-    print('seed %d failed with noise 0.01, try 0'%seed)
-    g1 = graph(lxd = Lx, seed = seed)
 
 
-# g1 = graph(lxd = Lx, seed = seed) 
+g1 = graph(lxd = Lx, seed = seed) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
 rot = 0 # rotation
 alpha = g1.alpha_field
