@@ -20,8 +20,8 @@ newcolors[0, :] = ly
 newcmp = ListedColormap(newcolors)
 from scipy.spatial import Voronoi
 from math import pi
-from shapely.geometry.polygon import Polygon
-from shapely.geometry import Point
+#from shapely.geometry.polygon import Polygon
+#from shapely.geometry import Point
 from collections import defaultdict
 import math
 import argparse
@@ -156,29 +156,33 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd: float = 20, seed: int = 1, noise: float = 0.01):
-        mesh_size, grain_size = 0.08, 4
+    def __init__(self, lxd: float = 40, seed: int = 1, noise: float = 0.01):
+        self.mesh_size, self.ini_grain_size = 0.08, 4
+        self.ini_height, self.final_height = 2, 50
+        self.patch_size = 40
         self.lxd = lxd
         self.seed = seed
-        s = int(lxd/mesh_size)+1
+        s = int(lxd/self.mesh_size)+1
         self.imagesize = (s, s)
         self.vertices = defaultdict(list) ## vertices coordinates
         self.vertex2joint = defaultdict(set) ## (vertex index, x coordiante, y coordinate)  -> (region1, region2, region3)
         self.vertex_neighbor = defaultdict(set)
         self.edges = []  ## index linkage
-        self.edge_len = []
+       # self.edge_len = []
         self.regions = defaultdict(list) ## index group
         self.region_coors = defaultdict(list)
         self.region_edge = defaultdict(set)
-        self.region_area = defaultdict(float)
         self.region_center = defaultdict(list)
        # self.region_coors = [] ## region corner coordinates
-        self.density = grain_size/lxd
-        self.noise = noise/lxd
+        self.density = self.ini_grain_size/lxd
+        self.noise = noise/lxd/(lxd/self.patch_size)
         self.BC = 'periodic'
         self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
         self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
         self.error_layer = 0
+        
+        self.raise_err = False
+        self.save = None
         
         randInit = True
         
@@ -219,6 +223,15 @@ class graph:
             self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
 
     
+    def layer_grain_distribution(self):
+        
+        grain_area = np.array(list(self.area_counts.values()))*self.mesh_size**2
+        grain_size = np.sqrt(4*grain_area/pi)
+        mu = np.mean(grain_size)
+        std = np.std(grain_size)
+        print(np.max(grain_size), np.min(grain_size))
+        return mu, std
+
     def compute_error_layer(self):
         self.error_layer = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
         print('pointwise error at current layer: ', self.error_layer)
@@ -229,18 +242,18 @@ class graph:
         vor = Voronoi(mirrored_seeds)     
     
        # regions = []
-       # reordered_regions = []
+        reordered_regions = set()
        # vertices = []
         vert_map = {}
         vert_count = 0
-        edge_count = 0
+       # edge_count = 0
         alpha = 0
        # edges = []
         
         for region in vor.regions:
             flag = True
             inboundpoints = 0
-            upper_bound = 2 if self.BC == 'periodic' else 1
+           # upper_bound = 2 if self.BC == 'periodic' else 1
             for index in region:
                 if index == -1:
                     flag = False
@@ -248,7 +261,7 @@ class graph:
                 else:
                     x = vor.vertices[index, 0]
                     y = vor.vertices[index, 1]
-                    if x<=-eps or y<=-eps or x>=upper_bound+eps or y>=upper_bound+eps:
+                    if x<=-0.5-eps or y<=-0.5-eps or x>=1.5+eps or y>=1.5+eps:
                         flag = False
                         break
                     if x<=1+eps and y<=1+eps:
@@ -257,15 +270,15 @@ class graph:
             
                         
             if region != [] and flag:
-                polygon =  Polygon(vor.vertices[region]) 
-                if inboundpoints ==0 and not polygon.contains(Point(1,1)): continue
+               # polygon =  Polygon(vor.vertices[region]) 
+               # if inboundpoints ==0 and not polygon.contains(Point(1,1)): continue
                 '''
                 valid region propertities
                 '''
                 
             #    regions.append(region)
                 reordered_region = []
-                alpha += 1 
+                
 
                 
                 for index in region:
@@ -280,21 +293,60 @@ class graph:
                         vert_count += 1
                     else:
                         reordered_region.append(vert_map[point])
-                                          
-                sorted_vert = reordered_region    
+                
+                if tuple(sorted(reordered_region)) not in reordered_regions:
+                    reordered_regions.add(tuple(sorted(reordered_region)))
+
+                else:
+                    continue
+
+                alpha += 1                           
+              #  sorted_vert = reordered_region    
                 for i in range(len(reordered_region)):
 
                     self.vertex2joint[reordered_region[i]].add(alpha)  
-                    
                     """
                     cur = sorted_vert[i]
                     nxt = sorted_vert[i+1] if i<len(sorted_vert)-1 else sorted_vert[0]
                     self.edges.update({edge_count:[cur, nxt]})
                     edge_count += 1
-                    """
+                    """                    
+                    
+        for k, v in self.vertex2joint.items():
+            if len(v)!=3:
+                print(k, v)
+                
+                
+
     
       #  vor.filtered_points = seeds
       #  vor.filtered_regions = regions
+   # @njit(parallel=True)
+    def para_pixel(self, img, s):
+        
+        
+        for i in range(s):
+            for j in range(s):
+                ii, jj, = i ,j
+                if img[i,j,2]==0:
+
+                    if img[i+s,j,2]>0:
+                        ii += s
+                    elif img[i,j+s,2]>0:
+                        jj += s
+                    elif img[i+s,j+s,2]>0:
+                        ii += s
+                        jj += s
+                    else:
+                       # print('wrong', self.seed)
+                        if self.raise_err:
+                            raise ValueError(i,j)
+                        else: 
+                            pass
+                        
+                self.alpha_field[i,j] = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]    
+        if self.raise_err:
+            assert np.all(self.alpha_field>0), self.seed
         
     def plot_polygons(self):
         """
@@ -326,97 +378,66 @@ class graph:
 
         img = np.asarray(image)
         
-        for i in range(s):
-            for j in range(s):
-                ii, jj, = i ,j
-                if img[i,j,2]==0:
+        self.para_pixel(img, s)
+                
 
-                    if img[i+s,j,2]>0:
-                        ii += s
-                    elif img[i,j+s,2]>0:
-                        jj += s
-                    elif img[i+s,j+s,2]>0:
-                        ii += s
-                        jj += s
-                    else:
-                       # pass
-                        raise ValueError(i,j)
-                alpha = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]   
-                self.alpha_field[i,j] = alpha 
-                self.region_area[alpha] += 1
-        
-        for k, v in self.region_area.items():
-            self.region_area[k]/=s**2
-        
+        """
         for i in range(2*s):
             for j in range(2*s):
                 alpha = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]   
                 self.alpha_field_dummy[i,j] = alpha 
-                
+        """
         
+        self.compute_error_layer()
      
     def show_data_struct(self):
         
 
+        fig, ax = plt.subplots(1, 4, figsize=(20, 5))
         
-        fig, ax = plt.subplots(2, 3, figsize=(15, 10))
-        
-        vertices = list(self.vertices.values())
-        x, y = zip(*vertices)
-        ax[0,0].scatter(list(x), list(y), s=5)
-        ax[0,0].axis("equal")
-        ax[0,0].set_title('Vertices'+str(len(self.vertex_neighbor)))
-        #ax[0].set_xlim(0,1)
-        #ax[0].set_ylim(0,1)
-        #ax[0].set_xticks([])
-        #ax[0].set_yticks([])
+        Q, V, E = len(self.regions), len(self.vertex_neighbor), len(self.edges)
+
         
         for coors in self.region_coors.values():
             for i in range(len(coors)):
                 cur = coors[i]
                 nxt = coors[i+1] if i<len(coors)-1 else coors[0]
-                ax[0,1].plot([cur[0],nxt[0]], [cur[1],nxt[1]], 'k')
+                ax[0].plot([cur[0],nxt[0]], [cur[1],nxt[1]], 'k')
                 
         x, y = zip(*self.region_center.values())     
     
-        ax[0,1].scatter(list(x), list(y), c = 'k')
-        ax[0,1].axis("equal")
-        ax[0,1].set_title('Edges'+str(len(self.edges)))
-        #ax[1].set_xticks([])
-        #ax[1].set_yticks([])
+      #  ax[0].scatter(list(x), list(y), c = 'k')
+        ax[0].axis("equal")
+        ax[0].set_title('(Q, V, E)=(%d, %d, %d)'%(Q, V, E))
 
         
-        view_size = int(0.6*self.alpha_field_dummy.shape[0])
-        field = self.alpha_field_dummy[:view_size,:view_size]
-        field = self.theta_z[field]
-        ax[0,2].imshow((field/pi*180)*(field>0), origin='lower', cmap=newcmp, vmin=0, vmax=90)
-        ax[0,2].set_xticks([])
-        ax[0,2].set_yticks([])
-        ax[0,2].set_title('Grains'+str(len(self.regions))) 
-
-        ax[1,0].imshow(self.theta_z[self.alpha_field]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
-        ax[1,0].set_xticks([])
-        ax[1,0].set_yticks([])
-        ax[1,0].set_title('vertex model reconstructed') 
-        ax[1,1].imshow(self.theta_z[self.alpha_pde]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
-        ax[1,1].set_xticks([])
-        ax[1,1].set_yticks([])
-        ax[1,1].set_title('pde')         
+        ax[1].imshow(self.theta_z[self.alpha_field]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
+        ax[1].set_xticks([])
+        ax[1].set_yticks([])
+        ax[1].set_title('reconstructed') 
         
-        ax[1,2].imshow(1*(self.alpha_pde!=self.alpha_field),cmap='Reds',origin='lower')
-        ax[1,2].set_xticks([])
-        ax[1,2].set_yticks([])
-        ax[1,2].set_title('error'+'%d'%(self.error_layer*100)+'%')                 
-               
-        plt.savefig('./voronoi.png', dpi=400)
+        ax[2].imshow(self.theta_z[self.alpha_pde]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
+        ax[2].set_xticks([])
+        ax[2].set_yticks([])
+        ax[2].set_title('phase field')         
+        
+        ax[3].imshow(1*(self.alpha_pde!=self.alpha_field),cmap='Reds',origin='lower')
+        ax[3].set_xticks([])
+        ax[3].set_yticks([])
+        p_err = int(np.round(self.error_layer*100))
+        ax[3].set_title('error'+'%d'%(p_err)+'%')           
+              
+        
+        if self.save:
+            plt.savefig(self.save, dpi=400)
        
     def update(self, init = False):
         
         """
         Input: joint2vertex, vertices, edges, 
-        Output: region_coors
+        Output: region_coors, vertex_neighbor
         """
-        
+      #  self.edge_len.clear()
         
       #  self.vertex2joint = dict((v, k) for k, v in self.joint2vertex.items())
         self.vertex_neighbor.clear()                    
@@ -458,7 +479,10 @@ class graph:
                                 break
                             
                 prev, cur = cur, nxt
-                verts[cur] = periodic_move(verts[cur], verts[prev]) 
+                
+            
+            for i in range(1, len(vert_in_region)):
+                verts[i] = periodic_move(verts[i], verts[i-1]) 
 
                 
             inbound = [True, True]
@@ -501,7 +525,7 @@ class graph:
             self.region_edge[region] = grain_edge
            # self.edges.update(tent_edge)
               #  self.edges.add((link[1],link[0]))
-        print('num vertices of grains', cnt)
+      #  print('num vertices of grains', cnt)
         print('num edges, junctions', len([i for i in self.edges if i[0]>-1 ]), len(self.joint2vertex))        
         # form edge             
 
@@ -515,29 +539,24 @@ class graph:
                     print(dst, 'not available',src) 
                     print('in', self.vertex2joint[dst])
                                        
-                self.edge_len.append(periodic_dist_(self.vertices[src], self.vertices[dst]))   
-            
-            
+               # self.edge_len.append(periodic_dist_(self.vertices[src], self.vertices[dst]))   
+       # print('edge vertices', len(self.vertex_neighbor))    
+        for v, n in self.vertex_neighbor.items():
+            if len(n)!=3:
+                print((v,n))
+               # raise ValueError((v,n))
 
         if init:  
             self.plot_polygons()
-        self.compute_error_layer()
+       # self.compute_error_layer()
 
 
-    def GNN_update(self, X: np.ndarray):
-        
-        for joint, coors in self.vertices.items():
-            self.vertices[joint] = X[joint]
-            
-        self.update()
 
-
-        
                 
 class GrainHeterograph:
     def __init__(self):
-        self.features = {'grain':['x', 'y', 'z', 'area', 'extraV', 'cosx', 'sinx', 'cosz', 'sinz'],
-                         'joint':['x', 'y', 'z', 'G', 'R']}
+        self.features = {'grain':['x', 'y', 'z', 'area', 'extraV', 'cosx', 'sinx', 'cosz', 'sinz', 'span'],
+                         'joint':['x', 'y', 'z', 'G', 'R', 'span']}
         self.mask = {}
         
         self.features_grad = {'grain':['darea'], 'joint':['dx', 'dy']}
@@ -557,11 +576,10 @@ class GrainHeterograph:
         self.edge_index_dicts = {}
         self.edge_weight_dicts = {}
         self.additional_features = {}
-        self.neighbor_dicts = {}
         
         self.physical_params = {}
 
-    def form_gradient(self, prev, nxt, event_list):
+    def form_gradient(self, prev, nxt, event_list, elim_list):
         
         self.event_list = event_list
         
@@ -575,19 +593,23 @@ class GrainHeterograph:
 
         
             darea = nxt.feature_dicts['grain'][:,3:4] - self.feature_dicts['grain'][:,3:4]
-            
+
+           # for grain, scaleup in elim_list:
+           #     if darea[grain]<=0:
+           #         darea[grain] *= scaleup
+
             self.target_dicts['grain'] = self.targets_scaling['grain']*\
                 np.hstack((darea, nxt.feature_dicts['grain'][:,4:5]))
                                          
             self.target_dicts['joint'] = self.targets_scaling['joint']*\
                self.subtract(nxt.feature_dicts['joint'][:,:2], self.feature_dicts['joint'][:,:2], 'next')
-               # (nxt.feature_dicts['joint'][:,:2] - self.feature_dicts['joint'][:,:2])
-           # self.target_dicts['edge_event'] = nxt.edge_rotation        
+
             
-            self.additional_features['nxt'] = nxt.edge_index_dicts
+           # self.additional_features['nxt'] = nxt.edge_index_dicts
             
             
 
+            ''' gradients '''
             
             # check if the grain neighbor of the junction is the same
             for i in range(len(self.mask['joint'])):
@@ -598,19 +620,11 @@ class GrainHeterograph:
                         self.mask['joint'][i,0] = 0
                       #  print('not matched', i, self.vertex2joint[i])
                       
-            self.gradient_max = {'joint':np.max(np.absolute(self.mask['joint']*self.target_dicts['joint'])),\
-                                   'grain':np.max(np.absolute(self.target_dicts['grain']))}   
-                
-            self.gradient_scale = {'joint':np.mean(np.absolute(self.mask['joint']*self.target_dicts['joint'])),\
-                                   'grain':np.mean(np.absolute(self.target_dicts['grain']))}     
-                
-            print('maximum gradient', self.gradient_max)
-            
-            assert np.all(self.mask['joint']*self.target_dicts['joint']>-1) \
-               and np.all(self.mask['joint']*self.target_dicts['joint']<1)
-            assert np.all(self.target_dicts['grain']>-1) and (np.all(self.target_dicts['grain']<1))
+
 
             
+            '''edge'''
+
             self.edges = [[src, dst] for src, dst in self.edges if src>-1 and dst>-1]
             self.target_dicts['edge_event'] = -100*np.ones(len(self.edges), dtype=int)
  
@@ -624,6 +638,34 @@ class GrainHeterograph:
             print('number of positive/negative events', \
                   sum(self.target_dicts['edge_event']>0), sum(self.target_dicts['edge_event']==0))
             
+            
+            edge_pair = []    
+            for i, el in enumerate(self.edge_weight_dicts[self.edge_type[2]][:,0]):
+                if el > -1:
+                    edge_pair.append([el, nxt.edge_weight_dicts[self.edge_type[2]][i,0]])
+            
+            assert len(self.edges) == len(edge_pair)
+            
+            self.mask['edge'] = np.ones(len(self.edges), dtype=int)
+            self.target_dicts['edge'] = np.zeros(len(self.edges))
+            
+            for i, (el, el_n) in enumerate(edge_pair):
+                
+                if self.target_dicts['edge_event'][i]>0:
+                    self.target_dicts['edge'][i] = 0.5*self.targets_scaling['joint']*(-el_n-el)
+            
+                else:
+                    self.target_dicts['edge'][i] = 0.5*self.targets_scaling['joint']*(el_n-el)
+                
+                if self.target_dicts['edge_event'][i]<0 or el_n<-1:
+                    self.mask['edge'][i] = 0
+            
+
+            
+            
+                
+            '''grain'''    
+                
                 
             self.target_dicts['grain_event'] = np.zeros(len(self.mask['grain']), dtype=int)    
             for i in range(len(self.mask['grain'])):
@@ -631,6 +673,27 @@ class GrainHeterograph:
                     self.target_dicts['grain_event'][i] = 1
                 
             print('number of grain events', np.sum(self.target_dicts['grain_event']))
+
+
+
+            self.gradient_max = {'joint':np.max(np.absolute(self.mask['joint']*self.target_dicts['joint'])),
+                                 'grain':np.max(np.absolute(self.target_dicts['grain'])),
+                                 'edge':np.max(np.absolute(self.mask['edge']*self.target_dicts['edge']))}   
+            
+            gradscale = np.absolute(self.mask['joint']*self.target_dicts['joint'])
+            gradscale = gradscale[gradscale>0]
+            
+            self.gradient_scale = {'joint':np.mean(gradscale),\
+                                   'grain':np.mean(np.absolute(self.target_dicts['grain']))}     
+                
+            print('maximum gradient', self.gradient_max)
+            print('average gradient', self.gradient_scale)
+            
+            assert np.all(self.mask['joint']*self.target_dicts['joint']>-1) \
+               and np.all(self.mask['joint']*self.target_dicts['joint']<1)
+            assert np.all(self.target_dicts['grain']>-1) and (np.all(self.target_dicts['grain']<1))
+            assert np.all(self.mask['edge']*self.target_dicts['edge']>-1) \
+               and np.all(self.mask['edge']*self.target_dicts['edge']<1) 
             
            # del self.edges
            # del self.vertex2joint
@@ -644,26 +707,39 @@ class GrainHeterograph:
         
                                      
         if prev is None:
-            prev_grad_grain = 0*self.feature_dicts['grain'][:,:1]
-            prev_grad_joint = 0*self.feature_dicts['joint'][:,:2]
+            self.prev_grad_grain = 0*self.feature_dicts['grain'][:,:1]
+            self.prev_grad_joint = 0*self.feature_dicts['joint'][:,:2]
+            self.prev_grad_edge  = 0*self.edge_weight_dicts[self.edge_type[2]][:,:1]
                     
         else:
-            prev_grad_grain = self.targets_scaling['grain']*\
+            self.prev_grad_grain = self.targets_scaling['grain']*\
                 (self.feature_dicts['grain'][:,3:4] - prev.feature_dicts['grain'][:,3:4]) 
-            prev_grad_joint = self.targets_scaling['joint']*\
+            self.prev_grad_joint = self.targets_scaling['joint']*\
                 self.subtract(self.feature_dicts['joint'][:,:2], prev.feature_dicts['joint'][:,:2], 'prev')
                # (self.feature_dicts['joint'][:,:2] - prev.feature_dicts['joint'][:,:2])             
+            self.prev_grad_edge  = 0.5*self.targets_scaling['joint']*\
+                self.subtract(self.edge_weight_dicts[self.edge_type[2]][:,:1], prev.edge_weight_dicts[self.edge_type[2]][:,:1], 'prev')
         
         self.feature_dicts['grain'][:,4] *= self.targets_scaling['grain']
-        self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], self.span/120 + 0*prev_grad_grain[:,:1], prev_grad_grain))
+        
+        
+        
+        
+        self.feature_dicts['grain'][:, len(self.features['grain'])-1] = self.span/120 
+        self.feature_dicts['joint'][:, len(self.features['joint'])-1] = self.span/120
+                                                 
+        self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], self.prev_grad_grain))
 
-        self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], self.span/120 + 0*prev_grad_joint[:,:1], prev_grad_joint)) 
+        self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], self.prev_grad_joint)) 
                 
+        
+      #  self.edge_weight_dicts[self.edge_type[2]] = np.hstack((self.edge_weight_dicts[self.edge_type[2]], 
+      #                                                         self.prev_grad_edge)) 
 
         
         for nodes, features in self.features.items():
             self.features[nodes] = self.features[nodes] + self.features_grad[nodes]  
-            assert len(self.features[nodes]) + 1 == self.feature_dicts[nodes].shape[1]
+            assert len(self.features[nodes]) == self.feature_dicts[nodes].shape[1]
 
 
     @staticmethod
@@ -678,32 +754,64 @@ class GrainHeterograph:
             return b[:short_len,:]-a
 
 
+    @staticmethod
+    def fillup(b, a):
+
+        short_len = len(a)
+        
+        return np.concatenate((a, 0*b[short_len:,:]), axis=0)
+        
+    def append_history(self, prev_list):
+        
+        exist = np.where(self.edge_weight_dicts[self.edge_type[2]][:,0]>-1)[0]
+        self.edge_weight_dicts[self.edge_type[2]] = self.edge_weight_dicts[self.edge_type[2]][exist,:]
+        
+        
+        for prev in prev_list:
+            
+            if prev is None:           
+                prev_grad_grain = 0*self.feature_dicts['grain'][:,:1]
+                prev_grad_joint = 0*self.feature_dicts['joint'][:,:2]  
+            #    prev_edge_len = 0*self.edge_weight_dicts[self.edge_type[2]][:,:1]
+            else:
+                prev_grad_grain = self.fillup(self.prev_grad_grain, prev.prev_grad_grain)
+                prev_grad_joint = self.fillup(self.prev_grad_joint, prev.prev_grad_joint)
+            #    prev_edge_len = self.fillup(self.edge_weight_dicts[self.edge_type[2]][:,:1],
+            #                                prev.edge_weight_dicts[self.edge_type[2]][:,:1])
+            
+            self.feature_dicts['grain'] = np.hstack((self.feature_dicts['grain'], prev_grad_grain))
+            self.feature_dicts['joint'] = np.hstack((self.feature_dicts['joint'], prev_grad_joint))                                       
+            
+         #   self.edge_weight_dicts[self.edge_type[2]] = np.hstack((self.edge_weight_dicts[self.edge_type[2]], 
+         #                                                          prev_edge_len))   
+            
+        return
+    
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate heterograph data")
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 1)
-    parser.add_argument("--level", type=int, default = 0)
 
     args = parser.parse_args()        
         
     if args.mode == 'check':
-        seed = 8
-        g1 = graph(lxd = 20, seed=seed) 
+
+        seed = 0
+        g1 = graph(lxd = 40, seed=seed) 
+
         g1.show_data_struct()
 
     
     if args.mode == 'instance':
         
-        for seed in range(300):
+        for seed in range(args.seed*12, (args.seed+1)*12):
             print('\n')
             print('test seed', seed)
 
-            g1 = graph(lxd = 20, seed=seed) 
+            g1 = graph(lxd = 40, seed=seed) 
 
 
           #  g1.show_data_struct() 
-               
-
-
 
