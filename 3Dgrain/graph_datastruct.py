@@ -178,7 +178,7 @@ class graph:
         self.noise = noise/lxd/(lxd/self.patch_size)
         self.BC = 'periodic'
         self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
-        self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
+      #  self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
         self.error_layer = 0
         
         self.raise_err = False
@@ -193,7 +193,7 @@ class graph:
             
                 self.random_voronoi()
                 self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
-                self.alpha_pde = self.alpha_field
+                self.alpha_pde = self.alpha_field.copy()
                 self.update(init=True)
             
             except:
@@ -202,7 +202,7 @@ class graph:
                 self.vertex2joint = defaultdict(set)
                 self.random_voronoi()
                 self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
-                self.alpha_pde = self.alpha_field
+                self.alpha_pde = self.alpha_field.copy()
                 self.update(init=True)            
             
             self.num_regions = len(self.regions)
@@ -311,42 +311,28 @@ class graph:
                     self.edges.update({edge_count:[cur, nxt]})
                     edge_count += 1
                     """                    
-                    
+        
+        ''' deal with quadraples '''            
+        
+        """
+        for k, v in self.vertex2joint.copy().items():
+            if len(v)>3:
+                num_k = len(v)-3     
+                grains = list(v)
+                self.vertex2joint[k] = set(grains[:3])
+        """
+        """
+        num_vertices = len(self.vertex2joint)
+        self.vertex2joint[num_vertices] = set(grains[0:2]+grains[3])
+        self.vertices[num_vertices] = self.vertices[k]
+        """
+        
         for k, v in self.vertex2joint.items():
             if len(v)!=3:
                 print(k, v)
                 
                 
 
-    
-      #  vor.filtered_points = seeds
-      #  vor.filtered_regions = regions
-   # @njit(parallel=True)
-    def para_pixel(self, img, s):
-        
-        
-        for i in range(s):
-            for j in range(s):
-                ii, jj, = i ,j
-                if img[i,j,2]==0:
-
-                    if img[i+s,j,2]>0:
-                        ii += s
-                    elif img[i,j+s,2]>0:
-                        jj += s
-                    elif img[i+s,j+s,2]>0:
-                        ii += s
-                        jj += s
-                    else:
-                       # print('wrong', self.seed)
-                        if self.raise_err:
-                            raise ValueError(i,j)
-                        else: 
-                            pass
-                        
-                self.alpha_field[i,j] = img[ii,jj,0]*255*255+img[ii,jj,1]*255+img[ii,jj,2]    
-        if self.raise_err:
-            assert np.all(self.alpha_field>0), self.seed
         
     def plot_polygons(self):
         """
@@ -376,24 +362,24 @@ class graph:
             if len(p)>1:
                 draw.polygon(p, fill=orientation) 
 
-        img = np.asarray(image)
-        
-        self.para_pixel(img, s)
-                
+        img = np.array(image, dtype=int)
 
-        """
-        for i in range(2*s):
-            for j in range(2*s):
-                alpha = img[i,j,0]*255*255+img[i,j,1]*255+img[i,j,2]   
-                self.alpha_field_dummy[i,j] = alpha 
-        """
-        
+        img = img[:,:,0]*255*255 + img[:,:,1]*255 + img[:,:,2]
+
+        img = np.stack([img[:s,:s] ,img[s:,:s] ,img[:s,s:] ,img[s:,s:] ])
+
+       # self.para_pixel(img, s)
+        self.alpha_field = np.max(img, axis=0)    
+
+        if self.raise_err:
+            assert np.all(self.alpha_field>0), self.seed
+        assert np.all(self.alpha_field>0), self.seed    
         self.compute_error_layer()
      
     def show_data_struct(self):
         
 
-        fig, ax = plt.subplots(1, 4, figsize=(20, 5))
+        fig, ax = plt.subplots(1, 4, figsize=(20, 5), gridspec_kw={'width_ratios': [1, 1, 1, 1], 'height_ratios': [1]})
         
         Q, V, E = len(self.regions), len(self.vertex_neighbor), len(self.edges)
 
@@ -408,24 +394,26 @@ class graph:
     
       #  ax[0].scatter(list(x), list(y), c = 'k')
         ax[0].axis("equal")
-        ax[0].set_title('(Q, V, E)=(%d, %d, %d)'%(Q, V, E))
-
+        ax[0].axis('off')
+       # ax[0].set_title('(Q, V, E)=(%d, %d, %d)'%(Q, V, E))
+       # ax[0].set_title('Graph')
+        ax[0].set_frame_on(False)
         
         ax[1].imshow(self.theta_z[self.alpha_field]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
         ax[1].set_xticks([])
         ax[1].set_yticks([])
-        ax[1].set_title('reconstructed') 
+      #  ax[1].set_title('GrainGNN') 
         
         ax[2].imshow(self.theta_z[self.alpha_pde]/pi*180, origin='lower', cmap=newcmp, vmin=0, vmax=90)
         ax[2].set_xticks([])
         ax[2].set_yticks([])
-        ax[2].set_title('phase field')         
+       # ax[2].set_title('Phase field')         
         
         ax[3].imshow(1*(self.alpha_pde!=self.alpha_field),cmap='Reds',origin='lower')
         ax[3].set_xticks([])
         ax[3].set_yticks([])
         p_err = int(np.round(self.error_layer*100))
-        ax[3].set_title('error'+'%d'%(p_err)+'%')           
+      #  ax[3].set_title('error'+'%d'%(p_err)+'%')           
               
         
         if self.save:
@@ -455,6 +443,7 @@ class graph:
                 self.region_coors[region].append(self.vertices[v])
         cnt = 0
         edge_count = 0
+
         for region, verts in self.region_coors.items():
             if len(verts)<=1: continue
         #    assert len(verts)>1, ('one vertex is not a grain ', region, self.regions[region])
@@ -462,23 +451,11 @@ class graph:
             moved_region = []
 
             vert_in_region = self.regions[region]
+  
+            
             grain_edge = set()
 
-            prev, cur = 0, 0
-            for i in range(len(vert_in_region)):
-                
-                for nxt in range(len(vert_in_region)): 
-                    if nxt!=prev:
-                        if init:
-                            if linked_edge_by_junction(self.vertex2joint[vert_in_region[cur]], \
-                                                    self.vertex2joint[vert_in_region[nxt]]):
-                               break
-                          
-                        else:
-                            if [vert_in_region[cur], vert_in_region[nxt]] in self.edges:
-                                break
-                            
-                prev, cur = cur, nxt
+
                 
             
             for i in range(1, len(vert_in_region)):
@@ -799,7 +776,7 @@ if __name__ == '__main__':
     if args.mode == 'check':
 
         seed = 0
-        g1 = graph(lxd = 40, seed=seed) 
+        g1 = graph(lxd = 80, seed=seed) 
 
         g1.show_data_struct()
 
