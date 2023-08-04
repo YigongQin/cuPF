@@ -13,12 +13,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
+plt.rcParams.update({'font.size': 24})
 coolwarm = cm.get_cmap('coolwarm', 256)
 newcolors = coolwarm(np.linspace(0, 1, 256*100))
 ly = np.array([255/256, 255/256, 255/256, 1])
 newcolors[0, :] = ly
 newcmp = ListedColormap(newcolors)
 from scipy.spatial import Voronoi
+from scipy.stats import truncnorm
 from math import pi
 #from shapely.geometry.polygon import Polygon
 #from shapely.geometry import Point
@@ -65,8 +67,8 @@ def periodic_move(p, pc):
     y += -1*(rel_y>0.5) + 1*(rel_y<-0.5) 
     
     
-    assert -0.5<x - xc<0.5
-    assert -0.5<y - yc<0.5
+    #assert -0.5<x - xc<0.5
+    #assert -0.5<y - yc<0.5
     return [x, y]
 
 
@@ -152,14 +154,54 @@ def hexagonal_lattice(dx=0.05, noise=0.0001, BC='periodic'):
     return points, in_points
 
 
+def random_lattice(dx=0.05, noise=0.0001, BC='periodic'):
+    # Assemble a hexagonal lattice
+    rows, cols = int(1/dx), int(1/dx)
+    print('cols and rows of grains: ', cols, rows)
+    points = []
+    in_points = []
+    randNoise = np.random.rand(rows*cols,2)
+    count = 0
+    for row in range(rows*cols):
+  
+            
+            x = randNoise[count,0]
+            y = randNoise[count,1]
+            
+            if in_bound(x, y):
+              in_points.append([x,y])
+              points.append([x,y])
+              if BC == 'noflux':
+                  points.append([-x,y])
+                  points.append([x,-y])
+                  points.append([2-x,y])
+                  points.append([x,2-y])
+              if BC == 'periodic':
+                  points.append([x+1,y])
+                  points.append([x-1,y])
+                  points.append([x,y+1])
+                  points.append([x,y-1])                  
+                  points.append([x+1,y+1])
+                  points.append([x-1,y-1])
+                  points.append([x-1,y+1])
+                  points.append([x+1,y-1])                     
+            count+=1
+    return points, in_points
+
 
 
         
 class graph:
-    def __init__(self, lxd: float = 40, seed: int = 1, noise: float = 0.01):
-        self.mesh_size, self.ini_grain_size = 0.08, 4
-        self.ini_height, self.final_height = 2, 50
+    def __init__(self, lxd: float = 40, seed: int = 1, noise: float = 0.01, \
+                 adjust_grain_size = False, adjust_grain_orien = False):
+        self.mesh_size = 0.08
         self.patch_size = 40
+
+        self.ini_grain_size = 4
+        if adjust_grain_size:
+            self.ini_grain_size = 2 + (seed%10)/5*3
+        self.ini_height, self.final_height = 2, 50
+        
         self.lxd = lxd
         self.seed = seed
         s = int(lxd/self.mesh_size)+1
@@ -181,35 +223,25 @@ class graph:
       #  self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
         self.error_layer = 0
         
-        self.raise_err = False
+        self.raise_err = True
         self.save = None
         
         randInit = True
         
         if randInit:
             np.random.seed(seed)
+
+            self.random_voronoi()
+            self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
+            self.alpha_pde = self.alpha_field.copy()
+            self.update(init=True)
             
-            try:
-            
-                self.random_voronoi()
-                self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
-                self.alpha_pde = self.alpha_field.copy()
-                self.update(init=True)
-            
-            except:
-                self.noise = 0
-                self.edges = [] 
-                self.vertex2joint = defaultdict(set)
-                self.random_voronoi()
-                self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
-                self.alpha_pde = self.alpha_field.copy()
-                self.update(init=True)            
-            
+ 
             self.num_regions = len(self.regions)
             self.num_vertices = len(self.vertices)
             self.num_edges = len(self.edges)
             
-            cur_grain, counts = np.unique(self.alpha_pde, return_counts=True)
+            cur_grain, counts = np.unique(self.alpha_field, return_counts=True)
             self.area_counts = dict(zip(cur_grain, counts))
 
             
@@ -220,17 +252,53 @@ class graph:
             self.theta_x = np.zeros(1 + self.num_regions)
             self.theta_z = np.zeros(1 + self.num_regions)
             self.theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
-            self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+            
+            if adjust_grain_orien:
+                low, up = 0, pi/2
+                mean, sd = 0+pi/36*(seed%10), 0.4
+                gen = truncnorm((low - mean) / sd, (up - mean) / sd, loc=mean, scale=sd)
+                self.theta_z[1:] = gen.rvs(self.num_regions)
+            else:
+                self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
 
-    
+        self.layer_grain_distribution()    
+
     def layer_grain_distribution(self):
         
-        grain_area = np.array(list(self.area_counts.values()))*self.mesh_size**2
+        grain_area = np.array(list(self.area_counts.values()))*self.mesh_size**2#*self.ini_height
         grain_size = np.sqrt(4*grain_area/pi)
+       
         mu = np.mean(grain_size)
         std = np.std(grain_size)
-        print(np.max(grain_size), np.min(grain_size))
-        return mu, std
+        print('initial size distribution', mu, std)
+        print('max and min', np.max(grain_size), np.min(grain_size))
+        
+        self.ini_grain_dis = grain_size
+
+    def plot_grain_distribution(self):
+        bins = np.arange(0,20,1)
+        
+        dis, bin_edge = np.histogram(self.ini_grain_dis, bins=bins, density=True)
+        bin_edge = 0.5*(bin_edge[:-1] + bin_edge[1:])
+        fig, ax = plt.subplots(1,1,figsize=(5,5))
+        ax.plot(bin_edge, dis*np.diff(bin_edge)[0], 'b', label='GNN')
+        ax.set_xlim(0, 20)
+        ax.set_xlabel(r'$d\ (\mu m)$')
+        ax.set_ylabel(r'$P$')  
+      #  ax.legend(fontsize=15)  
+        plt.savefig('seed'+str(self.seed)+'_ini_size_dis' +'.png', dpi=400, bbox_inches='tight')
+
+        bins = np.arange(0,90,10)
+        
+        fig, ax = plt.subplots(1,1,figsize=(5,5))
+        ax.hist(self.theta_z[1:]*180/pi, bins, density=False, facecolor='g', alpha=0.75, edgecolor='black')
+        ax.set_xlim(0, 90)
+        ax.set_xlabel(r'$\theta_z$')
+       # ax.set_ylabel(r'$P$')  
+      #  ax.legend(fontsize=15)  
+        plt.savefig('seed'+str(self.seed)+'_ini_orien_dis' +'.png', dpi=400, bbox_inches='tight')
+
+
 
     def compute_error_layer(self):
         self.error_layer = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
@@ -242,7 +310,7 @@ class graph:
         vor = Voronoi(mirrored_seeds)     
     
        # regions = []
-        reordered_regions = set()
+        reordered_regions = []
        # vertices = []
         vert_map = {}
         vert_count = 0
@@ -295,7 +363,7 @@ class graph:
                         reordered_region.append(vert_map[point])
                 
                 if tuple(sorted(reordered_region)) not in reordered_regions:
-                    reordered_regions.add(tuple(sorted(reordered_region)))
+                    reordered_regions.append(tuple(sorted(reordered_region)))
 
                 else:
                     continue
@@ -312,21 +380,43 @@ class graph:
                     edge_count += 1
                     """                    
         
-        ''' deal with quadraples '''            
-        
-        """
+        ''' deal with quadruples '''            
+          
+        self.quadruples = {}
+
         for k, v in self.vertex2joint.copy().items():
             if len(v)>3:
-                num_k = len(v)-3     
+                
                 grains = list(v)
-                self.vertex2joint[k] = set(grains[:3])
-        """
-        """
-        num_vertices = len(self.vertex2joint)
-        self.vertex2joint[num_vertices] = set(grains[0:2]+grains[3])
-        self.vertices[num_vertices] = self.vertices[k]
-        """
-        
+               # print('quadruple', k, grains)
+                num_vertices = len(self.vertex2joint)
+                
+            
+                first = grains[0]
+                v.remove(first)
+                self.vertex2joint[num_vertices] = v.copy()
+                v.add(first)
+                
+                self.vertices[num_vertices] = self.vertices[k]
+
+                
+                n1 = reordered_regions[first-1]
+               # print(grains)
+                for test_grains in grains[1:]:
+
+                    if len(set(n1).intersection(set(reordered_regions[test_grains-1])))==1:
+                        remove_grain = test_grains
+
+                        break
+
+                v.remove(remove_grain)
+
+                self.vertex2joint[k] = v.copy()
+                v.remove(first)
+                v = list(v)
+                
+                self.quadruples.update({v[0]:(k,num_vertices), v[1]:(k,num_vertices)})     
+                
         for k, v in self.vertex2joint.items():
             if len(v)!=3:
                 print(k, v)
@@ -373,7 +463,7 @@ class graph:
 
         if self.raise_err:
             assert np.all(self.alpha_field>0), self.seed
-        assert np.all(self.alpha_field>0), self.seed    
+   
         self.compute_error_layer()
      
     def show_data_struct(self):
@@ -438,6 +528,7 @@ class graph:
         
         for k, v in self.joint2vertex.items():
             for region in set(k):
+
                 self.regions[region].append(v)
                 
                 self.region_coors[region].append(self.vertices[v])
@@ -451,11 +542,6 @@ class graph:
             moved_region = []
 
             vert_in_region = self.regions[region]
-  
-            
-            grain_edge = set()
-
-
                 
             
             for i in range(1, len(vert_in_region)):
@@ -489,19 +575,35 @@ class graph:
             cnt += len(vert_in_region) 
 
             
-            for i in range(len(sorted_vert)):
-                cur = sorted_vert[i]
-                nxt = sorted_vert[i+1] if i<len(sorted_vert)-1 else sorted_vert[0]
+            if init:
                 
-                grain_edge.add((cur, nxt))
+                grain_edge = []
+                save_edge = True
                 
-                if init:
-                    self.edges.append([cur, nxt])
-                    edge_count += 1
+                for i in range(len(sorted_vert)):
+                    cur = sorted_vert[i]
+                    nxt = sorted_vert[i+1] if i<len(sorted_vert)-1 else sorted_vert[0]
                     
-            self.region_edge[region] = grain_edge
-           # self.edges.update(tent_edge)
-              #  self.edges.add((link[1],link[0]))
+                    if region in self.quadruples:
+                        if cur in self.quadruples[region] or nxt in self.quadruples[region]:
+                            if not linked_edge_by_junction(self.vertex2joint[cur], self.vertex2joint[nxt]):
+                                save_edge = False
+                           
+                    grain_edge.append([cur, nxt])
+                
+                if save_edge:
+                    self.edges.extend(grain_edge)
+                else:
+                   # print('before',grain_edge)
+                    v1, v2 = self.quadruples[region]
+                    for e in grain_edge:
+                        if e[0] == v1: e[0] = v2
+                        elif e[0] == v2: e[0] = v1   
+                        if e[1] == v1: e[1] = v2
+                        elif e[1] == v2: e[1] = v1 
+                   # print('after', grain_edge)
+                    self.edges.extend(grain_edge)
+
       #  print('num vertices of grains', cnt)
         print('num edges, junctions', len([i for i in self.edges if i[0]>-1 ]), len(self.joint2vertex))        
         # form edge             
@@ -775,11 +877,11 @@ if __name__ == '__main__':
         
     if args.mode == 'check':
 
-        seed = 0
-        g1 = graph(lxd = 80, seed=seed) 
+        seed = 4
+        g1 = graph(lxd = 40, seed=seed) 
 
-        g1.show_data_struct()
-
+       # g1.show_data_struct()
+       # g1.plot_grain_distribution()
     
     if args.mode == 'instance':
         
