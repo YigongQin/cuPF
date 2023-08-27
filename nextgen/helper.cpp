@@ -1,9 +1,8 @@
 #include <stdio.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "helper.h"
 
 void print2d(float* array, int fnx, int fny){
 
@@ -18,8 +17,6 @@ void print2d(float* array, int fnx, int fny){
    }
 
 }
-
-
 
 void printCudaInfo(int rank, int i)
 {
