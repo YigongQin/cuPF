@@ -1,0 +1,31 @@
+__inline__ __device__ void 
+G2L_3D(int pf_C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
+
+  k = pf_C/(fnx*fny);
+  int pf_C_z=pf_C-k*fnx*fny; 
+  j = pf_C_z/fnx;
+  i = pf_C_z-j*fnx;
+
+}
+
+
+__inline__ __device__ void 
+G2L_4D(int C, int &i, int &j, int &k, int &PF_id, int fnx, int fny, int fnz){
+
+  PF_id = C/(fnx*fny*fnz);
+  int pf_C = C - PF_id*fnx*fny*fnz;  // local C in every PF
+  k = pf_C/(fnx*fny);
+  int pf_C_z=pf_C-k*fnx*fny; 
+  j = pf_C_z/fnx;
+  i = pf_C_z-j*fnx;
+
+}
+
+__inline__ __device__ int 
+L2G_4D(int i, int j, int k, int pf, int fnx, int fny, int fnz){
+
+    return i + j*fnx + k*fnx*fny + pf*fnx*fny*fnz;
+
+}
+
+
