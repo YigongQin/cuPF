@@ -84,11 +84,3 @@ void read_input(std::string input, int* target){
 
 }
 
-template <typename T>
-std::string to_stringp(const T a_value, int n )
-{
-    std::ostringstream out;
-    out.precision(n);
-    out << std::fixed << a_value;
-    return out.str();
-}

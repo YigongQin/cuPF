@@ -1,7 +1,7 @@
 EXECUTABLE := phase_field
 CU_FILES   := PhaseField.cu APTPhaseField.cu 
 CU_DEPS    :=
-CC_FILES   := main.cpp helper.cpp PhaseField.cpp MPIsetting.cpp QOI.cpp
+CC_FILES   := main.cpp helper.cpp PhaseFieldCpu.cpp MPIsetting.cpp QOI.cpp
 
 all: $(EXECUTABLE)
 
@@ -15,7 +15,7 @@ OBJDIR=objs
 INC_FLAGS=-I../common -I$(TACC_HDF5_INC) 
 MPI_INC=-I/opt/intel/impi/2019.9.304/intel64/include/
 CXX=icpc 
-CXXFLAGS=-O3 -Wall $(INC_FLAGS) $(MPI_INC) -std=c++11
+CXXFLAGS=-O3 -Wall $(INC_FLAGS) $(MPI_INC) -std=c++14
 HDF5_FLAGS=-Wl,-rpath,$(TACC_HDF5_LIB) -L$(TACC_HDF5_LIB) -lhdf5 -lz
 MPICXX=/opt/intel/impi/2019.9.304/intel64/bin/mpicxx
 ################################################################################
@@ -40,11 +40,11 @@ GENCODE_FLAGS   := $(GENCODE_SM70) # For Pascal architecture
 ################################################################################
 NVCC_LDFLAGS=-L$(CUDA_PATH)/lib64/ -lcudart -Wl,-rpath=$(CUDA_PATH)/lib64
 NVCC=$(CUDA_PATH)/bin/nvcc -ccbin=$(MPICXX) 
-NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++11
+NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++14
 
 #CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
-OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseField.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o
+OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseFieldCpu.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o
 OBJS += $(OBJDIR)/PhaseField.o $(OBJDIR)/APTPhaseField.o 
 
 CXXFLAGS += -I$(CUDA_PATH)/include/ $(HDF5_FLAGS) -L$(CUDA_PATH)/lib64/ -lcudart 

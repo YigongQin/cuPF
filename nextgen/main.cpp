@@ -25,6 +25,8 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(comm, &mpiManager.rank);
     MPI_Comm_size(comm, &mpiManager.numProcessor);
+    mpiManager.twoDimensionPartition();
+    mpiManager.printMPIsetting();
     // mpiManager.rank=0;
     // mpiManager.nproc=1;
 

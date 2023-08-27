@@ -9,8 +9,6 @@ void printCudaInfo(int rank, int i);
 void getParam(std::string lineText, std::string key, float& param);
 void read_input(std::string input, float* target);
 void read_input(std::string input, int* target);
-template <typename T>
-std::string to_stringp(const T a_value, int n );
 
 __global__ void set_minus1(float* u, int size);
 __global__ void ave_x(float* phi, float* meanx, int fnx, int fny, int fnz, int NUM_PF);

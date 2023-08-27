@@ -240,7 +240,7 @@ void PhaseField::cpuSetup(MPIsetting& mpiManager){
         xmin_loc += dxd;
     } 
     
-    if (mpiManager.numProcessorY == 0)
+    if (mpiManager.processorIDY == 0)
     {
         mpiManager.nyLocal += 1;
     }
@@ -381,7 +381,7 @@ void PhaseField::initField(){
 
 }
 
-
+std::string to_stringp(float a_value, int n );
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype);
 
 void PhaseField::output(const MPIsetting& mpiManager, const string outputFolder, bool save3DField)
@@ -421,6 +421,13 @@ void PhaseField::output(const MPIsetting& mpiManager, const string outputFolder,
     H5Fclose(h5_file);
 }
 
+std::string to_stringp(float a_value, int n )
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return out.str();
+}
 
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype){
 
