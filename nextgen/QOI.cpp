@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 using namespace std;
 
 QOI::QOI(GlobalConstants params)
@@ -15,7 +16,7 @@ QOI::QOI(GlobalConstants params)
     mQoIVectorFloatData.emplace("fractions", std::vector<float>((params.nts+1)*params.num_theta));
 
     mQoIVectorIntData.emplace("tip_y", std::vector<int>(params.nts+1));
-    mQoIVectorIntData.emplace("cross_sec", std::vector<int>((params.nts+1)*params.fnx*params.fny));
+    mQoIVectorIntData.emplace("cross_sec", std::vector<int>());
     mQoIVectorIntData.emplace("extra_area", std::vector<int>((params.nts+1)*params.num_theta));
     mQoIVectorIntData.emplace("total_area", std::vector<int>((params.nts+1)*params.num_theta));
     mQoIVectorIntData.emplace("tip_final", std::vector<int>((params.nts+1)*params.num_theta));
@@ -101,11 +102,10 @@ void QOI::searchJunctionsOnImage(GlobalConstants params, int* alpha)
      {
         int cur_tip = mQoIVectorIntData["tip_y"][kt];
         int offset_z = fnx*fny*cur_tip;
-        memcpy(&mQoIVectorIntData["cross_sec"] + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
-
+        //memcpy(&mQoIVectorIntData["cross_sec"] + kt*fnx*fny, alpha + cur_tip*fnx*fny,  sizeof(int)*fnx*fny ); 
+        copy(alpha + cur_tip*fnx*fny, alpha + (cur_tip + 1)*fnx*fny, back_inserter(mQoIVectorIntData["cross_sec"]));
         int offset_node_region = mQoIVectorIntData["node_region"].size()/(params.nts+1)*kt;
         int node_cnt = 0;
-
         for (int j = 1; j<fny-1; j++)
         { 
             for (int i = 1; i<fnx-1; i++)
@@ -128,7 +128,6 @@ void QOI::searchJunctionsOnImage(GlobalConstants params, int* alpha)
                     }
                 }       
                 int alpha_occur=0, max_occur=0;
-
                 for (auto & it : occur) 
                 {
                     alpha_occur++;
