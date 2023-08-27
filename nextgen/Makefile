@@ -44,7 +44,7 @@ NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++11
 
 #CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
-OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseFieldCpu.o
+OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseField.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o
 OBJS += $(OBJDIR)/PhaseField.o $(OBJDIR)/APTPhaseField.o 
 
 CXXFLAGS += -I$(CUDA_PATH)/include/ $(HDF5_FLAGS) -L$(CUDA_PATH)/lib64/ -lcudart 

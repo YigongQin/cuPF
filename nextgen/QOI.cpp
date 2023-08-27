@@ -4,9 +4,10 @@
 /////////////////////
 
 #include "QOI.h"
-#include<unordered_map>
-#include<unordered_set>
-#include<cmath>
+#include <unordered_map>
+#include <unordered_set>
+#include <cmath>
+#include <cstring>
 using namespace std;
 
 QOI::QOI(GlobalConstants params)

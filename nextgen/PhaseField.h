@@ -9,7 +9,7 @@ class PhaseField: public PDE
 public:
 	PhaseField(){};
 	virtual ~PhaseField();
-	void parseInputParams(const string fileName);
+	void parseInputParams(const std::string fileName);
 	void cpuSetup(MPIsetting& mpiManager);
 	void initField();
 	virtual void cudaSetup(const MPIsetting& mpiManager); // setup cuda for every GPU

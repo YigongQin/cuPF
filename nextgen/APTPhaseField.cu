@@ -597,7 +597,7 @@ void APTPhaseField::evolve(){
             lowsl = 1;
             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-            qois->sample_heights(lowsl, alpha, fnx, fny, fnz);
+            qois->sampleHeights(lowsl, alpha, fnx, fny, fnz);
 
 
           }
