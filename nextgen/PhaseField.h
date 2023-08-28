@@ -3,6 +3,7 @@
 #include "cuPDE.h"
 #include "params.h"
 #include "QOI.h"
+#include "thermalInputData.h"
 
 class PhaseField: public PDE 
 {
@@ -38,15 +39,9 @@ public:
 	int* argmax;
 	float* z_device2;
 
-	Mac_input mac;
-	Mac_input Mgpu;
+	thermalInputData mac;
+	thermalInputData Mgpu;
 	GlobalConstants params;
 	QOI* qois;
 
 };
-
-/*
-__global__ void set_minus1(float* u, int size);
-__global__ void ave_x(float* phi, float* meanx, int fnx, int fny, int fnz, int NUM_PF);
-void tip_mvf(int *cur_tip, float* phi, float* meanx, float* meanx_host, int fnx, int fny, int fnz, int NUM_PF);
-*/

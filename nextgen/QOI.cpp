@@ -11,7 +11,7 @@
 #include <iostream>
 using namespace std;
 
-QOI::QOI(GlobalConstants params)
+QOI::QOI(const GlobalConstants params)
 {
     mQoIVectorFloatData.emplace("fractions", std::vector<float>((params.nts+1)*params.num_theta));
 
@@ -29,12 +29,13 @@ QOI::QOI(GlobalConstants params)
 
 
 
-void QOI::calculateQoIs(GlobalConstants params, int &cur_tip, int* alpha, int kt, float* z, int* loss_area, int move_count)
+void QOI::calculateQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+                        const float* z, const int* loss_area, int move_count)
 {
 
      // cur_tip here inludes the halo
-     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, length = params.length, \
-         num_grains = params.num_theta, NUM_PF = params.NUM_PF, all_time = params.nts+1;
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, 
+         num_grains = params.num_theta, all_time = params.nts+1;
      bool contin_flag = true;
 
      while(contin_flag == true)
@@ -92,7 +93,7 @@ void QOI::calculateQoIs(GlobalConstants params, int &cur_tip, int* alpha, int kt
 
 }
 
-void QOI::searchJunctionsOnImage(GlobalConstants params, int* alpha)
+void QOI::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
 {
      // find the args that have active phs greater or equal 3, copy the args to mQoIVectorIntData["node_region"]
      int fnx = params.fnx, fny = params.fny;
@@ -151,7 +152,7 @@ void QOI::searchJunctionsOnImage(GlobalConstants params, int* alpha)
      }
 }
 
-void QOI::sampleHeights(int& cur_tip, int* alpha, int fnx, int fny, int fnz)
+void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz)
 {
 
      bool contin_flag = true;

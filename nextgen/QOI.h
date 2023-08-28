@@ -14,9 +14,10 @@ class QOI
 public:
 	QOI(GlobalConstants params);
 	virtual ~QOI(){};
-	void searchJunctionsOnImage(GlobalConstants params, int* alpha);
-	void calculateQoIs(GlobalConstants params, int &cur_tip, int* alpha, int kt, float* z, int* loss_area, int move_count);
-	void sampleHeights(int& cur_tip, int* alpha, int fnx, int fny, int fnz);
+	void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha);
+	void calculateQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+                        const float* z, const int* loss_area, int move_count);
+	void sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz);
 	std::map<std::string, std::vector<int> >   mQoIVectorIntData;
 	std::map<std::string, std::vector<float> > mQoIVectorFloatData;
 	std::map<std::string, int > mQoIVectorSize;

@@ -31,9 +31,9 @@ int main(int argc, char** argv)
     // mpiManager.nproc=1;
 
     string inputFile = argv[1]; 
-    string macroInputFolder = "forcing/case";
+    string thermalInputFolder = "forcing/case";
     // this output folder should be specified differently for each system
-    string outputFolder = "/scratch1/07428/ygqin/graph/"; 
+    string outputFolder = "/scratch/07428/ygqin/graph/"; 
 
     static struct option long_options[] = {
         {"help",     0, 0,  '?'},
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
             checkCorrectness = true;
             break;
         case 'f':
-            macroInputFolder = optarg;
+            thermalInputFolder = optarg;
             break;
         case 'a':
             useAPT = false;
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
         cout << "use full PF" << endl;
     }
 
-    PFSolver->mac.folder = macroInputFolder + to_string(seedValue);
+    PFSolver->mac.folder = thermalInputFolder + to_string(seedValue);
 
     PFSolver->params.seed_val = seedValue;
     PFSolver->parseInputParams(inputFile);

@@ -7,8 +7,9 @@
 
 #include <string>
 
-struct GlobalConstants {
-
+class GlobalConstants 
+{
+public:
   // processing parameters
   float G, R, delta, kin_delta;
 
@@ -26,11 +27,12 @@ struct GlobalConstants {
 
   // grid parameters
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, haloWidth;
-  int Mt, nts, num_theta, NUM_PF, num_nodes; 
+  int Mt, nts, NUM_PF; 
   float dx, dt, hi, cfl, dt_sqrt;
 
   // initial condition parameters
   int ictype;
+  int num_theta, num_nodes;
 
   // anisotropy parameters
   float cosa, sina, sqrt2, a_s, epsilon, a_12;
@@ -48,21 +50,6 @@ struct GlobalConstants {
 };
 
 
-struct Mac_input{
-  std::string folder;
-  int Nx,  Ny, Nz, Nt;
-  float* X_mac; 
-  float* Y_mac; 
-  float* Z_mac;
-  float* t_mac;
-  int* alpha_mac;
-  float* psi_mac;
-  float* U_mac;
-  float* T_3D;
-  float* theta_arr;
-  float* cost;
-  float* sint;
-};
 
 
 
