@@ -15,6 +15,7 @@
 #include "PhaseField.h"
 #include "APTPhaseField.h"
 #include "QOI.h"
+#include "thermalInputData.h"
 using namespace std;
 
 

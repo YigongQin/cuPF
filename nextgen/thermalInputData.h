@@ -1,9 +1,9 @@
 //////////////////////
-// thermalInput.h
+// thermalInputData.h
 // COPYRIGHT Yigong Qin, ALL RIGHTS RESERVED
 /////////////////////
-
-class thermalInput
+#pragma once
+class thermalInputData
 {
 public:
 
