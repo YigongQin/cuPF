@@ -1,7 +1,7 @@
 EXECUTABLE := phase_field
 CU_FILES   := PhaseField.cu APTPhaseField.cu 
 CU_DEPS    :=
-CC_FILES   := main.cpp helper.cpp PhaseFieldCpu.cpp MPIsetting.cpp QOI.cpp
+CC_FILES   := main.cpp helper.cpp PhaseFieldCpu.cpp MPIsetting.cpp QOI.cpp ThermalInputData.cpp
 
 all: $(EXECUTABLE)
 
@@ -44,7 +44,7 @@ NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++14
 
 #CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
-OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseFieldCpu.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o
+OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseFieldCpu.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o $(OBJDIR)/ThermalInputData.o
 OBJS += $(OBJDIR)/PhaseField.o $(OBJDIR)/APTPhaseField.o 
 
 CXXFLAGS += -I$(CUDA_PATH)/include/ $(HDF5_FLAGS) -L$(CUDA_PATH)/lib64/ -lcudart 
