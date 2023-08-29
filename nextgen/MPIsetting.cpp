@@ -107,45 +107,45 @@ void MPIsetting2D::exchangeBoundaryData(int nTimeStep)
     int ntag = 8*nTimeStep;
     if ( processorIDX < numProcessorX-1 ) 
     {
-        MPI_Send(mMPIBuffer["sendR"], dataSizeX, MPI_FLOAT, rank+1, ntag+1, comm);
-        MPI_Recv(mMPIBuffer["recvR"], dataSizeX, MPI_FLOAT, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendR"].first, dataSizeX, MPI_FLOAT, rank+1, ntag+1, comm);
+        MPI_Recv(mMPIBuffer["recvR"].first, dataSizeX, MPI_FLOAT, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
     }
     if ( processorIDX > 0 )
     {
-        MPI_Recv(mMPIBuffer["recvL"], dataSizeX, MPI_FLOAT, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);
-        MPI_Send(mMPIBuffer["sendL"], dataSizeX, MPI_FLOAT, rank-1, ntag+2, comm);
+        MPI_Recv(mMPIBuffer["recvL"].first, dataSizeX, MPI_FLOAT, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendL"].first, dataSizeX, MPI_FLOAT, rank-1, ntag+2, comm);
     }
 
     if ( processorIDY < numProcessorY-1 ) 
     {
-        MPI_Send(mMPIBuffer["sendT"], dataSizeY, MPI_FLOAT, rank+numProcessorX, ntag+3, comm);
-        MPI_Recv(mMPIBuffer["recvT"], dataSizeY, MPI_FLOAT, rank+numProcessorX, ntag+4, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendT"].first, dataSizeY, MPI_FLOAT, rank+numProcessorX, ntag+3, comm);
+        MPI_Recv(mMPIBuffer["recvT"].first, dataSizeY, MPI_FLOAT, rank+numProcessorX, ntag+4, comm, MPI_STATUS_IGNORE);
     }
     if ( processorIDY > 0 )
     {
-        MPI_Recv(mMPIBuffer["recvB"], dataSizeY, MPI_FLOAT, rank-numProcessorX, ntag+3, comm, MPI_STATUS_IGNORE);
-        MPI_Send(mMPIBuffer["sendB"], dataSizeY, MPI_FLOAT, rank-numProcessorX, ntag+4, comm);
+        MPI_Recv(mMPIBuffer["recvB"].first, dataSizeY, MPI_FLOAT, rank-numProcessorX, ntag+3, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendB"].first, dataSizeY, MPI_FLOAT, rank-numProcessorX, ntag+4, comm);
     }
 
     if ( processorIDX < numProcessorX-1 and processorIDY < numProcessorY-1)
     {
-        MPI_Send(mMPIBuffer["sendRT"], dataSizeXY, MPI_FLOAT, rank+1+numProcessorX, ntag+5, comm);
-        MPI_Recv(mMPIBuffer["recvRT"], dataSizeXY, MPI_FLOAT, rank+1+numProcessorX, ntag+6, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendRT"].first, dataSizeXY, MPI_FLOAT, rank+1+numProcessorX, ntag+5, comm);
+        MPI_Recv(mMPIBuffer["recvRT"].first, dataSizeXY, MPI_FLOAT, rank+1+numProcessorX, ntag+6, comm, MPI_STATUS_IGNORE);
     }
     if ( processorIDX > 0 and processorIDY > 0 )
     {
-        MPI_Recv(mMPIBuffer["recvLB"], dataSizeXY, MPI_FLOAT, rank-1-numProcessorX, ntag+5, comm, MPI_STATUS_IGNORE);
-        MPI_Send(mMPIBuffer["sendLB"], dataSizeXY, MPI_FLOAT, rank-1-numProcessorX, ntag+6, comm);
+        MPI_Recv(mMPIBuffer["recvLB"].first, dataSizeXY, MPI_FLOAT, rank-1-numProcessorX, ntag+5, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendLB"].first, dataSizeXY, MPI_FLOAT, rank-1-numProcessorX, ntag+6, comm);
     }
 
     if ( processorIDY < numProcessorY-1 and processorIDX > 0 )
     {
-        MPI_Send(mMPIBuffer["sendLT"], dataSizeXY, MPI_FLOAT, rank+numProcessorX-1, ntag+7, comm);
-        MPI_Recv(mMPIBuffer["recvLT"], dataSizeXY, MPI_FLOAT, rank+numProcessorX-1, ntag+8, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendLT"].first, dataSizeXY, MPI_FLOAT, rank+numProcessorX-1, ntag+7, comm);
+        MPI_Recv(mMPIBuffer["recvLT"].first, dataSizeXY, MPI_FLOAT, rank+numProcessorX-1, ntag+8, comm, MPI_STATUS_IGNORE);
     }
     if ( processorIDY>0 and processorIDX < numProcessorX-1 )
     {
-        MPI_Recv(mMPIBuffer["recvRB"], dataSizeXY, MPI_FLOAT, rank-numProcessorX+1, ntag+7, comm, MPI_STATUS_IGNORE);
-        MPI_Send(mMPIBuffer["sendRB"], dataSizeXY, MPI_FLOAT, rank-numProcessorX+1, ntag+8, comm);
+        MPI_Recv(mMPIBuffer["recvRB"].first, dataSizeXY, MPI_FLOAT, rank-numProcessorX+1, ntag+7, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendRB"].first, dataSizeXY, MPI_FLOAT, rank-numProcessorX+1, ntag+8, comm);
     }
 }
