@@ -5,12 +5,17 @@
 #include <functional>
 using namespace std;
 
+DesignSettingData::DesignSettingData()
+: useMPI(false), useMovingFrame(false), includeNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0)
+{
+}
+
 void DesignSettingData::getOptions(int argc, char** argv)
 {
-    string inputFile = argv[1]; 
-    string thermalInputFolder = "forcing/case";
+    inputFile = argv[1]; 
+    thermalInputFolder = "forcing/case";
     // this output folder should be specified differently for each system
-    string outputFolder = "/scratch/07428/ygqin/graph/"; 
+    outputFolder = "/scratch/07428/ygqin/graph/"; 
 
     static struct option long_options[] = 
     {
