@@ -390,7 +390,7 @@ void PhaseField::output(const string outputFolder, bool save3DField)
 
     string outputFormat = "Epita_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
-    string outputFile = outputFormat+ "_rank"+to_string(mpiManager->rank)+".h5";
+    string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
     outputFile = outputFolder + '/' + outputFile;
     cout << "save file name" << outputFile << endl;
