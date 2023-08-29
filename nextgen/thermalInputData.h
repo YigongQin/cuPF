@@ -1,11 +1,14 @@
 //////////////////////
-// thermalInputData.h
+// ThermalInputData.h
 // COPYRIGHT Yigong Qin, ALL RIGHTS RESERVED
 /////////////////////
 #pragma once
-class thermalInputData
+#include <string>
+
+class ThermalInputData
 {
 public:
+    void readThermalInputData();
 
     std::string folder;
     int Nx, Ny, Nz, Nt;

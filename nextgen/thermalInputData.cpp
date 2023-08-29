@@ -1,10 +1,10 @@
 //////////////////////
-// thermalInputData.cpp
+// ThermalInputData.cpp
 // COPYRIGHT Yigong Qin, ALL RIGHTS RESERVED
 /////////////////////
-#include "thermalInputData.h"
+#include "ThermalInputData.h"
 
-void thermalInputData::readThermalInputData()
+void ThermalInputData::readThermalInputData()
 {
-
+    
 }
