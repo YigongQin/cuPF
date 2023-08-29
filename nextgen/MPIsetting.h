@@ -29,10 +29,10 @@ public:
     int haloWidth = 1;
     int mNumFields;
     std::vector<int> mGeometrySize;
+    std::map<std::string, std::pair<float*, int> > mMPIBuffer;
 
 protected:
     int ntag, dataSizeX, dataSizeY, dataSizeXY; 
-    std::map<std::string, std::pair<float*, int> > mMPIBuffer;
 };
 
 class MPIsetting1D : public MPIsetting

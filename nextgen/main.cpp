@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <string>
-#include<functional>
+#include <functional>
 #include <cmath>
 #include <algorithm>
 #include <iterator>

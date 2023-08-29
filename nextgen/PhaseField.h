@@ -16,8 +16,8 @@ public:
 	virtual void cudaSetup(); // setup cuda for every GPU
 	virtual void evolve(); // evolve the field with input
     void output(const std::string outputFolder, bool save3DField); 
-	inline void SetMPIManager(const MPIsetting* mpiManager);
-	inline const MPIsetting* GetMPIManager() const;
+	inline void SetMPIManager(MPIsetting* mpiManager);
+	inline MPIsetting* GetMPIManager() const;
 
 	// grid size
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
@@ -45,15 +45,15 @@ public:
 	ThermalInputData Mgpu;
 	GlobalConstants params;
 	QOI* qois;
-	const MPIsetting* mMPIManager;
+	MPIsetting* mMPIManager;
 };
 
-inline void PhaseField::SetMPIManager(const MPIsetting* mpiManager)
+inline void PhaseField::SetMPIManager(MPIsetting* mpiManager)
 {
 	mMPIManager = mpiManager;
 }
 
-inline const MPIsetting* PhaseField::GetMPIManager() const
+inline MPIsetting* PhaseField::GetMPIManager() const
 {
 	return mMPIManager;
 }

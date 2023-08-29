@@ -548,7 +548,8 @@ void APTPhaseField::cudaSetup()
         mpiManager->createBoundaryBuffer(2*NUM_PF);
         for (auto & buffer : mpiManager->mMPIBuffer)
         {
-            cudaMalloc((void **)&(buffer.first),  sizeof(float)*buffer.second );
+            std::pair<float*, int> bufferPointer = buffer.second;
+            cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
         }
     } 
 }
