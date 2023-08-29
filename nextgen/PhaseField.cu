@@ -428,13 +428,15 @@ PhaseField::~PhaseField() {
 }
 
 
-void PhaseField::cudaSetup(const MPIsetting& mpiManager) {
+void PhaseField::cudaSetup() {
+
+    const MPIsetting* mpiManager = GetMPIManager();
 
     int num_gpus_per_node = 4;
-    int device_id_innode = mpiManager.rank % num_gpus_per_node;
+    int device_id_innode = mpiManager->rank % num_gpus_per_node;
     //gpu_name = cuda.select_device( )
     cudaSetDevice(device_id_innode); 
-    printCudaInfo(mpiManager.rank,device_id_innode);
+    printCudaInfo(mpiManager->rank,device_id_innode);
     params.NUM_PF = params.num_theta;
     NUM_PF = params.NUM_PF;
     

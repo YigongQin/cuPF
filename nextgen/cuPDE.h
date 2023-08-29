@@ -5,9 +5,9 @@ class PDE
 {
 public:
 	virtual ~PDE(){};
-	virtual void cpuSetup(MPIsetting& mpiManager) = 0;
+	virtual void cpuSetup(MPIsetting* mpiManager) = 0;
 	virtual void initField() = 0;
-	virtual void cudaSetup(const MPIsetting& mpiManager) = 0; // setup cuda for every GPU
+	virtual void cudaSetup() = 0; // setup cuda for every GPU
 	virtual void evolve() = 0;
 
 protected:

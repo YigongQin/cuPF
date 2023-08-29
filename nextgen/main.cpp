@@ -2,10 +2,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <string>
-#include <cstring>
-#include <map>
 #include<functional>
-#include<mpi.h>
 #include <cmath>
 #include <algorithm>
 #include <iterator>
@@ -15,21 +12,16 @@
 #include "PhaseField.h"
 #include "APTPhaseField.h"
 #include "QOI.h"
-#include "thermalInputData.h"
+#include "ThermalInputData.h"
+#include "MPIsetting.h"
+
 using namespace std;
 
 
 int main(int argc, char** argv)
 {
-    MPIsetting mpiManager;
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(comm, &mpiManager.rank);
-    MPI_Comm_size(comm, &mpiManager.numProcessor);
-    mpiManager.twoDimensionPartition();
-    mpiManager.printMPIsetting();
-    // mpiManager.rank=0;
-    // mpiManager.nproc=1;
 
     string inputFile = argv[1]; 
     string thermalInputFolder = "forcing/case";
@@ -44,6 +36,7 @@ int main(int argc, char** argv)
         {"APTon",    1, 0,  'a'},
         {"seed",     1, 0,  's'},
         {"output",   1, 0,  'o'},
+        {"mpiDim",   1, 0,  'm'},
         {0 ,0, 0, 0}
     };
 
@@ -52,8 +45,9 @@ int main(int argc, char** argv)
     bool checkCorrectness = false;
     bool save3DField = false;
     int seedValue;
+    int mpiDim = 1;
 
-    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:c?", long_options, NULL)) != EOF) {
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:c:m?", long_options, NULL)) != EOF) {
 
         switch (opt) {
         case 'c':
@@ -82,6 +76,21 @@ int main(int argc, char** argv)
     int result = system(cmd.c_str()); 
     assert(result == 0);
 
+    MPIsetting* mpiManager;
+    if (mpiDim == 1)
+    {
+         mpiManager = new MPIsetting1D(comm);
+    }
+    else if (mpiDim == 2)
+    {
+         mpiManager = new MPIsetting2D(comm);
+    }
+    
+    MPI_Comm_rank(comm, &mpiManager->rank);
+    MPI_Comm_size(comm, &mpiManager->numProcessor);
+    mpiManager->domainPartition();
+    mpiManager->printMPIsetting();
+
     PhaseField* PFSolver;
     if (useAPT == true)
     {
@@ -98,14 +107,15 @@ int main(int argc, char** argv)
 
     PFSolver->params.seed_val = seedValue;
     PFSolver->parseInputParams(inputFile);
-    
     PFSolver->cpuSetup(mpiManager);
     PFSolver->qois = new QOI(PFSolver->params);
 
+    PFSolver->SetMPIManager(mpiManager);
+
     PFSolver->initField();
-    PFSolver->cudaSetup(mpiManager);
+    PFSolver->cudaSetup();
     PFSolver->evolve();
-    PFSolver->output(mpiManager, outputFolder, save3DField);
+    PFSolver->output(outputFolder, save3DField);
 
     MPI_Finalize();
 

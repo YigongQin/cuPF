@@ -190,9 +190,9 @@ void PhaseField::parseInputParams(std::string fileName){
 
 }
 
-void PhaseField::cpuSetup(MPIsetting& mpiManager){
+void PhaseField::cpuSetup(MPIsetting* mpiManager){
 
-    if (mpiManager.rank==0)
+    if (mpiManager->rank==0)
     { 
     // print params and mac information
 
@@ -217,45 +217,45 @@ void PhaseField::cpuSetup(MPIsetting& mpiManager){
 
     }
 
-    mpiManager.nxLocal = params.nx/mpiManager.numProcessorX;
-    mpiManager.nyLocal = params.ny/mpiManager.numProcessorY;
-    mpiManager.nzLocal = params.nz/mpiManager.numProcessorZ;
-    mpiManager.nzLocalAll = params.nz_full;
+    mpiManager->nxLocal = params.nx/mpiManager->numProcessorX;
+    mpiManager->nyLocal = params.ny/mpiManager->numProcessorY;
+    mpiManager->nzLocal = params.nz/mpiManager->numProcessorZ;
+    mpiManager->nzLocalAll = params.nz_full;
     
     float dxd = params.dx*params.W0;
-    float len_blockx = mpiManager.nxLocal*dxd; 
-    float len_blocky = mpiManager.nyLocal*dxd; 
-    float len_blockz = mpiManager.nzLocal*dxd; 
+    float len_blockx = mpiManager->nxLocal*dxd; 
+    float len_blocky = mpiManager->nyLocal*dxd; 
+    float len_blockz = mpiManager->nzLocal*dxd; 
     
-    float xmin_loc = params.xmin + mpiManager.processorIDX*len_blockx; 
-    float ymin_loc = params.ymin + mpiManager.processorIDY*len_blocky; 
-    float zmin_loc = params.zmin + mpiManager.processorIDZ*len_blockz;
+    float xmin_loc = params.xmin + mpiManager->processorIDX*len_blockx; 
+    float ymin_loc = params.ymin + mpiManager->processorIDY*len_blocky; 
+    float zmin_loc = params.zmin + mpiManager->processorIDZ*len_blockz;
 
-    if (mpiManager.processorIDX == 0)
+    if (mpiManager->processorIDX == 0)
     {
-        mpiManager.nxLocal += 1;
+        mpiManager->nxLocal += 1;
     }
     else
     {
         xmin_loc += dxd;
     } 
     
-    if (mpiManager.processorIDY == 0)
+    if (mpiManager->processorIDY == 0)
     {
-        mpiManager.nyLocal += 1;
+        mpiManager->nyLocal += 1;
     }
     else
     {
         ymin_loc += dxd;
     }
 
-    mpiManager.nzLocal += 1;
-    mpiManager.nzLocalAll += 1;
+    mpiManager->nzLocal += 1;
+    mpiManager->nzLocalAll += 1;
 
-    params.fnx = mpiManager.nxLocal + 2*params.haloWidth;
-    params.fny = mpiManager.nyLocal + 2*params.haloWidth;
-    params.fnz = mpiManager.nzLocal + 2*params.haloWidth;
-    params.fnz_f = mpiManager.nzLocalAll + 2*params.haloWidth;
+    params.fnx = mpiManager->nxLocal + 2*params.haloWidth;
+    params.fny = mpiManager->nyLocal + 2*params.haloWidth;
+    params.fnz = mpiManager->nzLocal + 2*params.haloWidth;
+    params.fnz_f = mpiManager->nzLocalAll + 2*params.haloWidth;
 
     fnx = params.fnx;
     fny = params.fny;
@@ -264,7 +264,8 @@ void PhaseField::cpuSetup(MPIsetting& mpiManager){
 
     params.length = fnx*fny*fnz;
     params.full_length = fnx*fny*fnz_f;
-    length = params.length,full_length = params.full_length;
+    length = params.length;
+    full_length = params.full_length;
 
     x = new float[fnx];
     y = new float[fny];
@@ -298,9 +299,9 @@ void PhaseField::cpuSetup(MPIsetting& mpiManager){
   //  for(int i=0; i<fnx; i++){
   //      cout<<x[i]<<" ";
   //  }
-    cout<< "rank "<< mpiManager.rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
-    cout<< "rank "<< mpiManager.rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;
-    cout<< "rank "<< mpiManager.rank<< " zmin " << z[0] << " zmax "<<z[fnz-1]<<endl;
+    cout<< "rank "<< mpiManager->rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
+    cout<< "rank "<< mpiManager->rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;
+    cout<< "rank "<< mpiManager->rank<< " zmin " << z[0] << " zmax "<<z[fnz-1]<<endl;
     cout<<"x length of psi, phi, U="<<fnx<<endl;
     cout<<"y length of psi, phi, U="<<fny<<endl;
     cout<<"z length of psi, phi, U="<<fnz<<endl;   
@@ -384,12 +385,12 @@ void PhaseField::initField(){
 std::string to_stringp(float a_value, int n );
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype);
 
-void PhaseField::output(const MPIsetting& mpiManager, const string outputFolder, bool save3DField)
+void PhaseField::output(const string outputFolder, bool save3DField)
 {
 
     string outputFormat = "Epita_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
-    string outputFile = outputFormat+ "_rank"+to_string(mpiManager.rank)+".h5";
+    string outputFile = outputFormat+ "_rank"+to_string(mpiManager->rank)+".h5";
 
     outputFile = outputFolder + '/' + outputFile;
     cout << "save file name" << outputFile << endl;

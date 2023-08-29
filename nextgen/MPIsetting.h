@@ -5,17 +5,51 @@
 
 #pragma once
 
+#include <mpi.h>
+#include <string>
+#include <map>
+#include <vector>
+
 class MPIsetting
 {
 public:
+    MPIsetting(MPI_Comm commWorld);
 	void printMPIsetting() const;
-	virtual void oneDimensionPartition(){};
-	virtual void twoDimensionPartition();
-	virtual void ThreeDimensionPartition(){};
+    void calculateTransferDataSize(int numFields);
+	virtual void domainPartition() = 0;
+    virtual void createBoundaryBuffer(int numFields) = 0;
+    virtual void exchangeBoundaryData(int nTimeStep) = 0;
+    void MPItransferData(int nTimeStep, std::vector<float*, int> fields);
 
-    int rank;
+    MPI_Comm comm;
+    int rank, numProcessor;
     int processorIDX, processorIDY, processorIDZ;
-    int numProcessor, numProcessorX, numProcessorY, numProcessorZ;
+    int numProcessorX, numProcessorY, numProcessorZ;
     int nxLocal, nyLocal, nzLocal, nzLocalAll;
+    int haloWidth = 1;
+    int mNumFields;
+    std::vector<int> mGeometrySize;
+
+protected:
+    int ntag, dataSizeX, dataSizeY, dataSizeXY; 
+    std::map<std::string, std::pair<float*, int> > mMPIBuffer;
+};
+
+class MPIsetting1D : public MPIsetting
+{
+public:
+    MPIsetting1D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
+    void domainPartition() override;
+    void createBoundaryBuffer(int numFields) override;
+    void exchangeBoundaryData(int nTimeStep) override;
+};
+
+class MPIsetting2D : public MPIsetting
+{
+public:
+    MPIsetting2D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
+    void domainPartition() override;
+    void createBoundaryBuffer(int numFields) override;
+    void exchangeBoundaryData(int nTimeStep) override;
 };
 

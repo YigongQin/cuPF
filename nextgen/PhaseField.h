@@ -3,7 +3,7 @@
 #include "cuPDE.h"
 #include "params.h"
 #include "QOI.h"
-#include "thermalInputData.h"
+#include "ThermalInputData.h"
 
 class PhaseField: public PDE 
 {
@@ -11,11 +11,13 @@ public:
 	PhaseField(){};
 	virtual ~PhaseField();
 	void parseInputParams(const std::string fileName);
-	void cpuSetup(MPIsetting& mpiManager);
+	void cpuSetup(MPIsetting* mpiManager);
 	void initField();
-	virtual void cudaSetup(const MPIsetting& mpiManager); // setup cuda for every GPU
+	virtual void cudaSetup(); // setup cuda for every GPU
 	virtual void evolve(); // evolve the field with input
-	void output(const MPIsetting& mpiManager, const std::string outputFolder, bool save3DField); 
+    void output(const std::string outputFolder, bool save3DField); 
+	inline void SetMPIManager(const MPIsetting* mpiManager);
+	inline const MPIsetting* GetMPIManager() const;
 
 	// grid size
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
@@ -39,9 +41,19 @@ public:
 	int* argmax;
 	float* z_device2;
 
-	thermalInputData mac;
-	thermalInputData Mgpu;
+	ThermalInputData mac;
+	ThermalInputData Mgpu;
 	GlobalConstants params;
 	QOI* qois;
-
+	const MPIsetting* mMPIManager;
 };
+
+inline void PhaseField::SetMPIManager(const MPIsetting* mpiManager)
+{
+	mMPIManager = mpiManager;
+}
+
+inline const MPIsetting* PhaseField::GetMPIManager() const
+{
+	return mMPIManager;
+}

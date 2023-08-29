@@ -71,9 +71,6 @@ APTcollect_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
       alpha_m[C] = active_args[max_loc_f];
     }
    }
-
-
-
 }
 
 
@@ -381,6 +378,74 @@ APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg,
 
 }
 
+__device__ float 
+nuncl_possibility(float delT, float d_delT  ){
+
+  float slope = 0.5f*(delT-cP.undcool_mean)*(delT-cP.undcool_mean)/cP.undcool_std/cP.undcool_std;
+  slope = expf(slope); 
+  float density = cP.nuc_Nmax/(sqrtf(2.0f*M_PI)*cP.undcool_std) *slope*d_delT;
+  float nuc_posb = 4.0f*cP.nuc_rad*cP.nuc_rad*density;
+  return nuc_posb; 
+
+}
+
+
+__global__ void
+add_nucl(int* nucl_status, int cnx, int cny, float* phi, float* alpha_m, float* x, float* y, curandState* states, \
+        float dt, float t, float* X, float* Y, float* Tmac, float* u_3d, int Nx, int Ny, int Nt){
+
+  // fnx = (2*cP.) 
+  int C = blockIdx.x * blockDim.x + threadIdx.x;
+  int j=C/cnx;
+  int i=C-j*cnx;
+   float Dt = Tmac[1]-Tmac[0];
+   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
+   float Dy = Y[1]-Y[0];
+  if ( (i<cnx) && (j<cny) ) {
+    if (nucl_status[C]==0){
+      int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell;
+      int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
+
+
+      int kx = (int) (( x[glob_i] - X[0] )/Dx);
+      float delta_x = ( x[glob_i] - X[0] )/Dx - kx;
+         //printf("%f ",delta_x);
+      int ky = (int) (( y[glob_j] - Y[0] )/Dy);
+      float delta_y = ( y[glob_j] - Y[0] )/Dy - ky;
+      //printf("%d ",kx);
+      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
+      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
+
+      int kt = (int) ((t-Tmac[0])/Dt);
+      float delta_t = (t-Tmac[0])/Dt-kt;
+      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
+      int offset =  kx + ky*Nx + kt*Nx*Ny;
+      int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
+      float T_cell = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
+             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
+
+      int kt1 = (int) ((t+dt-Tmac[0])/Dt);
+      float delta_t1 = (t+dt-Tmac[0])/Dt-kt1;
+      if (kt1==Nt-1) {kt1 = Nt-2; delta_t1 =1.0f;}
+      int offset1 =  kx + ky*Nx + kt1*Nx*Ny;
+      int offset1_n =  kx + ky*Nx + (kt1+1)*Nx*Ny;
+      float T_cell1 = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset1 ] + (1.0f-delta_x)*delta_y*u_3d[ offset1+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset1+1 ] +   delta_x*delta_y*u_3d[ offset1+Nx+1 ] )*(1.0f-delta_t1) + \
+             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset1_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset1_n+Nx ] \
+               +delta_x*(1.0f-delta_y)*u_3d[ offset1_n+1 ] +   delta_x*delta_y*u_3d[ offset1_n+Nx+1 ] )*delta_t1;
+      float delT = cP.Tliq - T_cell;
+      float d_delT = T_cell - T_cell1;
+      float nuc_posb = nuncl_possibility(delT, d_delT);
+      if (curand_uniform(states+C)<nuc_posb){
+           // start to render circles
+         printf("nucleation starts at cell no. %d \n", C);
+
+      } 
+    }
+  }
+}
 
 
 
@@ -413,16 +478,21 @@ APTPhaseField::~APTPhaseField() {
 }
 
 
-void APTPhaseField::cudaSetup(const MPIsetting& mpiManager) {
+void APTPhaseField::cudaSetup() 
+{
+    const MPIsetting* mpiManager = GetMPIManager();
 
     int num_gpus_per_node = 4;
-    int device_id_innode = mpiManager.rank % num_gpus_per_node;
+    int device_id_innode = mpiManager->rank % num_gpus_per_node;
     //gpu_name = cuda.select_device( )
     cudaSetDevice(device_id_innode); 
-    printCudaInfo(mpiManager.rank,device_id_innode);
+
+    printCudaInfo(mpiManager->rank,device_id_innode);
+
     params.NUM_PF = APT_NUM_PF;
     NUM_PF = params.NUM_PF;
     printf("number of PFs %d \n", NUM_PF); 
+
     // allocate device memory and copy the data
     cudaMalloc((void **)&x_device, sizeof(float) * fnx);
     cudaMalloc((void **)&y_device, sizeof(float) * fny);
@@ -472,82 +542,91 @@ void APTPhaseField::cudaSetup(const MPIsetting& mpiManager) {
     cudaMemcpy(Mgpu.theta_arr, mac.theta_arr, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.sint, mac.sint, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
+
+    if (mpiManager->numProcessor >1)
+    {
+        mpiManager->createBoundaryBuffer(2*NUM_PF);
+        for (auto & buffer : mpiManager->mMPIBuffer)
+        {
+            cudaMalloc((void **)&(buffer.first),  sizeof(float)*buffer.second );
+        }
+    } 
 }
 
 
+void APTPhaseField::evolve()
+{
+    const MPIsetting* mpiManager = GetMPIManager();
+    //int* nucl_status;
+
+    // allocate x, y, phi, psi, U related params
+    int cnx = fnx/(2*params.pts_cell+1);
+    int cny = fny/(2*params.pts_cell+1);
+    int bc_len = fnx+fny+fnz;
+
+    // create moving frame
+    int move_count = 0;
+    int cur_tip=1;
+    int tip_front = 1;
+    int tip_thres = (int) ((1-BLANK)*fnz);
+    printf("max tip can go: %d\n", tip_thres); 
+    int sams = 0, lowsl = 1;
+
+    // create arrays for moving-frame
+    float* meanx;
+    cudaMalloc((void **)&meanx, sizeof(float) * fnz);
+    cudaMemset(meanx,0, sizeof(float) * fnz);
+    // printf(" ymax %f \n",y[fny-2] ); 
+    float* meanx_host=(float*) malloc(fnz* sizeof(float));
+
+    int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
+    int* d_loss_area;
+    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
+    memset(loss_area,0,sizeof(int) * params.num_theta);
+    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
+
+    // create noise
+    curandState* dStates;
+    int period = params.noi_period;
+    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
 
 
-
-void APTPhaseField::evolve(){
-  //int* nucl_status;
-
-  // allocate x, y, phi, psi, U related params
-  int cnx = fnx/(2*params.pts_cell+1);
-  int cny = fny/(2*params.pts_cell+1);
-  int bc_len = fnx+fny+fnz;
-
-   // create moving frame
-   int move_count = 0;
-   int cur_tip=1;
-   int tip_front = 1;
-   int tip_thres = (int) ((1-BLANK)*fnz);
-   printf("max tip can go: %d\n", tip_thres); 
-   int sams = 0, lowsl = 1;
-
-   // create arrays for moving-frame
-   float* meanx;
-   cudaMalloc((void **)&meanx, sizeof(float) * fnz);
-   cudaMemset(meanx,0, sizeof(float) * fnz);
-  // printf(" ymax %f \n",y[fny-2] ); 
-   float* meanx_host=(float*) malloc(fnz* sizeof(float));
-
-   int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
-   int* d_loss_area;
-   cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
-   memset(loss_area,0,sizeof(int) * params.num_theta);
-   cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-
-   // create noise
-   curandState* dStates;
-   int period = params.noi_period;
-   cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
+    int blocksize_1d = 128;
+    int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
+    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
+    int num_block_1d = (bc_len+blocksize_1d-1)/blocksize_1d;
+    int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+    int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
+    int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
+    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
+    
+    float t_cur_step;
+    int kts = params.Mt/params.nts;
+    printf("kts %d, nts %d\n",kts, params.nts);
 
 
-   int blocksize_1d = 128;
-   int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
-   int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
-   int num_block_1d = (bc_len+blocksize_1d-1)/blocksize_1d;
-   int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
-   int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
-   int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
-   printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-  
-   float t_cur_step;
-   int kts = params.Mt/params.nts;
-   printf("kts %d, nts %d\n",kts, params.nts);
+    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
+    set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
+    APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+    APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
+    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
+        //cudaDeviceSynchronize();
+    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
+    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
 
-   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
-   set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
-   APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-   APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
-   set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
+    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
+        Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+    cudaMemset(alpha_m, 0, sizeof(int) * length);
+    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
+    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+    cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
+    qois->calculateQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
+    cudaDeviceSynchronize();
+    double startTime = CycleTimer::currentSeconds();
+    int kt = 0;
 
-     //cudaDeviceSynchronize();
-   APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
-   APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
-
-   APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
-    Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
-   cudaMemset(alpha_m, 0, sizeof(int) * length);
-   APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
-   cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-   qois->calculateQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
-   cudaDeviceSynchronize();
-   double startTime = CycleTimer::currentSeconds();
-   int kt = 0;
-   while (kt < 200000){
+    while (kt < 200000){
    //for (int kt=0; kt<params.Mt/2; kt++){
    //for (int kt=0; kt<0; kt++){
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);

@@ -13,7 +13,7 @@ class APTPhaseField: public PhaseField
 public:
 	APTPhaseField(){};
 	virtual ~APTPhaseField();
-	void cudaSetup(const MPIsetting& mpiManager); // setup cuda for every GPU
+	void cudaSetup(); // setup cuda for every GPU
 	void evolve(); // evolve the field with input
 
 private:
