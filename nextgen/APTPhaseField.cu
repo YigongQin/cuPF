@@ -480,7 +480,7 @@ APTPhaseField::~APTPhaseField() {
 
 void APTPhaseField::cudaSetup() 
 {
-    const MPIsetting* mpiManager = GetMPIManager();
+    MPIsetting* mpiManager = GetMPIManager();
 
     int num_gpus_per_node = 4;
     int device_id_innode = mpiManager->rank % num_gpus_per_node;
