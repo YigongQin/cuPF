@@ -4,6 +4,7 @@
 #include "params.h"
 #include "QOI.h"
 #include "ThermalInputData.h"
+#include "DesignSettingData.h"
 
 class PhaseField: public PDE 
 {
@@ -18,7 +19,8 @@ public:
     void output(const std::string outputFolder, bool save3DField); 
 	inline void SetMPIManager(MPIsetting* mpiManager);
 	inline MPIsetting* GetMPIManager() const;
-
+	inline void SetDesignSetting(const DesignSettingData* designSetting);
+	inline const DesignSettingData* GetSetDesignSetting() const;
 	// grid size
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
 
@@ -45,7 +47,9 @@ public:
 	ThermalInputData Mgpu;
 	GlobalConstants params;
 	QOI* qois;
+
 	MPIsetting* mMPIManager;
+	const DesignSettingData* mDesignSetting;
 };
 
 inline void PhaseField::SetMPIManager(MPIsetting* mpiManager)
@@ -56,4 +60,15 @@ inline void PhaseField::SetMPIManager(MPIsetting* mpiManager)
 inline MPIsetting* PhaseField::GetMPIManager() const
 {
 	return mMPIManager;
+}
+
+inline void PhaseField::SetDesignSetting(const DesignSettingData* designSetting)
+{
+	mDesignSetting = designSetting;
+}
+
+
+inline const DesignSettingData* PhaseField::GetSetDesignSetting() const
+{
+	return mDesignSetting;
 }

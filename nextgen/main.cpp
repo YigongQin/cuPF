@@ -51,6 +51,7 @@ int main(int argc, char** argv)
         cout << "use full PF" << endl;
     }
 
+    PFSolver->SetDesignSetting(designSetting);
     PFSolver->mac.folder = designSetting->thermalInputFolder + to_string(designSetting->seedValue);
 
     PFSolver->params.seed_val = designSetting->seedValue;

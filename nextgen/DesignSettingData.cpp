@@ -26,13 +26,15 @@ void DesignSettingData::getOptions(int argc, char** argv)
         {"output",   1, 0,  'o'},
         {"mpiDim",   1, 0,  'm'},
         {"savebulk", 1, 0,  'b'},
+        {"movingDomain",   1, 0,  'v'},
+        {"includeNuclean", 1, 0,  'n'},
         {0 ,0, 0, 0}
     };
 
     int opt;    
 
 
-    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m?", long_options, NULL)) != EOF) 
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:v:n?", long_options, NULL)) != EOF) 
     {
         switch (opt) 
         {
@@ -48,9 +50,18 @@ void DesignSettingData::getOptions(int argc, char** argv)
             case 'o':
                 outputFolder = outputFolder + optarg;
                 break;
+            case 'm':
+                mpiDim = atoi(optarg);
+                break;
             case 'b':
                 save3DField = true;    
                 cout << "save entire 3D data" << endl;
+            case 'v':
+                useMovingFrame = true;
+                break;
+            case 'n':
+                includeNucleation = true;
+                break;            
         }
     }
 }

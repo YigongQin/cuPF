@@ -378,70 +378,48 @@ APTcopy_frame(float* ph_buff, int* arg_buff, float* z_buff, float* ph, int* arg,
 
 }
 
-__device__ float 
-nuncl_possibility(float delT, float d_delT  ){
-
+__inline__ __device__ float 
+nuncl_possibility(float delT, float d_delT)
+{
   float slope = 0.5f*(delT-cP.undcool_mean)*(delT-cP.undcool_mean)/cP.undcool_std/cP.undcool_std;
   slope = expf(slope); 
   float density = cP.nuc_Nmax/(sqrtf(2.0f*M_PI)*cP.undcool_std) *slope*d_delT;
-  float nuc_posb = 4.0f*cP.nuc_rad*cP.nuc_rad*density;
+   // float nuc_posb = 4.0f*cP.nuc_rad*cP.nuc_rad*density; // 2D
+  float nuc_posb = 8.0f*cP.nuc_rad*cP.nuc_rad*cP.nuc_rad*density; // 3D
   return nuc_posb; 
-
 }
 
 
-__global__ void
-add_nucl(int* nucl_status, int cnx, int cny, float* phi, float* alpha_m, float* x, float* y, curandState* states, \
-        float dt, float t, float* X, float* Y, float* Tmac, float* u_3d, int Nx, int Ny, int Nt){
 
-  // fnx = (2*cP.) 
+__global__ void
+add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* phi, float* alpha_m, float* x, float* y, float* z, curandState* states, 
+        float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
+{
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int j=C/cnx;
   int i=C-j*cnx;
-   float Dt = Tmac[1]-Tmac[0];
-   float Dx = X[1]-X[0]; // (X[Nx-1]-X[0]) / (Nx-1)
-   float Dy = Y[1]-Y[0];
-  if ( (i<cnx) && (j<cny) ) {
-    if (nucl_status[C]==0){
+  float Dt = Tmac[1]-Tmac[0];
+  float Dx = X[1]-X[0]; 
+
+  if ( (i<cnx) && (j<cny) && (k<cnz)) 
+  {
+    if (nucl_status[C]==0)
+    {
       int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell;
       int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
+      int glob_k = (2*cP.pts_cell+1)*k + cP.pts_cell; 
 
-
-      int kx = (int) (( x[glob_i] - X[0] )/Dx);
-      float delta_x = ( x[glob_i] - X[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[glob_j] - Y[0] )/Dy);
-      float delta_y = ( y[glob_j] - Y[0] )/Dy - ky;
-      //printf("%d ",kx);
-      if (kx==Nx-1) {kx = Nx-2; delta_x =1.0f;}
-      if (ky==Ny-1) {ky = Ny-2; delta_y =1.0f;}
-
-      int kt = (int) ((t-Tmac[0])/Dt);
-      float delta_t = (t-Tmac[0])/Dt-kt;
-      if (kt==Nt-1) {kt = Nt-2; delta_t =1.0f;}
-      int offset =  kx + ky*Nx + kt*Nx*Ny;
-      int offset_n =  kx + ky*Nx + (kt+1)*Nx*Ny;
-      float T_cell = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_t) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_t;
-
-      int kt1 = (int) ((t+dt-Tmac[0])/Dt);
-      float delta_t1 = (t+dt-Tmac[0])/Dt-kt1;
-      if (kt1==Nt-1) {kt1 = Nt-2; delta_t1 =1.0f;}
-      int offset1 =  kx + ky*Nx + kt1*Nx*Ny;
-      int offset1_n =  kx + ky*Nx + (kt1+1)*Nx*Ny;
-      float T_cell1 = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset1 ] + (1.0f-delta_x)*delta_y*u_3d[ offset1+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset1+1 ] +   delta_x*delta_y*u_3d[ offset1+Nx+1 ] )*(1.0f-delta_t1) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset1_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset1_n+Nx ] \
-               +delta_x*(1.0f-delta_y)*u_3d[ offset1_n+1 ] +   delta_x*delta_y*u_3d[ offset1_n+Nx+1 ] )*delta_t1;
-      float delT = cP.Tliq - T_cell;
-      float d_delT = T_cell - T_cell1;
+      float T_cell = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t-Tmac[0], 
+                                         Nx, Ny, Nz, Nt, Dx, Dt);
+      float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
+                                         Nx, Ny, Nz, Nt, Dx, Dt);                                        
+      float delT = cP.Tliq - T_cel_dt;
+      float d_delT = T_cell - T_cell_dt;
       float nuc_posb = nuncl_possibility(delT, d_delT);
-      if (curand_uniform(states+C)<nuc_posb){
-           // start to render circles
-         printf("nucleation starts at cell no. %d \n", C);
 
+      if (curand_uniform(states+C)<nuc_posb)
+      {
+         printf("nucleation starts at cell no. %d \n", C);
       } 
     }
   }
