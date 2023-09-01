@@ -396,8 +396,9 @@ add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* phi, float* alpha_m
         float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
-  int j=C/cnx;
-  int i=C-j*cnx;
+  int i, j, k, PF_id;
+  G2L_3D(C, i, j, k, PF_id, cnx, cny, cnz);
+  
   float Dt = Tmac[1]-Tmac[0];
   float Dx = X[1]-X[0]; 
 
@@ -413,7 +414,7 @@ add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* phi, float* alpha_m
                                          Nx, Ny, Nz, Nt, Dx, Dt);
       float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
                                          Nx, Ny, Nz, Nt, Dx, Dt);                                        
-      float delT = cP.Tliq - T_cel_dt;
+      float delT = cP.Tliq - T_cell_dt;
       float d_delT = T_cell - T_cell_dt;
       float nuc_posb = nuncl_possibility(delT, d_delT);
 
