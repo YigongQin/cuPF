@@ -29,7 +29,7 @@ QOI::QOI(const GlobalConstants params)
 
 
 
-void QOI::calculateQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
                         const float* z, const int* loss_area, int move_count)
 {
 

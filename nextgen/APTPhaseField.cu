@@ -398,7 +398,7 @@ add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* phi, float* alpha_m
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id;
   G2L_3D(C, i, j, k, PF_id, cnx, cny, cnz);
-  
+
   float Dt = Tmac[1]-Tmac[0];
   float Dx = X[1]-X[0]; 
 
@@ -542,7 +542,8 @@ void APTPhaseField::evolve()
     // allocate x, y, phi, psi, U related params
     int cnx = fnx/(2*params.pts_cell+1);
     int cny = fny/(2*params.pts_cell+1);
-    int bc_len = fnx+fny+fnz;
+    int cnz = fnz/(2*params.pts_cell+1);
+
 
     // create moving frame
     int move_count = 0;
@@ -574,7 +575,7 @@ void APTPhaseField::evolve()
     int blocksize_1d = 128;
     int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
-    int num_block_1d = (bc_len+blocksize_1d-1)/blocksize_1d;
+ 
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
     int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
@@ -601,12 +602,14 @@ void APTPhaseField::evolve()
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-    qois->calculateQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
+
+    qois->calculateLineQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
+
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    while (kt < 200000){
+    while (kt < 1000000){
    //for (int kt=0; kt<params.Mt/2; kt++){
    //for (int kt=0; kt<0; kt++){
      APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
@@ -628,7 +631,7 @@ void APTPhaseField::evolve()
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             qois->calculateQoIs(params, cur_tip, alpha, sams+1, z, loss_area, move_count);
+             qois->calculateLineQoIs(params, cur_tip, alpha, sams+1, z, loss_area, move_count);
              sams += 1;
              if (sams==params.nts){
                 printf("sample all %d heights\n", params.nts);
@@ -643,13 +646,13 @@ void APTPhaseField::evolve()
              //cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
              //sample_heights(lowsl, alpha, fnx, fny, fnz);
 
-             while (tip_front >=tip_thres){
+             while (tip_front >=tip_thres)
+             {
                 APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
                 APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
                 APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
                 move_count +=1;
                 tip_front-=1;
-
              }
 
             APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);

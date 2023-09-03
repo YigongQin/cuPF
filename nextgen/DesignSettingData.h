@@ -12,7 +12,7 @@ public:
     void getOptions(int argc, char** argv);
 
     bool useMPI;
-    bool useMovingFrame;
+    bool useLineConfig;
     bool includeNucleation;
     bool useAPT;
     bool save3DField;

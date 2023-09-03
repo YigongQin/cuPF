@@ -6,7 +6,7 @@
 using namespace std;
 
 DesignSettingData::DesignSettingData()
-: useMPI(false), useMovingFrame(false), includeNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0)
+: useMPI(false), useLineConfig(false), includeNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0)
 {
 }
 
@@ -26,7 +26,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
         {"output",   1, 0,  'o'},
         {"mpiDim",   1, 0,  'm'},
         {"savebulk", 1, 0,  'b'},
-        {"movingDomain",   1, 0,  'v'},
+        {"lineConfig",     1, 0,  'l'},
         {"includeNuclean", 1, 0,  'n'},
         {0 ,0, 0, 0}
     };
@@ -34,7 +34,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
     int opt;    
 
 
-    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:v:n?", long_options, NULL)) != EOF) 
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:l:n?", long_options, NULL)) != EOF) 
     {
         switch (opt) 
         {
@@ -56,8 +56,8 @@ void DesignSettingData::getOptions(int argc, char** argv)
             case 'b':
                 save3DField = true;    
                 cout << "save entire 3D data" << endl;
-            case 'v':
-                useMovingFrame = true;
+            case 'l':
+                useLineConfig = true;
                 break;
             case 'n':
                 includeNucleation = true;

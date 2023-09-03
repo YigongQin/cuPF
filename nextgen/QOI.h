@@ -15,7 +15,7 @@ public:
 	QOI(GlobalConstants params);
 	virtual ~QOI(){};
 	void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha);
-	void calculateQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+	void calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
                         const float* z, const int* loss_area, int move_count);
 	void sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz);
 	std::map<std::string, std::vector<int> >   mQoIVectorIntData;
