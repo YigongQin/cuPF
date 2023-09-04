@@ -75,7 +75,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<std::pair<float*, in
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        distributeData1D<<< num_block_2d, blocksize_2d >>>(this, field.first, field.second, dataAcquired), mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first);
+        distributeData1D<<< num_block_2d, blocksize_2d >>>(this, field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first);
         dataAcquired += field.second*mGeometrySize[0];
     }
 
