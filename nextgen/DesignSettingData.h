@@ -8,7 +8,7 @@
 class DesignSettingData
 {
 public:
-
+    DesignSettingData();
     void getOptions(int argc, char** argv);
 
     bool useMPI;
