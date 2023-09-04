@@ -14,6 +14,10 @@
 #include "devicefunc.cu_inl"
 
 using namespace std;
+
+#define blocksize_1d  128
+#define blocksize_2d  128
+
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
 #define BLOCKSIZE BLOCK_DIM_X*BLOCK_DIM_Y
@@ -533,49 +537,90 @@ void APTPhaseField::cudaSetup()
     } 
 }
 
+void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
+{
+    tip_thres = (int) ((1-BLANK)*MovingDirectoinSize);
+    printf("max tip can go: %d\n", tip_thres); 
+
+    meanx_host = new float[MovingDirectoinSize];
+    movingDomainManager->loss_area = new int[numGrains];
+
+    cudaMalloc((void **)&meanx, sizeof(float) * MovingDirectoinSize);
+    cudaMemset(meanx,0, sizeof(float) * MovingDirectoinSize);
+
+    cudaMalloc((void **)&d_movingDomainManager->loss_area, sizeof(int) * numGrains); 
+    memset(movingDomainManager->loss_area, 0, sizeof(int) * numGrains);
+    cudaMemset(d_movingDomainManager->loss_area, 0, sizeof(int) * numGrains);
+}
+
+void PhaseField::getLineQoIs(MovingDomain* movingDomainManager)
+{
+    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
+    float locationInMovingDomain = (movingDomainManager->move_count + movingDomainManager->lowsl -1)*params.W0*params.dx; 
+    float threshold = params.z0 + params.top*(movingDomainManager->samples+1)/params.nts;
+
+    if (locationInMovingDomain > threshold) 
+    {
+        printf("threshold %f \n", threshold);
+        cudaMemset(alpha_m, 0, sizeof(int) * length);
+        APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+        cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+        cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(movingDomainManager->loss_area, d_movingDomainManager->loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
+        //QoIs based on alpha field
+        movingDomainManager->cur_tip=0;
+        qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, movingDomainManager->samples+1, z,
+                                movingDomainManager->loss_area, movingDomainManager->move_count);
+        movingDomainManager->samples += 1;
+    }
+}
+
+void PhaseField::moveDomain(MovingDomain* movingDomainManager)
+{
+    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
+    int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+
+    tip_mvf(&movingDomainManager->tip_front, PFs_old, movingDomainManager->meanx, movingDomainManager->meanx_host, fnx, fny, fnz, NUM_PF);
+    while (movingDomainManager->tip_front >= movingDomainManager->tip_thres)
+    {
+       APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+       APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, 
+                                                       movingDomainManager->loss_area, movingDomainManager->move_count);
+       APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
+       movingDomainManager->move_count += 1;
+       movingDomainManager->tip_front -=1 ;
+    }
+
+    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+    movingDomainManager->lowsl = 1;
+    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+    qois->sampleHeights(movingDomainManager->lowsl, alpha, fnx, fny, fnz);
+}
+
 
 void APTPhaseField::evolve()
 {
-    const MPIsetting* mpiManager = GetMPIManager();
-    //int* nucl_status;
-
-    // allocate x, y, phi, psi, U related params
-    int cnx = fnx/(2*params.pts_cell+1);
-    int cny = fny/(2*params.pts_cell+1);
-    int cnz = fnz/(2*params.pts_cell+1);
+    const DesignSettingData* designSetting = GetSetDesignSetting(); 
+    MPIsetting* mpiManager = GetMPIManager();
+    MovingDomain* movingDomainManager = MovingDomain();
 
 
-    // create moving frame
-    int move_count = 0;
-    int cur_tip=1;
-    int tip_front = 1;
-    int tip_thres = (int) ((1-BLANK)*fnz);
-    printf("max tip can go: %d\n", tip_thres); 
-    int sams = 0, lowsl = 1;
+    if (designSetting->includeNucleation)
+    {
+      //int* nucl_status;
+      int cnx = fnx/(2*params.pts_cell+1);
+      int cny = fny/(2*params.pts_cell+1);
+      int cnz = fnz/(2*params.pts_cell+1);
+  
+      // create noise
+      curandState* dStates;
+      int period = params.noi_period;
+      cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
+    }
 
-    // create arrays for moving-frame
-    float* meanx;
-    cudaMalloc((void **)&meanx, sizeof(float) * fnz);
-    cudaMemset(meanx,0, sizeof(float) * fnz);
-    // printf(" ymax %f \n",y[fny-2] ); 
-    float* meanx_host=(float*) malloc(fnz* sizeof(float));
-
-    int* loss_area=(int*) malloc((params.num_theta)* sizeof(int));
-    int* d_loss_area;
-    cudaMalloc((void **)&d_loss_area, sizeof(int) * params.num_theta); 
-    memset(loss_area,0,sizeof(int) * params.num_theta);
-    cudaMemset(d_loss_area,0,sizeof(int) * params.num_theta); 
-
-    // create noise
-    curandState* dStates;
-    int period = params.noi_period;
-    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
-
-
-    int blocksize_1d = 128;
-    int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
- 
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
     int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
@@ -603,72 +648,49 @@ void APTPhaseField::evolve()
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
     cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
 
-    qois->calculateLineQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
+
+    if (designSetting->useLineConfig)
+    {
+        movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
+        qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, 0, z, movingDomainManager->loss_area, movingDomainManager->move_count);
+    }
+
 
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    while (kt < 1000000){
-   //for (int kt=0; kt<params.Mt/2; kt++){
-   //for (int kt=0; kt<0; kt++){
-     APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
+    while (kt < 1000000)
+    {
+        //for (int kt=0; kt<params.Mt/2; kt++){
+        //for (int kt=0; kt<0; kt++){
+        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
 
-     t_cur_step = (2*kt+1)*params.dt*params.tau0;
-     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args_new, active_args_old,\
+        t_cur_step = (2*kt+1)*params.dt*params.tau0;
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args_new, active_args_old,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
- 
-     APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
 
-    if ( (move_count + lowsl -1)*params.W0*params.dx > params.z0 + params.top*(sams+1)/params.nts) {
-             //tip_mvf(&cur_tip,phi_new, meanx, meanx_host, fnx,fny);
-             printf("threshold %f \n", params.z0 + params.top*(sams+1)/params.nts);
-             cudaMemset(alpha_m, 0, sizeof(int) * length);
-             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
-             cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-             cudaMemcpy(loss_area, d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
-             cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
-             //QoIs based on alpha field
-             cur_tip=0;
-             qois->calculateLineQoIs(params, cur_tip, alpha, sams+1, z, loss_area, move_count);
-             sams += 1;
-             if (sams==params.nts){
+        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+
+        if (designSetting->useLineConfig)
+        {
+            getLineQoIs(movingDomainManager);
+            if (movingDomainManager->samples==params.nts)
+            {
                 printf("sample all %d heights\n", params.nts);
                 break;
-             }
-          }
+            }
+            if ( (2*kt+2)%TIPP==0) 
+            {
+                moveDomain(movingDomainManager);
+            }
+        }
 
-   if ( (2*kt+2)%TIPP==0) {
-             tip_mvf(&tip_front, PFs_old, meanx, meanx_host, fnx,fny,fnz,NUM_PF);
-             //lowsl = 1;
-             //APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-             //cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
-             //sample_heights(lowsl, alpha, fnx, fny, fnz);
-
-             while (tip_front >=tip_thres)
-             {
-                APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-                APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, d_loss_area, move_count);
-                APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
-                move_count +=1;
-                tip_front-=1;
-             }
-
-            APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
-            lowsl = 1;
-            APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
-            cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-            qois->sampleHeights(lowsl, alpha, fnx, fny, fnz);
-
-
-          }
-
-     t_cur_step = (2*kt+2)*params.dt*params.tau0;
-     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args_old, active_args_new,\
+        t_cur_step = (2*kt+2)*params.dt*params.tau0;
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args_old, active_args_new,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
-     kt++;
+        kt++;
    }
 
 
@@ -681,9 +703,13 @@ void APTPhaseField::evolve()
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
    cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
-   cudaMemcpy(alpha_i_full+move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-   qois->searchJunctionsOnImage(params, alpha_i_full);
+
+   if (designSetting->useLineConfig)
+   {
+        cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+        qois->searchJunctionsOnImage(params, alpha_i_full);
+   }
 }
 
 
