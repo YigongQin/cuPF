@@ -548,8 +548,7 @@ void APTPhaseField::cudaSetup()
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
         }
     } 
-    
-    cudaMemcpyToSymbol(cM, mpiManager, sizeof(MPIsetting) );
+
 }
 
 void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
