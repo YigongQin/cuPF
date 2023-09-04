@@ -631,6 +631,12 @@ void APTPhaseField::evolve()
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     MPIsetting* mpiManager = GetMPIManager();
     MovingDomain* movingDomainManager = new MovingDomain();
+    std::vector<std::pair<float*, int>>  dataVectors_old, dataVectors_new;
+    dataVectors_old.push_back(std::make_pair(PFs_old, NUM_PF));
+    dataVectors_old.push_back(std::make_pair(active_args_old, NUM_PF));
+    dataVectors_new.push_back(std::make_pair(PFs_new, NUM_PF));
+    dataVectors_new.push_back(std::make_pair(active_args_new, NUM_PF));
+
 
     blocksize_1d = 128;
     blocksize_2d = 128;
@@ -658,9 +664,16 @@ void APTPhaseField::evolve()
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
+    if (mpiManager->numProcessor >1)
+    {
+        mpiManager->MPItransferData(1e10, dataVectors_old);
+        mpiManager->MPItransferData(1e10, dataVectors_new);
+    }
+
     setBC(designSetting->useLineConfig, PFs_old, active_args_old);
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
+    // get initial fields
     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
         Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
     cudaMemset(alpha_m, 0, sizeof(int) * length);
@@ -687,11 +700,20 @@ void APTPhaseField::evolve()
     {
         //for (int kt=0; kt<params.Mt/2; kt++){
         //for (int kt=0; kt<0; kt++){
+        if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
+        {
+            mpiManager->MPItransferData(2*kt, dataVectors_new);
+        }
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
         APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args_new, active_args_old,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+
+        if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
+        {
+            mpiManager->MPItransferData(2*kt+1, dataVectors_old);
+        }
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);
 
