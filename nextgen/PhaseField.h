@@ -91,7 +91,7 @@ public:
     int tip_front;
     int tip_thres;
     int samples, lowsl;
-	float* meanx, mean_host;
+	float* meanx, meanx_host;
 	int* loss_area, d_loss_area;
 };
 

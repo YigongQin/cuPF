@@ -566,7 +566,7 @@ void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
         APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
         cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
         cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-        cudaMemcpy(movingDomainManager->loss_area, d_movingDomainManager->loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(movingDomainManager->loss_area, movingDomainManager->loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
         cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
         //QoIs based on alpha field
         movingDomainManager->cur_tip=0;
@@ -578,6 +578,8 @@ void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
 
 void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 {
+    int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
+    int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
 
@@ -604,7 +606,7 @@ void APTPhaseField::evolve()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     MPIsetting* mpiManager = GetMPIManager();
-    MovingDomain* movingDomainManager = MovingDomain();
+    MovingDomain* movingDomainManager = new MovingDomain();
 
 
     if (designSetting->includeNucleation)
@@ -613,12 +615,12 @@ void APTPhaseField::evolve()
       int cnx = fnx/(2*params.pts_cell+1);
       int cny = fny/(2*params.pts_cell+1);
       int cnz = fnz/(2*params.pts_cell+1);
-  
-      // create noise
-      curandState* dStates;
-      int period = params.noi_period;
-      cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
     }
+    // create noise
+    curandState* dStates;
+    int period = params.noi_period;
+    cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
+    
 
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
