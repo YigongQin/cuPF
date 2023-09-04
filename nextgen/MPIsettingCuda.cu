@@ -5,14 +5,10 @@
 
 
 __global__ void
-collectData1D(float* field, int numFields, int offset, float* sendBufferL, float* sendBufferR)
+collectData1D(float* field, int numFields, int offset, float* sendBufferL, float* sendBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
 {
     int C = blockIdx.x * blockDim.x + threadIdx.x;
     int i, j, k, PF_id, fnx, fny, fnz;
-    int nxLocal = cM.nxLocal;
-    int nyLocal = cM.nyLocal;
-    int nzLocal = cM.nzLocal;
-    int haloWidth = cM.haloWidth;
     G2L_3D(C, i, j, k, PF_id, nxLocal, nyLocal, nzLocal);
     if ( (i<haloWidth) && (j<nyLocal) && (k<nzLocal) && (PF_id<numFields))
     {
@@ -30,14 +26,10 @@ collectData1D(float* field, int numFields, int offset, float* sendBufferL, float
 
 
 __global__ void
-distributeData1D(float* field, int numFields, int offset, float* recvBufferL, float* recvBufferR)
+distributeData1D(float* field, int numFields, int offset, float* recvBufferL, float* recvBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id, fnx, fny, fnz;
-  int nxLocal = cM.nxLocal;
-  int nyLocal = cM.nyLocal;
-  int nzLocal = cM.nzLocal;
-  int haloWidth = cM.haloWidth;
   G2L_3D(C, i, j, k, PF_id, nxLocal, nyLocal, nzLocal);
 
   if ( (i<haloWidth) && (j<nyLocal) && (k<nzLocal) && (PF_id<numFields))
@@ -64,7 +56,8 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<std::pair<float*, in
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        collectData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first);
+        collectData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
+                                                        nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
 
@@ -77,7 +70,8 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<std::pair<float*, in
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        distributeData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first);
+        distributeData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
+                                                           nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
 

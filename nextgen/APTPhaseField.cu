@@ -31,7 +31,6 @@ using namespace std;
 
 
 __constant__ GlobalConstants cP;
-__constant__ MPIsetting cM;
 
 __inline__ __device__ float
 kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
@@ -150,7 +149,9 @@ APTset_BC_3D(float* ph, int* active_args, int max_area){
 }
 
 __global__ void
-APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
+APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
+                   int processorIDX, int processorIDY, int processorIDZ, int numProcessorX, int numProcessorY, int numProcessorZ)
+{
 
    // dimension with R^{2D} * PF
 
@@ -165,14 +166,14 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
   {
      int zj = bc_idx/fnx;
      int zi = bc_idx - zj*fnx;
-     if (cM.processorIDZ==0)
+     if (processorIDZ==0)
      {
         int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
         int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
         ph[d_out] = ph[d_in];
         active_args[d_out] = active_args[d_in];
      }
-     if (cM.processorIDZ==cM.numProcessorZ-1)
+     if (processorIDZ==numProcessorZ-1)
      {
         int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
         int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
@@ -186,14 +187,14 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
   {
      int zk = bc_idx/fnx;
      int zi = bc_idx - zk*fnx;
-     if (cM.processorIDY==0)
+     if (processorIDY==0)
      {
         int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
         int b_in = L2G_4D(zi, 2, zk, pf, fnx, fny, fnz);
         ph[b_out] = ph[b_in];
         active_args[b_out] = active_args[b_in];
      }
-     if (cM.processorIDY==cM.numProcessorY-1)
+     if (processorIDY==numProcessorY-1)
      {
         int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
         int t_in = L2G_4D(zi, fny-3, zk, pf, fnx, fny, fnz);
@@ -208,14 +209,14 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
 
      int zk = bc_idx/fny;
      int zj = bc_idx - zk*fny;
-     if (cM.processorIDX==0)
+     if (processorIDX==0)
      {
         int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
         int l_in = L2G_4D(2, zj, zk, pf, fnx, fny, fnz);
         ph[l_out] = ph[l_in];
         active_args[l_out] = active_args[l_in];
      }
-     if (cM.processorIDX==cM.numProcessorX-1)
+     if (processorIDX==numProcessorX-1)
      {
         int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
         int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
@@ -612,13 +613,15 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 
 void APTPhaseField::setBC(bool useLineConfig, float* ph, int* active_args)
 {
+    MPIsetting* mpiManager = GetMPIManager();
     if (useLineConfig == true)
     {
         APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area);
     }
     else
     {
-        APTset_nofluxBC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area);
+        APTset_nofluxBC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area,
+             mpiManager->processorIDX, mpiManager->processorIDY, mpiManager->processorIDZ, mpiManager->numProcessorX, mpiManager->numProcessorY, mpiManager->numProcessorZ);
     }
 }
 
