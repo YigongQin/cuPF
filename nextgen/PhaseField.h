@@ -53,9 +53,6 @@ public:
 	MPIsetting* mMPIManager;
 	const DesignSettingData* mDesignSetting;
 
-protected:
-	virtual void moveDomain(MovingDomain* movingDomainManager);
-	virtual void getLineQoIs(MovingDomain* movingDomainManager);
 };
 
 inline void PhaseField::SetMPIManager(MPIsetting* mpiManager)
