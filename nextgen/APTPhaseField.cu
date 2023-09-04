@@ -156,7 +156,7 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-  int bcX = CP.bcX, bcY = CP.bcY, bcZ = CP.bcZ;
+
   int pf = index/max_area;
   int bc_idx = index- pf*max_area;     
 
@@ -208,14 +208,14 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
 
      int zk = bc_idx/fny;
      int zj = bc_idx - zk*fny;
-     if (processorIDX==0)
+     if (cM.processorIDX==0)
      {
         int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
         int l_in = L2G_4D(2, zj, zk, pf, fnx, fny, fnz);
         ph[l_out] = ph[l_in];
         active_args[l_out] = active_args[l_in];
      }
-     if (processorIDX==numProcessorX-1)
+     if (cM.processorIDX==cM.numProcessorX-1)
      {
         int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
         int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
