@@ -9,6 +9,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 class MPIsetting
 {
@@ -33,6 +35,8 @@ public:
 
 protected:
     int ntag, dataSizeX, dataSizeY, dataSizeXY; 
+    __global__ void collectData(float* field, int numFields, int offset);
+    __global__ void distributeData(float* field, int numFields, int offset);
 };
 
 class MPIsetting1D : public MPIsetting

@@ -1,8 +1,6 @@
 #include "MPIsetting.h"
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include "devicefunc.cu_inl"
-
+#include <algorithm>
 
 void MPIsetting::MPItransferData(int nTimeStep, std::vector<float*, int> fieldChunks)
 {
@@ -36,7 +34,6 @@ __global__ void
 MPIsetting1D::collectData(float* field, int numFields, int offset)
 {
     int C = blockIdx.x * blockDim.x + threadIdx.x;
-    int hd = cP.haloWidth;
     int i, j, k, PF_id, fnx, fny, fnz;
     fnx = nxLocal + haloWidth*2;
     fny = nyLocal + haloWidth*2;
@@ -60,7 +57,6 @@ __global__ void
 MPIsetting1D::distributeData(float* field, int numFields, int offset)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
-  int hd = cP.haloWidth;
   int i, j, k, PF_id, fnx, fny, fnz;
   fnx = nxLocal + haloWidth*2;
   fny = nyLocal + haloWidth*2;
