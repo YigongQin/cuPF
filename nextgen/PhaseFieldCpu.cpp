@@ -300,10 +300,6 @@ void PhaseField::cpuSetup(MPIsetting* mpiManager){
   //      cout<<x[i]<<" ";
   //  }
 
-    params.bcX = mpiManager->processorIDX>;
-
-
-
     cout<< "rank "<< mpiManager->rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
     cout<< "rank "<< mpiManager->rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;
     cout<< "rank "<< mpiManager->rank<< " zmin " << z[0] << " zmax "<<z[fnz-1]<<endl;
