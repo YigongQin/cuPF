@@ -544,13 +544,13 @@ void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
 
     meanx_host = new float[MovingDirectoinSize];
     loss_area = new int[numGrains];
+    memset(loss_area, 0, sizeof(int) * numGrains);
 
     cudaMalloc((void **)&meanx, sizeof(float) * MovingDirectoinSize);
     cudaMemset(meanx,0, sizeof(float) * MovingDirectoinSize);
 
-    cudaMalloc((void **)&loss_area, sizeof(int) * numGrains); 
-    memset(loss_area, 0, sizeof(int) * numGrains);
-    cudaMemset(loss_area, 0, sizeof(int) * numGrains);
+    cudaMalloc((void **)&d_loss_area, sizeof(int) * numGrains); 
+    cudaMemset(d_loss_area, 0, sizeof(int) * numGrains);
 }
 
 void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
