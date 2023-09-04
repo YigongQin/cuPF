@@ -15,9 +15,6 @@
 
 using namespace std;
 
-#define blocksize_1d  128
-#define blocksize_2d  128
-
 #define BLOCK_DIM_X 16
 #define BLOCK_DIM_Y 16
 #define BLOCKSIZE BLOCK_DIM_X*BLOCK_DIM_Y
@@ -555,7 +552,6 @@ void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
 
 void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
 {
-    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     float locationInMovingDomain = (movingDomainManager->move_count + movingDomainManager->lowsl -1)*params.W0*params.dx; 
     float threshold = params.z0 + params.top*(movingDomainManager->samples+1)/params.nts;
 
@@ -578,11 +574,6 @@ void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
 
 void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 {
-    int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
-    int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
-    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
-    int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
-
     tip_mvf(&movingDomainManager->tip_front, PFs_old, movingDomainManager->meanx_device, movingDomainManager->meanx_host, fnx, fny, fnz, NUM_PF);
     while (movingDomainManager->tip_front >= movingDomainManager->tip_thres)
     {
@@ -608,6 +599,13 @@ void APTPhaseField::evolve()
     MPIsetting* mpiManager = GetMPIManager();
     MovingDomain* movingDomainManager = new MovingDomain();
 
+    blocksize_1d = 128;
+    blocksize_2d = 128;
+    num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
+    num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
+    max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
+    num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
+    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
 
     if (designSetting->includeNucleation)
     {
@@ -621,18 +619,6 @@ void APTPhaseField::evolve()
     int period = params.noi_period;
     cudaMalloc((void **) &dStates, sizeof(curandState) * (length+period));
     
-
-    int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
-    int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
-    int max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
-    int num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
-    printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-    
-    float t_cur_step;
-    int kts = params.Mt/params.nts;
-    printf("kts %d, nts %d\n",kts, params.nts);
-
-
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
@@ -657,6 +643,9 @@ void APTPhaseField::evolve()
         qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, 0, z, movingDomainManager->loss_area_host, movingDomainManager->move_count);
     }
 
+    float t_cur_step;
+    int kts = params.Mt/params.nts;
+    printf("kts %d, nts %d\n",kts, params.nts);
 
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
