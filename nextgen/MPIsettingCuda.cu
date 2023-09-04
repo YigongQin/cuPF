@@ -58,7 +58,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<std::pair<float*, in
     int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
     for (auto & field : fieldChunks)
     {
-        int threadsRequired = field.second*std::max_element(mGeometrySize.begin(), mGeometrySize.end());
+        int threadsRequired = field.second*std::max(mGeometrySize.begin(), mGeometrySize.end());
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
         collectData1D<<< num_block_2d, blocksize_2d >>>(this, field.first, field.second, dataAcquired);
@@ -71,7 +71,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<std::pair<float*, in
 
     for (auto & field : fieldChunks)
     {
-        int threadsRequired = field.second*std::max_element(mGeometrySize.begin(), mGeometrySize.end());
+        int threadsRequired = field.second*std::max(mGeometrySize.begin(), mGeometrySize.end());
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
         distributeData1D<<< num_block_2d, blocksize_2d >>>(this, field.first, field.second, dataAcquired);
