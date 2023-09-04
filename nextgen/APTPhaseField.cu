@@ -543,14 +543,14 @@ void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
     printf("max tip can go: %d\n", tip_thres); 
 
     meanx_host = new float[MovingDirectoinSize];
-    loss_area = new int[numGrains];
-    memset(loss_area, 0, sizeof(int) * numGrains);
+    loss_area_host = new int[numGrains];
+    memset(loss_area_host, 0, sizeof(int) * numGrains);
 
-    cudaMalloc((void **)&meanx, sizeof(float) * MovingDirectoinSize);
-    cudaMemset(meanx,0, sizeof(float) * MovingDirectoinSize);
+    cudaMalloc((void **)&meanx_device, sizeof(float) * MovingDirectoinSize);
+    cudaMemset(meanx_device,0, sizeof(float) * MovingDirectoinSize);
 
-    cudaMalloc((void **)&d_loss_area, sizeof(int) * numGrains); 
-    cudaMemset(d_loss_area, 0, sizeof(int) * numGrains);
+    cudaMalloc((void **)&loss_area_device, sizeof(int) * numGrains); 
+    cudaMemset(loss_area_device, 0, sizeof(int) * numGrains);
 }
 
 void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
@@ -566,12 +566,12 @@ void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
         APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
         cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
         cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-        cudaMemcpy(movingDomainManager->loss_area, movingDomainManager->d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(movingDomainManager->loss_area_host, movingDomainManager->loss_area_device, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
         cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
         //QoIs based on alpha field
         movingDomainManager->cur_tip=0;
         qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, movingDomainManager->samples+1, z,
-                                movingDomainManager->loss_area, movingDomainManager->move_count);
+                                movingDomainManager->loss_area_host, movingDomainManager->move_count);
         movingDomainManager->samples += 1;
     }
 }
@@ -583,12 +583,12 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
 
-    tip_mvf(&movingDomainManager->tip_front, PFs_old, movingDomainManager->meanx, movingDomainManager->meanx_host, fnx, fny, fnz, NUM_PF);
+    tip_mvf(&movingDomainManager->tip_front, PFs_old, movingDomainManager->meanx_device, movingDomainManager->meanx_host, fnx, fny, fnz, NUM_PF);
     while (movingDomainManager->tip_front >= movingDomainManager->tip_thres)
     {
        APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
        APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, 
-                                                       movingDomainManager->d_loss_area, movingDomainManager->move_count);
+                                                       movingDomainManager->loss_area_device, movingDomainManager->move_count);
        APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
        movingDomainManager->move_count += 1;
        movingDomainManager->tip_front -=1 ;
@@ -654,7 +654,7 @@ void APTPhaseField::evolve()
     if (designSetting->useLineConfig)
     {
         movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
-        qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, 0, z, movingDomainManager->loss_area, movingDomainManager->move_count);
+        qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, 0, z, movingDomainManager->loss_area_host, movingDomainManager->move_count);
     }
 
 

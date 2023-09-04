@@ -11,10 +11,10 @@ public:
     int tip_front;
     int tip_thres;
     int samples, lowsl;
-	float* meanx; 
+	float* meanx_device; 
 	float* meanx_host;
-	int* loss_area; 
-	int* d_loss_area;
+	int* loss_area_device; 
+	int* loss_area_host;
 };
 
 MovingDomain::MovingDomain()
