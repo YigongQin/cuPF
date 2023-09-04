@@ -20,6 +20,7 @@ public:
 protected:
 	virtual void moveDomain(MovingDomain* movingDomainManager);
 	virtual void getLineQoIs(MovingDomain* movingDomainManager);
+	void setBC(bool useLineConfig, float* ph, int* active_args);
 
 private:
 	int* active_args_old;

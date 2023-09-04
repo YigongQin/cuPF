@@ -26,12 +26,12 @@ using namespace std;
 #define ZERO 0
 
 #define TIPP 20
-#define BLANK 0.2
 #define APT_NUM_PF 5
   
 
 
 __constant__ GlobalConstants cP;
+__constant__ MPIsetting cM;
 
 __inline__ __device__ float
 kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
@@ -156,58 +156,73 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area){
 
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
+  int bcX = CP.bcX, bcY = CP.bcY, bcZ = CP.bcZ;
   int pf = index/max_area;
   int bc_idx = index- pf*max_area;     
 
   int area_z = fnx*fny;
-  if ( (bc_idx<area_z) && (pf<NUM_PF) ){
+  if ( (bc_idx<area_z) && (pf<NUM_PF))
+  {
      int zj = bc_idx/fnx;
      int zi = bc_idx - zj*fnx;
-
-     int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
-     int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
-     int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
-     int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
-     ph[d_out] = ph[d_in];
-     ph[u_out] = ph[u_in];
-     active_args[d_out] = active_args[d_in];
-     active_args[u_out] = active_args[u_in];
-
+     if (cM.processorIDZ==0)
+     {
+        int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
+        int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
+        ph[d_out] = ph[d_in];
+        active_args[d_out] = active_args[d_in];
+     }
+     if (cM.processorIDZ==cM.numProcessorZ-1)
+     {
+        int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
+        int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
+        ph[u_out] = ph[u_in];
+        active_args[u_out] = active_args[u_in];
+     }
   }
 
   int area_y = fnx*fnz;
-  if ( (bc_idx<area_y) && (pf<NUM_PF) ){
+  if ( (bc_idx<area_y) && (pf<NUM_PF))
+  {
      int zk = bc_idx/fnx;
      int zi = bc_idx - zk*fnx;
-
-     int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
-     int b_in = L2G_4D(zi, 2, zk, pf, fnx, fny, fnz);
-     int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
-     int t_in = L2G_4D(zi, fny-3, zk, pf, fnx, fny, fnz);
-     ph[b_out] = ph[b_in];
-     ph[t_out] = ph[t_in];
-     active_args[b_out] = active_args[b_in];
-     active_args[t_out] = active_args[t_in];
-
+     if (cM.processorIDY==0)
+     {
+        int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
+        int b_in = L2G_4D(zi, 2, zk, pf, fnx, fny, fnz);
+        ph[b_out] = ph[b_in];
+        active_args[b_out] = active_args[b_in];
+     }
+     if (cM.processorIDY==cM.numProcessorY-1)
+     {
+        int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
+        int t_in = L2G_4D(zi, fny-3, zk, pf, fnx, fny, fnz);
+        ph[t_out] = ph[t_in];
+        active_args[t_out] = active_args[t_in];
+     }
   }
 
   int area_x = fny*fnz;
-  if ( (bc_idx<area_x) && (pf<NUM_PF) ){
+  if ( (bc_idx<area_x) && (pf<NUM_PF))
+  {
 
      int zk = bc_idx/fny;
      int zj = bc_idx - zk*fny;
-
-     int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
-     int l_in = L2G_4D(2, zj, zk, pf, fnx, fny, fnz);
-     int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
-     int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
-     ph[l_out] = ph[l_in];
-     ph[r_out] = ph[r_in];
-     active_args[l_out] = active_args[l_in];
-     active_args[r_out] = active_args[r_in];     
-
+     if (processorIDX==0)
+     {
+        int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
+        int l_in = L2G_4D(2, zj, zk, pf, fnx, fny, fnz);
+        ph[l_out] = ph[l_in];
+        active_args[l_out] = active_args[l_in];
+     }
+     if (processorIDX==numProcessorX-1)
+     {
+        int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
+        int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
+        ph[r_out] = ph[r_in];
+        active_args[r_out] = active_args[r_in]; 
+     }
   }
-
 }
 
 
@@ -532,11 +547,13 @@ void APTPhaseField::cudaSetup()
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
         }
     } 
+    
+    cudaMemcpyToSymbol(cM, mpiManager, sizeof(MPIsetting) );
 }
 
 void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
 {
-    tip_thres = (int) ((1-BLANK)*MovingDirectoinSize);
+    tip_thres = (int) (0.8*MovingDirectoinSize);
     printf("max tip can go: %d\n", tip_thres); 
 
     meanx_host = new float[MovingDirectoinSize];
@@ -593,6 +610,19 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 }
 
 
+void APTPhaseField::setBC(bool useLineConfig, float* ph, int* active_args)
+{
+    if (useLineConfig == true)
+    {
+        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area);
+    }
+    else
+    {
+        APTset_nofluxBC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area);
+    }
+}
+
+
 void APTPhaseField::evolve()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
@@ -625,9 +655,8 @@ void APTPhaseField::evolve()
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
-        //cudaDeviceSynchronize();
-    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
-    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+    setBC(designSetting->useLineConfig, PFs_old, active_args_old);
+    setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
         Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
@@ -655,13 +684,13 @@ void APTPhaseField::evolve()
     {
         //for (int kt=0; kt<params.Mt/2; kt++){
         //for (int kt=0; kt<0; kt++){
-        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_new, active_args_new, max_area);
+        setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
         APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args_new, active_args_old,\
         Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
-        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+        setBC(designSetting->useLineConfig, PFs_old, active_args_old);
 
         if (designSetting->useLineConfig)
         {

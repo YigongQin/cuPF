@@ -30,10 +30,10 @@ public:
   int Mt, nts, NUM_PF; 
   float dx, dt, hi, cfl, dt_sqrt;
 
-  // initial condition parameters
+  // initial/boundary condition parameters
   int ictype;
   int num_theta, num_nodes;
-
+  int bcX, bcY, bcZ;
   // anisotropy parameters
   float cosa, sina, sqrt2, a_s, epsilon, a_12;
 
