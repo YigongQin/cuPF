@@ -48,8 +48,8 @@ MPIsetting1D::collectData(float* field, int numFields, int offset)
         int field_indexL = L2G_4D(i + haloWidth, j + haloWidth, k + haloWidth, PF_id, fnx, fny, fnz);
         int field_indexR = L2G_4D(i + nxLocal, j + haloWidth, k + haloWidth, PF_id, fnx, fny, fnz);
 
-        mMPIBuffer["sendL"][C + offset] = field[field_indexL];
-        mMPIBuffer["sendR"][C + offset] = field[field_indexR];
+        mMPIBuffer["sendL"].first[C + offset] = field[field_indexL];
+        mMPIBuffer["sendR"].first[C + offset] = field[field_indexR];
     }
 }
 
@@ -71,8 +71,8 @@ MPIsetting1D::distributeData(float* field, int numFields, int offset)
       int field_indexL = L2G_4D(i, j + haloWidth, k + haloWidth, PF_id, fnx, fny, fnz);
       int field_indexR = L2G_4D(i + nxLocal + haloWidth, j + haloWidth, k + haloWidth, PF_id, fnx, fny, fnz);
 
-      field[field_indexL] = mMPIBuffer["recvL"][C + offset];
-      field[field_indexR] = mMPIBuffer["recvR"][C + offset];
+      field[field_indexL] = mMPIBuffer["recvL"].first[C + offset];
+      field[field_indexR] = mMPIBuffer["recvR"].first[C + offset];
   }
 }
 
