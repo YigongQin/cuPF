@@ -543,17 +543,17 @@ void MovingDomain::allocateMovingDomain(int numGrains, int MovingDirectoinSize)
     printf("max tip can go: %d\n", tip_thres); 
 
     meanx_host = new float[MovingDirectoinSize];
-    movingDomainManager->loss_area = new int[numGrains];
+    loss_area = new int[numGrains];
 
     cudaMalloc((void **)&meanx, sizeof(float) * MovingDirectoinSize);
     cudaMemset(meanx,0, sizeof(float) * MovingDirectoinSize);
 
-    cudaMalloc((void **)&d_movingDomainManager->loss_area, sizeof(int) * numGrains); 
-    memset(movingDomainManager->loss_area, 0, sizeof(int) * numGrains);
-    cudaMemset(d_movingDomainManager->loss_area, 0, sizeof(int) * numGrains);
+    cudaMalloc((void **)&loss_area, sizeof(int) * numGrains); 
+    memset(loss_area, 0, sizeof(int) * numGrains);
+    cudaMemset(loss_area, 0, sizeof(int) * numGrains);
 }
 
-void PhaseField::getLineQoIs(MovingDomain* movingDomainManager)
+void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
 {
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     float locationInMovingDomain = (movingDomainManager->move_count + movingDomainManager->lowsl -1)*params.W0*params.dx; 
@@ -576,7 +576,7 @@ void PhaseField::getLineQoIs(MovingDomain* movingDomainManager)
     }
 }
 
-void PhaseField::moveDomain(MovingDomain* movingDomainManager)
+void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 {
     int num_block_2d = (length+blocksize_2d-1)/blocksize_2d;
     int num_block_PF = (length*NUM_PF+blocksize_2d-1)/blocksize_2d;
