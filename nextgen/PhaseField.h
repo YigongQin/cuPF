@@ -25,7 +25,7 @@ public:
 	inline const DesignSettingData* GetSetDesignSetting() const;
 	// grid size
 	int fnx, fny, fnz, fnz_f, NUM_PF, length, full_length;
-
+	int blocksize_1d, blocksize_2d, num_block_2d, num_block_PF,num_block_PF1d, max_area;
 	// host pointers
 
 	float* z_full;
