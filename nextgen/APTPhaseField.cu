@@ -566,7 +566,7 @@ void APTPhaseField::getLineQoIs(MovingDomain* movingDomainManager)
         APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
         cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
         cudaMemcpy(args_cpu, active_args_old, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-        cudaMemcpy(movingDomainManager->loss_area, movingDomainManager->loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
+        cudaMemcpy(movingDomainManager->loss_area, movingDomainManager->d_loss_area, params.num_theta * sizeof(int),cudaMemcpyDeviceToHost);
         cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
         //QoIs based on alpha field
         movingDomainManager->cur_tip=0;
@@ -588,7 +588,7 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
     {
        APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
        APTmove_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device, alpha_m, d_alpha_full, 
-                                                       movingDomainManager->loss_area, movingDomainManager->move_count);
+                                                       movingDomainManager->d_loss_area, movingDomainManager->move_count);
        APTcopy_frame<<< num_block_PF, blocksize_2d >>>(PFs_new, active_args_new, z_device2, PFs_old, active_args_old, z_device);
        movingDomainManager->move_count += 1;
        movingDomainManager->tip_front -=1 ;
