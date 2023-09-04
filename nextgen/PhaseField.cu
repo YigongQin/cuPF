@@ -555,7 +555,7 @@ void PhaseField::evolve(){
    rhs_psi<<< num_block_PF, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, \
     Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
 
-   qois->calculateQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
+   qois->calculateLineQoIs(params, cur_tip, alpha, 0, z, loss_area, move_count);
    cudaDeviceSynchronize();
    double startTime = CycleTimer::currentSeconds();
    for (int kt=0; kt<params.Mt/2; kt++){
@@ -577,7 +577,7 @@ void PhaseField::evolve(){
              cudaMemcpy(z, z_device, fnz * sizeof(int),cudaMemcpyDeviceToHost); 
              //QoIs based on alpha field
              cur_tip=0;
-             qois->calculateQoIs(params, cur_tip, alpha, (2*kt+2)/kts, z, loss_area, move_count);
+             qois->calculateLineQoIs(params, cur_tip, alpha, (2*kt+2)/kts, z, loss_area, move_count);
           }
      //if ( (2*kt+2)%params.haloWidth==0 )commu_BC(comm, SR_buffs, mpiManager, 2*kt+1, params.haloWidth, fnx, fny, psi_old, phi_old, U_new, dpsi, alpha_m);
      //cudaDeviceSynchronize();
