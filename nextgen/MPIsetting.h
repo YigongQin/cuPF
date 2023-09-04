@@ -21,7 +21,7 @@ public:
 	virtual void domainPartition() = 0;
     virtual void createBoundaryBuffer(int numFields) = 0;
     virtual void exchangeBoundaryData(int nTimeStep) = 0;
-    void MPItransferData(int nTimeStep, std::vector<float*, int> fields);
+    void MPItransferData(int nTimeStep, std::vector<std::pair<float*, int>> fields);
 
     MPI_Comm comm;
     int rank, numProcessor;
