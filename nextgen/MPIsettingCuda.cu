@@ -10,7 +10,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<float*, int> fieldCh
         int threadsRequired = field.second*std::max_element(mGeometrySize.begin(), mGeometrySize.end());
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        collectData<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired);
+        collectData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired);
         dataAcquired += field.second*mGeometrySize[0];
     }
 
@@ -23,7 +23,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<float*, int> fieldCh
         int threadsRequired = field.second*std::max_element(mGeometrySize.begin(), mGeometrySize.end());
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        distributeData<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired);
+        distributeData1D<<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired);
         dataAcquired += field.second*mGeometrySize[0];
     }
 
@@ -31,7 +31,7 @@ void MPIsetting::MPItransferData(int nTimeStep, std::vector<float*, int> fieldCh
 }
 
 __global__ void
-MPIsetting1D::collectData(float* field, int numFields, int offset)
+collectData1D(float* field, int numFields, int offset)
 {
     int C = blockIdx.x * blockDim.x + threadIdx.x;
     int i, j, k, PF_id, fnx, fny, fnz;
@@ -54,7 +54,7 @@ MPIsetting1D::collectData(float* field, int numFields, int offset)
 }
 
 __global__ void
-MPIsetting1D::distributeData(float* field, int numFields, int offset)
+distributeData1D(float* field, int numFields, int offset)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id, fnx, fny, fnz;

@@ -35,8 +35,6 @@ public:
 
 protected:
     int ntag, dataSizeX, dataSizeY, dataSizeXY; 
-    __global__ virtual void collectData(float* field, int numFields, int offset);
-    __global__ virtual void distributeData(float* field, int numFields, int offset);
 };
 
 class MPIsetting1D : public MPIsetting
