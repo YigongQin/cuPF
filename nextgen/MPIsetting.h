@@ -47,7 +47,7 @@ public:
     MPIsetting1D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
     void domainPartition() override;
     template <typename T> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
-    template <typename T> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer);
+    template <typename T, typename U> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer);
     void MPItransferData(int nTimeStep, std::vector<std::pair<float*, int> > fields, std::map<std::string, std::pair<float*, int> > mMPIBuffer);
     void MPItransferData(int nTimeStep, std::vector<std::pair<int*, int> > fields, std::map<std::string, std::pair<int*, int> > mMPIBuffer);
 };
@@ -57,7 +57,7 @@ class MPIsetting2D : public MPIsetting
 public:
     MPIsetting2D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
     void domainPartition() override;
-    template <typename T> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
+    template <typename T, typename U> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
     template <typename T> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer);
 };
 
@@ -75,8 +75,8 @@ MPIsetting1D::createBoundaryBuffer(int numFields)
     return mMPIBuffer;
 }
 
-template <typename T>
-void MPIsetting1D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
+template <typename T, typename U>
+void MPIsetting1D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer)
 {
     int ntag = 8*nTimeStep;
     if ( processorIDX < numProcessorX-1 ) 
@@ -122,8 +122,8 @@ MPIsetting2D::createBoundaryBuffer(int numFields)
     return mMPIBuffer;
 }
 
-template <typename T>
-void MPIsetting2D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
+template <typename T, typename U>
+void MPIsetting2D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer)
 {
     int ntag = 8*nTimeStep;
     if ( processorIDX < numProcessorX-1 ) 
