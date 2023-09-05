@@ -54,7 +54,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<int*, in
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        collectData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
+        collectData1D<float><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
                                                         nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
@@ -68,7 +68,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<int*, in
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        distributeData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
+        distributeData1D<float><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
                                                            nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
@@ -84,7 +84,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, 
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        collectData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
+        collectData1D<int><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
                                                         nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
@@ -98,7 +98,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, 
         int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
         int dataAcquired = 0;
         int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
-        distributeData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
+        distributeData1D<int><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
                                                            nxLocal, nyLocal, nzLocal, haloWidth);
         dataAcquired += field.second*mGeometrySize[0];
     }
