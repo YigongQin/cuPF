@@ -19,10 +19,6 @@ int main(int argc, char** argv)
     
     DesignSettingData* designSetting = new DesignSettingData();
     designSetting->getOptions(argc, argv);
-    // run the python initialization for temperature and orientation field
-    string cmd = "python3 " + designSetting->inputFile + " " + to_string(designSetting->seedValue);
-    int result = system(cmd.c_str()); 
-    assert(result == 0);
 
     MPIsetting* mpiManager;
     if (designSetting->mpiDim == 1)
@@ -49,6 +45,14 @@ int main(int argc, char** argv)
     {
         PFSolver = new PhaseField();
         cout << "use full PF" << endl;
+    }
+
+    // run the python initialization for temperature and orientation field
+    if (mpiManager->rank == 0)
+    {
+        string cmd = "python3 " + designSetting->inputFile + " " + to_string(designSetting->seedValue);
+        int result = system(cmd.c_str()); 
+        assert(result == 0);
     }
 
     PFSolver->SetDesignSetting(designSetting);
