@@ -659,12 +659,12 @@ void APTPhaseField::evolve()
         mpiManager->data_new_int.push_back(std::make_pair(active_args_new, NUM_PF));
         mpiManager->data_old_int.push_back(std::make_pair(active_args_old, NUM_PF));
 
-        for (auto & buffer : PFBuffer)
+        for (auto & buffer : mpiManager->PFBuffer)
         {
             std::pair<float*, int> bufferPointer = buffer.second;
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
         }
-        for (auto & buffer : ArgBuffer)
+        for (auto & buffer : mpiManager->ArgBuffer)
         {
             std::pair<int*, int> bufferPointer = buffer.second;
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(int)*bufferPointer.second );
