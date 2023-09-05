@@ -57,8 +57,8 @@ class MPIsetting2D : public MPIsetting
 public:
     MPIsetting2D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
     void domainPartition() override;
-    template <typename T, typename U> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
-    template <typename T> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer);
+    template <typename T> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
+    template <typename T, typename U> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer);
 };
 
 
