@@ -619,8 +619,7 @@ void APTPhaseField::setBC(bool useLineConfig, float* ph, int* active_args)
 void APTPhaseField::evolve()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
-    MPIsetting* mpiManager = GetMPIManager();
-    mpiManager = dynamic_cast<MPIsetting1D*> (mpiManager);
+    MPIsetting1D* mpiManager = dynamic_cast<MPIsetting1D*> (GetMPIManager());
     MovingDomain* movingDomainManager = new MovingDomain();
 
     blocksize_1d = 128;
