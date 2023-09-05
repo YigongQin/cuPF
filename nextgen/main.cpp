@@ -65,7 +65,9 @@ int main(int argc, char** argv)
 
     PFSolver->SetMPIManager(mpiManager);
 
+    cout << "field initialization on cpu" <<endl;
     PFSolver->initField();
+    cout << "cuda setup" <<endl;
     PFSolver->cudaSetup();
     PFSolver->evolve();
     PFSolver->output(designSetting->outputFolder, designSetting->save3DField);
