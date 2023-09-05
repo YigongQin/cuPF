@@ -539,15 +539,6 @@ void APTPhaseField::cudaSetup()
     cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.sint, mac.sint, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
 
-    if (mpiManager->numProcessor >1)
-    {
-        mpiManager->createBoundaryBuffer(2*NUM_PF);
-        for (auto & buffer : mpiManager->mMPIBuffer)
-        {
-            std::pair<float*, int> bufferPointer = buffer.second;
-            cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
-        }
-    } 
 
 }
 
@@ -630,12 +621,6 @@ void APTPhaseField::evolve()
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     MPIsetting* mpiManager = GetMPIManager();
     MovingDomain* movingDomainManager = new MovingDomain();
-    std::vector<std::pair<float*, int>>  dataVectors_old, dataVectors_new;
-    dataVectors_old.push_back(std::make_pair(PFs_old, NUM_PF));
-    dataVectors_old.push_back(std::make_pair(active_args_old, NUM_PF));
-    dataVectors_new.push_back(std::make_pair(PFs_new, NUM_PF));
-    dataVectors_new.push_back(std::make_pair(active_args_new, NUM_PF));
-
 
     blocksize_1d = 128;
     blocksize_2d = 128;
@@ -665,8 +650,25 @@ void APTPhaseField::evolve()
 
     if (mpiManager->numProcessor >1)
     {
-        mpiManager->MPItransferData(1e10, dataVectors_old);
-        mpiManager->MPItransferData(1e10, dataVectors_new);
+
+        std::map<std::string, std::pair<float*, int> > PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
+        std::map<std::string, std::pair<int*, int> > ArgBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
+
+        for (auto & buffer : PFBuffer)
+        {
+            std::pair<float*, int> bufferPointer = buffer.second;
+            cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
+        }
+        for (auto & buffer : ArgBuffer)
+        {
+            std::pair<int*, int> bufferPointer = buffer.second;
+            cudaMalloc((void **)&(bufferPointer.first),  sizeof(int)*bufferPointer.second );
+        }       
+   
+        mpiManager->MPItransferData(1e8, PFs_old, PFBuffer);
+        mpiManager->MPItransferData(1e8 + 1, PFs_new, PFBuffer);
+        mpiManager->MPItransferData(1e8 + 2, active_args_old, ArgBuffer);
+        mpiManager->MPItransferData(1e8 + 3, active_args_new, ArgBuffer);
     }
 
     setBC(designSetting->useLineConfig, PFs_old, active_args_old);
@@ -701,7 +703,8 @@ void APTPhaseField::evolve()
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
         {
-            mpiManager->MPItransferData(2*kt, dataVectors_new);
+            mpiManager->MPItransferData(4*kt, PFs_new, PFBuffer);
+            mpiManager->MPItransferData(4*kt + 2, active_args_new, ArgBuffer);
         }
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
@@ -711,7 +714,8 @@ void APTPhaseField::evolve()
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
-            mpiManager->MPItransferData(2*kt+1, dataVectors_old);
+            mpiManager->MPItransferData(4*kt + 1, PFs_old, PFBuffer);
+            mpiManager->MPItransferData(4*kt + 3, active_args_old, ArgBuffer);
         }
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);
