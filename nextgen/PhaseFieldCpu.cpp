@@ -221,6 +221,7 @@ void PhaseField::cpuSetup(MPIsetting* mpiManager){
     mpiManager->nyLocal = params.ny/mpiManager->numProcessorY;
     mpiManager->nzLocal = params.nz/mpiManager->numProcessorZ;
     mpiManager->nzLocalAll = params.nz_full;
+    mpiManager->haloWidth = params.haloWidth;
     
     float dxd = params.dx*params.W0;
     float len_blockx = mpiManager->nxLocal*dxd; 
