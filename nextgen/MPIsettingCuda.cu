@@ -45,8 +45,8 @@ distributeData1D(float* field, int numFields, int offset, T* recvBufferL, T* rec
 }
 
 
-template <typename T>
-void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<T*, int>> fieldChunks, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
+
+void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<int*, int>> fieldChunks, std::map<std::string, std::pair<int*, int> > mMPIBuffer)
 {
     int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
     for (auto & field : fieldChunks)
@@ -61,7 +61,37 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<T*, int>
 
     cudaDeviceSynchronize();    
 
-    exchangeBoundaryData(nTimeStep, mMPIBuffer); 
+    exchangeBoundaryData<MPI_INT>(nTimeStep, mMPIBuffer); 
+
+    for (auto & field : fieldChunks)
+    {
+        int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
+        int dataAcquired = 0;
+        int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
+        distributeData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["recvL"].first, mMPIBuffer["recvR"].first,
+                                                           nxLocal, nyLocal, nzLocal, haloWidth);
+        dataAcquired += field.second*mGeometrySize[0];
+    }
+
+    cudaDeviceSynchronize();      
+}
+
+void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, int>> fieldChunks, std::map<std::string, std::pair<float*, int> > mMPIBuffer)
+{
+    int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
+    for (auto & field : fieldChunks)
+    {
+        int threadsRequired = *std::max_element(mGeometrySize.begin(), mGeometrySize.end())*field.second;
+        int dataAcquired = 0;
+        int num_block_2d = (threadsRequired + blocksize_2d -1)/blocksize_2d;
+        collectData1D<T><<< num_block_2d, blocksize_2d >>>(field.first, field.second, dataAcquired, mMPIBuffer["sendL"].first, mMPIBuffer["sendR"].first,
+                                                        nxLocal, nyLocal, nzLocal, haloWidth);
+        dataAcquired += field.second*mGeometrySize[0];
+    }
+
+    cudaDeviceSynchronize();    
+
+    exchangeBoundaryData<MPI_FLOAT>(nTimeStep, mMPIBuffer); 
 
     for (auto & field : fieldChunks)
     {
