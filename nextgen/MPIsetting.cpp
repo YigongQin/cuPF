@@ -16,9 +16,9 @@ MPIsetting::MPIsetting(MPI_Comm commWorld) : comm(commWorld)
 void MPIsetting::calculateTransferDataSize(int numFields)
 {
     mNumFields = numFields;
-    int dataSizeX = numFields*haloWidth*nyLocal*nzLocal;
-    int dataSizeY = numFields*haloWidth*nxLocal*nzLocal;
-    int dataSizeXY = numFields*haloWidth*haloWidth*nzLocal;
+    dataSizeX = numFields*haloWidth*nyLocal*nzLocal;
+    dataSizeY = numFields*haloWidth*nxLocal*nzLocal;
+    dataSizeXY = numFields*haloWidth*haloWidth*nzLocal;
 }
 
 void MPIsetting::printMPIsetting() const
