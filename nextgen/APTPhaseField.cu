@@ -654,7 +654,7 @@ void APTPhaseField::evolve()
     {
 
         PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
-        PFBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
+        ArgBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
 
         for (auto & buffer : PFBuffer)
         {
