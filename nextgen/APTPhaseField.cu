@@ -667,10 +667,10 @@ void APTPhaseField::evolve()
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(int)*bufferPointer.second );
         }       
    
-        mpiManager->MPItransferData(1e8, PFs_old, PFBuffer);
-        mpiManager->MPItransferData(1e8 + 1, PFs_new, PFBuffer);
-        mpiManager->MPItransferData(1e8 + 2, active_args_old, ArgBuffer);
-        mpiManager->MPItransferData(1e8 + 3, active_args_new, ArgBuffer);
+        mpiManager->MPItransferData<float>(1e8, PFs_old, PFBuffer);
+        mpiManager->MPItransferData<float>(1e8 + 1, PFs_new, PFBuffer);
+        mpiManager->MPItransferData<int>(1e8 + 2, active_args_old, ArgBuffer);
+        mpiManager->MPItransferData<int>(1e8 + 3, active_args_new, ArgBuffer);
     }
 
     setBC(designSetting->useLineConfig, PFs_old, active_args_old);
@@ -705,8 +705,8 @@ void APTPhaseField::evolve()
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
         {
-            mpiManager->MPItransferData(4*kt, PFs_new, PFBuffer);
-            mpiManager->MPItransferData(4*kt + 2, active_args_new, ArgBuffer);
+            mpiManager->MPItransferData<float>(4*kt, PFs_new, PFBuffer);
+            mpiManager->MPItransferData<int>(4*kt + 2, active_args_new, ArgBuffer);
         }
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
@@ -716,8 +716,8 @@ void APTPhaseField::evolve()
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
-            mpiManager->MPItransferData(4*kt + 1, PFs_old, PFBuffer);
-            mpiManager->MPItransferData(4*kt + 3, active_args_old, ArgBuffer);
+            mpiManager->MPItransferData<float>(4*kt + 1, PFs_old, PFBuffer);
+            mpiManager->MPItransferData<int>(4*kt + 3, active_args_old, ArgBuffer);
         }
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);
