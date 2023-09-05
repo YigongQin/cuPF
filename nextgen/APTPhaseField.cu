@@ -620,6 +620,7 @@ void APTPhaseField::evolve()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     MPIsetting* mpiManager = GetMPIManager();
+    mpiManager = dynamic_cast<MPIsetting1D*> (mpiManager);
     MovingDomain* movingDomainManager = new MovingDomain();
 
     blocksize_1d = 128;
@@ -648,11 +649,13 @@ void APTPhaseField::evolve()
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
+    std::map<std::string, std::pair<float*, int> > PFBuffer; 
+    std::map<std::string, std::pair<int*, int> > ArgBuffer;
     if (mpiManager->numProcessor >1)
     {
 
-        std::map<std::string, std::pair<float*, int> > PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
-        std::map<std::string, std::pair<int*, int> > ArgBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
+        PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
+        PFBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
 
         for (auto & buffer : PFBuffer)
         {
