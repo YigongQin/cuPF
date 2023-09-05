@@ -47,7 +47,7 @@ public:
     MPIsetting1D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
     void domainPartition() override;
     template <typename T> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
-    template <typename T, typename U> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer);
+    template <typename T> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer);
     void MPItransferData(int nTimeStep, std::vector<std::pair<float*, int> > fields, std::map<std::string, std::pair<float*, int> > mMPIBuffer);
     void MPItransferData(int nTimeStep, std::vector<std::pair<int*, int> > fields, std::map<std::string, std::pair<int*, int> > mMPIBuffer);
 };
@@ -58,7 +58,7 @@ public:
     MPIsetting2D(MPI_Comm commWorld) : MPIsetting(commWorld) {};
     void domainPartition() override;
     template <typename T> std::map<std::string, std::pair<T*, int> > createBoundaryBuffer(int numFields);
-    template <typename T, typename U> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer);
+  //  template <typename T, typename U> void exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer);
 };
 
 
@@ -75,21 +75,7 @@ MPIsetting1D::createBoundaryBuffer(int numFields)
     return mMPIBuffer;
 }
 
-template <typename T, typename U>
-void MPIsetting1D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer)
-{
-    int ntag = 8*nTimeStep;
-    if ( processorIDX < numProcessorX-1 ) 
-    {
-        MPI_Send(mMPIBuffer["sendR"].first, mMPIBuffer["sendR"].second, T, rank+1, ntag+1, comm);
-        MPI_Recv(mMPIBuffer["recvR"].first, mMPIBuffer["recvR"].second, T, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
-    }
-    if ( processorIDX > 0 )
-    {
-        MPI_Recv(mMPIBuffer["recvL"].first, mMPIBuffer["recvL"].second, T, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);
-        MPI_Send(mMPIBuffer["sendL"].first, mMPIBuffer["sendL"].second, T, rank-1, ntag+2, comm);
-    }    
-}
+
 
 template <typename T> std::map<std::string, std::pair<T*, int> >  
 MPIsetting2D::createBoundaryBuffer(int numFields)
@@ -121,6 +107,26 @@ MPIsetting2D::createBoundaryBuffer(int numFields)
     
     return mMPIBuffer;
 }
+
+
+template <typename T>
+void MPIsetting1D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
+{
+    int ntag = 8*nTimeStep;
+    auto MPIType = std::is_same<T, float>::value ? MPI_FLOAT : MPI_INT;
+    if ( processorIDX < numProcessorX-1 ) 
+    {
+        MPI_Send(mMPIBuffer["sendR"].first, mMPIBuffer["sendR"].second, MPIType, rank+1, ntag+1, comm);
+        MPI_Recv(mMPIBuffer["recvR"].first, mMPIBuffer["recvR"].second, MPIType, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
+    }
+    if ( processorIDX > 0 )
+    {
+        MPI_Recv(mMPIBuffer["recvL"].first, mMPIBuffer["recvL"].second, MPIType, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);
+        MPI_Send(mMPIBuffer["sendL"].first, mMPIBuffer["sendL"].second, MPIType, rank-1, ntag+2, comm);
+    }    
+}
+
+/*
 
 template <typename T, typename U>
 void MPIsetting2D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std::pair<U*, int> > mMPIBuffer)
@@ -172,3 +178,4 @@ void MPIsetting2D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std
 }
 
 
+*/

@@ -61,7 +61,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<int*, in
 
     cudaDeviceSynchronize();    
 
-    exchangeBoundaryData<MPI_INT, int>(nTimeStep, mMPIBuffer); 
+    exchangeBoundaryData<int>(nTimeStep, mMPIBuffer); 
 
     for (auto & field : fieldChunks)
     {
@@ -91,7 +91,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, 
 
     cudaDeviceSynchronize();    
 
-    exchangeBoundaryData<MPI_FLOAT, float>(nTimeStep, mMPIBuffer); 
+    exchangeBoundaryData<float>(nTimeStep, mMPIBuffer); 
 
     for (auto & field : fieldChunks)
     {
