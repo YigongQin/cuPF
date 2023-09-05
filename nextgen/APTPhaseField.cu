@@ -648,13 +648,16 @@ void APTPhaseField::evolve()
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
 
-    std::map<std::string, std::pair<float*, int> > PFBuffer; 
-    std::map<std::string, std::pair<int*, int> > ArgBuffer;
+
     if (mpiManager->numProcessor >1)
     {
+        mpiManager->PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
+        mpiManager->ArgBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
 
-        PFBuffer = mpiManager->createBoundaryBuffer<float>(NUM_PF);
-        ArgBuffer = mpiManager->createBoundaryBuffer<int>(NUM_PF);
+        mpiManager->data_new_float.push_back(std::make_pair(PFs_new, NUM_PF));
+        mpiManager->data_old_float.push_back(std::make_pair(PFs_old, NUM_PF));
+        mpiManager->data_new_int.push_back(std::make_pair(active_args_new, NUM_PF));
+        mpiManager->data_old_int.push_back(std::make_pair(active_args_old, NUM_PF));
 
         for (auto & buffer : PFBuffer)
         {
@@ -667,10 +670,10 @@ void APTPhaseField::evolve()
             cudaMalloc((void **)&(bufferPointer.first),  sizeof(int)*bufferPointer.second );
         }       
    
-        mpiManager->MPItransferData<float>(1e8, PFs_old, PFBuffer);
-        mpiManager->MPItransferData<float>(1e8 + 1, PFs_new, PFBuffer);
-        mpiManager->MPItransferData<int>(1e8 + 2, active_args_old, ArgBuffer);
-        mpiManager->MPItransferData<int>(1e8 + 3, active_args_new, ArgBuffer);
+        mpiManager->MPItransferData<float>(1e8, mpiManager->data_new_float, mpiManager->PFBuffer);
+        mpiManager->MPItransferData<float>(1e8 + 1, mpiManager->data_old_float, mpiManager->PFBuffer);
+        mpiManager->MPItransferData<int>(1e8 + 2, mpiManager->data_new_int, mpiManager->ArgBuffer);
+        mpiManager->MPItransferData<int>(1e8 + 3, mpiManager->data_old_int, mpiManager->ArgBuffer);
     }
 
     setBC(designSetting->useLineConfig, PFs_old, active_args_old);
@@ -705,8 +708,8 @@ void APTPhaseField::evolve()
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
         {
-            mpiManager->MPItransferData<float>(4*kt, PFs_new, PFBuffer);
-            mpiManager->MPItransferData<int>(4*kt + 2, active_args_new, ArgBuffer);
+            mpiManager->MPItransferData<float>(4*kt, mpiManager->data_new_float, mpiManager->PFBuffer);
+            mpiManager->MPItransferData<int>(4*kt + 2, mpiManager->data_new_int, mpiManager->ArgBuffer);
         }
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
@@ -716,8 +719,8 @@ void APTPhaseField::evolve()
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
-            mpiManager->MPItransferData<float>(4*kt + 1, PFs_old, PFBuffer);
-            mpiManager->MPItransferData<int>(4*kt + 3, active_args_old, ArgBuffer);
+            mpiManager->MPItransferData<float>(4*kt + 1, mpiManager->data_old_float, mpiManager->PFBuffer);
+            mpiManager->MPItransferData<int>(4*kt + 3, mpiManager->data_old_int, mpiManager->ArgBuffer);
         }
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);

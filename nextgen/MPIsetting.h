@@ -31,6 +31,12 @@ public:
 
 protected:
     int ntag, dataSizeX, dataSizeY, dataSizeXY; 
+    std::map<std::string, std::pair<float*, int> > PFBuffer; 
+    std::map<std::string, std::pair<int*, int> > ArgBuffer;
+    std::vector<std::pair<float*, int> > data_old_float;
+    std::vector<std::pair<float*, int> > data_new_float;
+    std::vector<std::pair<int*, int> > data_old_int;
+    std::vector<std::pair<int*, int> > data_new_int;
 };
 
 class MPIsetting1D : public MPIsetting

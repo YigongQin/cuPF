@@ -46,7 +46,7 @@ distributeData1D(float* field, int numFields, int offset, T* recvBufferL, T* rec
 
 
 template <typename T>
-void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, int>> fieldChunks, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
+void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<T*, int>> fieldChunks, std::map<std::string, std::pair<T*, int> > mMPIBuffer)
 {
     int blocksize_2d = 128;  // seems reduce the block size makes it a little faster, but around 128 is okay.
     for (auto & field : fieldChunks)
@@ -61,7 +61,7 @@ void MPIsetting1D::MPItransferData(int nTimeStep, std::vector<std::pair<float*, 
 
     cudaDeviceSynchronize();    
 
-    exchangeBoundaryData(nTimeStep); 
+    exchangeBoundaryData(nTimeStep, mMPIBuffer); 
 
     for (auto & field : fieldChunks)
     {
