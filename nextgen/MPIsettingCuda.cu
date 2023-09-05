@@ -4,7 +4,7 @@
 
 
 template <typename T> __global__ void
-collectData1D(float* field, int numFields, int offset, T* sendBufferL, T* sendBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
+collectData1D(T* field, int numFields, int offset, T* sendBufferL, T* sendBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
 {
     int C = blockIdx.x * blockDim.x + threadIdx.x;
     int i, j, k, PF_id, fnx, fny, fnz;
@@ -24,7 +24,7 @@ collectData1D(float* field, int numFields, int offset, T* sendBufferL, T* sendBu
 }
 
 template <typename T> __global__ void
-distributeData1D(float* field, int numFields, int offset, T* recvBufferL, T* recvBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
+distributeData1D(T* field, int numFields, int offset, T* recvBufferL, T* recvBufferR, int nxLocal, int nyLocal, int nzLocal, int haloWidth)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id, fnx, fny, fnz;
