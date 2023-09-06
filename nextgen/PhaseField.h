@@ -50,7 +50,7 @@ public:
 	ThermalInputData Mgpu;
 	GlobalConstants params;
 	QOI* qois;
-	int* nucleantionStatus;
+	int* nucleationStatus;
 
 	MPIsetting* mMPIManager;
 	const DesignSettingData* mDesignSetting;
