@@ -1,0 +1,6 @@
+module load mvapich2-gdr/2.3.6
+export MV2_USE_CUDA=1
+export LD_PRELOAD=/opt/apps/intel19/mvapich2-gdr/2.3.6/lib64/libmpi.so
+export MV2_USE_ALIGNED_ALLOC=1
+export MV2_CUDA_ENABLE_MANAGED=1
+export MV2_CUDA_MANAGED_IPC=1
