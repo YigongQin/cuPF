@@ -230,7 +230,7 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
 
 // psi equation
 __global__ void
-APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData& therm)
+APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, float* sint, float* cost)
 {
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -308,10 +308,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
                 {
-                        sina = therm.sint[PF_id];
-                        cosa = therm.cost[PF_id];
-                        sinb = therm.sint[PF_id+cP.num_theta];
-                        cosb = therm.cost[PF_id+cP.num_theta];
+                        sina = sint[PF_id];
+                        cosa = cost[PF_id];
+                        sinb = sint[PF_id+cP.num_theta];
+                        cosb = cost[PF_id+cP.num_theta];
                 }
                 else
                 {
@@ -700,7 +700,7 @@ void APTPhaseField::evolve()
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     // get initial fields
-    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
+    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -735,7 +735,7 @@ void APTPhaseField::evolve()
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu.sint, Mgpu.cost);
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
@@ -761,7 +761,7 @@ void APTPhaseField::evolve()
         }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
         kt++;
    }
 
