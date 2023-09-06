@@ -324,9 +324,14 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
                 float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
+                float Tinterp;
                 if (cP.useLineConfig)
                 {
-                    float Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                }
+                else
+                {
+                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
@@ -730,7 +735,7 @@ void APTPhaseField::evolve()
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(2*kt+1, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
@@ -756,7 +761,7 @@ void APTPhaseField::evolve()
         }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(2*kt+2, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
         kt++;
    }
 
