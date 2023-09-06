@@ -431,7 +431,7 @@ init_nucl_status(float* ph, int* nucl_status, int cnx, int cny, int cnz, int fnx
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id;
-  G2L_3D(C, i, j, k, PF_id, int cnx, int cny, int cnz);
+  G2L_3D(C, i, j, k, PF_id, cnx, cny, cnz);
 
   if ( (i<cnx) && (j<cny) && (k<cnz) ) 
   {
@@ -466,7 +466,7 @@ nuncl_possibility(float delT, float d_delT)
 
 
 __global__ void
-add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* phi, float* alpha_m, float* x, float* y, float* z, curandState* states, 
+add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, curandState* states, 
         float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
@@ -697,9 +697,9 @@ void APTPhaseField::evolve()
     curandState* dStates;
     if (designSetting->includeNucleation)
     {
-      int cnx = fnx/(2*params.pts_cell+1);
-      int cny = fny/(2*params.pts_cell+1);
-      int cnz = fnz/(2*params.pts_cell+1);
+      cnx = fnx/(2*params.pts_cell+1);
+      cny = fny/(2*params.pts_cell+1);
+      cnz = fnz/(2*params.pts_cell+1);
       num_block_c = (cnx*cny*cnz + blocksize_2d-1)/blocksize_2d;   
 
       cudaMalloc((void **) &dStates, sizeof(curandState) * (length+params.noi_period));
@@ -776,7 +776,7 @@ void APTPhaseField::evolve()
 
         if (designSetting->includeNucleation)
         {
-            add_nucl<<<num_block_c, blocksize_2d>>>(nucl_status, cnx, cny, cny, PFs_old, alpha_m, x_device, y_device, fnx, fny, dStates, \
+            add_nucl<<<num_block_c, blocksize_2d>>>(nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, dStates, \
                 2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt); 
         }
 
