@@ -703,11 +703,12 @@ void APTPhaseField::evolve()
     int kts = params.Mt/params.nts;
     printf("kts %d, nts %d\n",kts, params.nts);
 
+    int numComm = 0;
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    while (kt < 1000000)
+    while (kt < 1000)
     {
         //for (int kt=0; kt<params.Mt/2; kt++){
         //for (int kt=0; kt<0; kt++){
@@ -715,6 +716,7 @@ void APTPhaseField::evolve()
         {
             mpiManager->MPItransferData(4*kt + 10, mpiManager->data_new_float, mpiManager->PFBuffer);
             mpiManager->MPItransferData(4*kt + 12, mpiManager->data_new_int, mpiManager->ArgBuffer);
+            numComm++;
         }
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
@@ -726,6 +728,7 @@ void APTPhaseField::evolve()
         {
             mpiManager->MPItransferData(4*kt + 11, mpiManager->data_old_float, mpiManager->PFBuffer);
             mpiManager->MPItransferData(4*kt + 13, mpiManager->data_old_int, mpiManager->ArgBuffer);
+            numComm++;
         }
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);
@@ -755,7 +758,8 @@ void APTPhaseField::evolve()
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
    printf("time for %d iterations: %f s\n", 2*kt, endTime-startTime);
-   params.Mt = 2*kt;
+   printf("no. communications performed %d \n", numComm);
+   params.Mt = 2*kt; // the actual no. time steps
    
    cudaMemset(alpha_m, 0, sizeof(int) * length);
    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
