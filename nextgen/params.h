@@ -33,6 +33,7 @@ public:
   // initial/boundary condition parameters
   int ictype;
   int num_theta, num_nodes;
+  bool useLineConfig;
 
   // anisotropy parameters
   float cosa, sina, sqrt2, a_s, epsilon, a_12;

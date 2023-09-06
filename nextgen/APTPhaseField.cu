@@ -230,15 +230,16 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
 
 // psi equation
 __global__ void
-APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float t, int* aarg, int* aarg_new,\
-       float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt, curandState* states, float* cost, float* sint){
+APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData& therm)
+{
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
   int i, j, k, PF_id;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF, length = cP.length;
   G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
 
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) {
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) 
+  {
 
   //=============== load active phs ================
         int local_args[APT_NUM_PF]; // local active PF indices
@@ -246,14 +247,17 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
 
 
         int globalC, target_index, stencil, arg_index;
-        for (int arg_index = 0; arg_index<NUM_PF; arg_index++){
+        for (int arg_index = 0; arg_index<NUM_PF; arg_index++)
+        {
             local_args[arg_index] = -1;
-            for (stencil=0; stencil<7; stencil++){
+            for (stencil=0; stencil<7; stencil++)
+            {
                 local_phs[stencil][arg_index] = -1.0f;
             } 
         }
         stencil = 0;
-        for (int zi = -1; zi<=1; zi++){
+        for (int zi = -1; zi<=1; zi++)
+        {
             for (int yi = -1; yi<=1; yi++){
                 for (int xi = -1; xi <=1; xi++){
                     for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
@@ -281,62 +285,75 @@ APTrhs_psi(float* x, float* y, float* z, float* ph, float* ph_new, int nt, float
             }
         }
 
-       for (arg_index = 0; arg_index<NUM_PF; arg_index++){
-       if (local_args[arg_index]==-1){
-            aarg_new[C+arg_index*length] = -1;
-            ph_new[C+arg_index*length] = -1.0f;
-       }
-       else{
+       for (arg_index = 0; arg_index<NUM_PF; arg_index++)
+       {
+            if (local_args[arg_index]==-1)
+            {
+                aarg_new[C+arg_index*length] = -1;
+                ph_new[C+arg_index*length] = -1.0f;
+            }
+            else
+            {
 
-       // start dealing with one specific PF
+                // start dealing with one specific PF
 
-       PF_id = local_args[arg_index]; // global PF index to find the right orientation
-       float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
-       phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
+                PF_id = local_args[arg_index]; // global PF index to find the right orientation
+                float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
+                phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
 
-       float phxn = ( phR - phL ) * 0.5f;
-       float phyn = ( phT - phB ) * 0.5f;
-       float phzn = ( phU - phD ) * 0.5f;
+                float phxn = ( phR - phL ) * 0.5f;
+                float phyn = ( phT - phB ) * 0.5f;
+                float phzn = ( phU - phD ) * 0.5f;
 
-       float cosa, sina, cosb, sinb;
-       if (phC>LS){
-       sina = sint[PF_id];
-       cosa = cost[PF_id];
-       sinb = sint[PF_id+cP.num_theta];
-       cosb = cost[PF_id+cP.num_theta];
-       }else{
-       sina = 0.0f;
-       cosa = 1.0f;
-       sinb = 0.0f;
-       cosb = 1.0f;
-       }
+                float cosa, sina, cosb, sinb;
+                if (phC>LS)
+                {
+                        sina = therm.sint[PF_id];
+                        cosa = therm.cost[PF_id];
+                        sinb = therm.sint[PF_id+cP.num_theta];
+                        cosb = therm.cost[PF_id+cP.num_theta];
+                }
+                else
+                {
+                        sina = 0.0f;
+                        cosa = 1.0f;
+                        sinb = 0.0f;
+                        cosb = 1.0f;
+                }
 
-        float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
+                float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
-        float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
-        float Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
-        float Up = Tinterp/(cP.L_cp);  
-        float repul=0.0f;
-        for (int pf_id=0; pf_id<NUM_PF; pf_id++){
-            
-           if (pf_id!=arg_index) {
-               repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
-           }
+                float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
+                if (cP.useLineConfig)
+                {
+                    float Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                }
+                
+                float Up = Tinterp/(cP.L_cp);  
+                float repul=0.0f;
+                for (int pf_id=0; pf_id<NUM_PF; pf_id++)
+                {
+                if (pf_id!=arg_index) 
+                {
+                    repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
+                }
+                }
+
+                float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
+                    - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
+                float dphi = rhs_psi / A2; 
+                ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
+                if (phC  +  cP.dt * dphi <-0.9999)
+                {
+                    aarg_new[C+arg_index*length] = -1;
+                }
+                else
+                {
+                    aarg_new[C+arg_index*length] = local_args[arg_index];
+                }
+
+            }
         }
-        float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
-              - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
-        float dphi = rhs_psi / A2; 
-        ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
-        if (phC  +  cP.dt * dphi <-0.9999){
-            aarg_new[C+arg_index*length] = -1;
-        }else{
-            aarg_new[C+arg_index*length] = local_args[arg_index];
-        }
-
-        }
-        }
-
-
      }
 } 
 
@@ -678,8 +695,7 @@ void APTPhaseField::evolve()
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     // get initial fields
-    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new, 0, 0, active_args_old, active_args_new,\
-        Mgpu.X_mac, Mgpu.Y_mac,  Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -714,8 +730,7 @@ void APTPhaseField::evolve()
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_new, PFs_old, 2*kt+1,t_cur_step, active_args_new, active_args_old,\
-        Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(2*kt+1, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
 
         if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
         {
@@ -741,9 +756,7 @@ void APTPhaseField::evolve()
         }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(x_device, y_device, z_device, PFs_old, PFs_new,  2*kt+2,t_cur_step, active_args_old, active_args_new,\
-        Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt, dStates, Mgpu.cost, Mgpu.sint);
-
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(2*kt+2, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
         kt++;
    }
 

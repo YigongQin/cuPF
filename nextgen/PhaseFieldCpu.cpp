@@ -182,6 +182,7 @@ void PhaseField::parseInputParams(std::string fileName){
     params.tmax = params.tau0*params.dt*params.Mt;
 
     params.pts_cell = (int) (params.nuc_rad/dxd);
+    params.useLineConfig = GetSetDesignSetting()->useLineConfig;
 
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/top.txt", &params.top);
