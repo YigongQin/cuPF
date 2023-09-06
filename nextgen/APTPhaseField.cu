@@ -662,19 +662,12 @@ void APTPhaseField::evolve()
 
         for (auto & buffer : mpiManager->PFBuffer)
         {
-            std::pair<float*, int> bufferPointer = buffer.second;
-            cudaMalloc((void **)&(bufferPointer.first),  sizeof(float)*bufferPointer.second );
+            cudaMalloc((void **)&(buffer.second.first),  sizeof(float)*buffer.second.second );
         }
         for (auto & buffer : mpiManager->ArgBuffer)
         {
-            std::pair<int*, int> bufferPointer = buffer.second;
-            cudaMalloc((void **)&(bufferPointer.first),  sizeof(int)*bufferPointer.second );
-        }      
-        cudaMalloc((void **)&(mpiManager->PFBuffer["sendR"]).first,  sizeof(float)*mpiManager->PFBuffer["sendR"].second);
-        cudaMalloc((void **)&(mpiManager->PFBuffer["recvL"]).first,  sizeof(float)*mpiManager->PFBuffer["recvL"].second);
-        cudaMalloc((void **)&(mpiManager->ArgBuffer["sendR"]).first,  sizeof(int)*mpiManager->ArgBuffer["sendR"].second);
-        cudaMalloc((void **)&(mpiManager->ArgBuffer["recvL"]).first,  sizeof(int)*mpiManager->ArgBuffer["recvL"].second); 
-   
+            cudaMalloc((void **)&(buffer.second.first),  sizeof(int)*buffer.second.second );
+        }     
         mpiManager->MPItransferData(0, mpiManager->data_new_float, mpiManager->PFBuffer);
         mpiManager->MPItransferData(1, mpiManager->data_old_float, mpiManager->PFBuffer);
         mpiManager->MPItransferData(2, mpiManager->data_new_int, mpiManager->ArgBuffer);

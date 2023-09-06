@@ -117,13 +117,20 @@ void MPIsetting1D::exchangeBoundaryData(int nTimeStep, std::map<std::string, std
     if ( processorIDX < numProcessorX-1 ) 
     {
         MPI_Send(mMPIBuffer["sendR"].first, mMPIBuffer["sendR"].second, MPIType, rank+1, ntag+1, comm);
-        MPI_Recv(mMPIBuffer["recvR"].first, mMPIBuffer["recvR"].second, MPIType, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
     }
     if ( processorIDX > 0 )
     {
         MPI_Recv(mMPIBuffer["recvL"].first, mMPIBuffer["recvL"].second, MPIType, rank-1, ntag+1, comm, MPI_STATUS_IGNORE);
+    }
+    if ( processorIDX > 0 )   
+    {
         MPI_Send(mMPIBuffer["sendL"].first, mMPIBuffer["sendL"].second, MPIType, rank-1, ntag+2, comm);
-    }    
+    }
+    if ( processorIDX < numProcessorX-1 )
+    {
+        MPI_Recv(mMPIBuffer["recvR"].first, mMPIBuffer["recvR"].second, MPIType, rank+1, ntag+2, comm, MPI_STATUS_IGNORE);
+    }
+ 
 }
 
 /*
