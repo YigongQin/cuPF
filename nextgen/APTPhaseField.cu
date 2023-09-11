@@ -466,7 +466,7 @@ nuncl_possibility(float delT, float d_delT)
 
 
 __global__ void
-add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, curandState* states, 
+add_nucl(float ph, int arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
         float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
@@ -483,19 +483,52 @@ add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float*
       int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell;
       int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
       int glob_k = (2*cP.pts_cell+1)*k + cP.pts_cell; 
-
-      float T_cell = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t-Tmac[0], 
-                                         Nx, Ny, Nz, Nt, Dx, Dt);
-      float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
-                                         Nx, Ny, Nz, Nt, Dx, Dt);                                        
-      float delT = cP.Tliq - T_cell_dt;
-      float d_delT = T_cell - T_cell_dt;
-      float nuc_posb = nuncl_possibility(delT, d_delT);
-      //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
-      if (curand_uniform(states+C)<nuc_posb)
+      int glob_C = glob_k*fnx*fny + glob_j*fnx + glob_i;
+    
+      for (int pf_id = 0; pf_id<cP.NUM_PF; pf_id++)
       {
-         printf("nucleation starts at cell no. %d \n", C);
-      } 
+        int loc = glob_C + pf_id*fnx*fny*fnz;
+        if (ph[loc]>LS)
+        {
+          nucl_status[C] = 1;
+        }
+      }
+
+      if (nucl_status[C]==0)
+      {
+
+        float T_cell = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t-Tmac[0], 
+                                            Nx, Ny, Nz, Nt, Dx, Dt);
+        float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
+                                            Nx, Ny, Nz, Nt, Dx, Dt);                                        
+        float delT = cP.Tliq - T_cell_dt;
+        float d_delT = T_cell - T_cell_dt;
+        float nuc_posb = nuncl_possibility(delT, d_delT);
+        //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
+        if (curand_uniform(states+C)<nuc_posb)
+        {
+            int rand_PF = curand(states+C)%cP.num_theta;
+            printf("time %f, nucleation starts at cell no. %d get the same orientation with grain no. %d\n", t, C, rand_PF);
+
+            for (int lock=-cP.pts_cell; lock<=cP.pts_cell; lock++)
+            {
+                for (int locj=-cP.pts_cell; locj<=cP.pts_cell; locj++)
+                {
+                    for (int loci=-cP.pts_cell; loci<=cP.pts_cell; loci++)
+                    {
+                        int os_loc = glob_C + lock*fnx*fny + locj*fnx + loci;
+                        float dist_C = cP.dx*( (1.0f+cP.pts_cell)/2.0f - sqrtf(loci*loci + locj*locj + lock*lock) );
+                        ph[os_loc] = tanhf( dist_C /cP.sqrt2 );
+                        if (ph[os_loc]>LS)
+                        {
+                            arg[os_loc] = rand_PF;
+                        }
+                    }
+                }
+            }
+            nucl_status[C] = 1;
+        } 
+      }
     }
   }
 }
@@ -777,7 +810,7 @@ void APTPhaseField::evolve()
 
         if (designSetting->includeNucleation)
         {
-            add_nucl<<<num_block_c, blocksize_2d>>>(nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, dStates, \
+            add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
                 2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt); 
         }
 

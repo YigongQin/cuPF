@@ -56,6 +56,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
             case 'b':
                 save3DField = true;    
                 cout << "save entire 3D data" << endl;
+                break;
             case 'l':
                 useLineConfig = true;
                 break;
