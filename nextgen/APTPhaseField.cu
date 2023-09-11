@@ -437,7 +437,7 @@ init_nucl_status(float* ph, int* nucl_status, int cnx, int cny, int cnz, int fnx
   {
       int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell;
       int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell;
-      int glob_k = (2*cP.pts_cell+1)*j + cP.pts_cell;
+      int glob_k = (2*cP.pts_cell+1)*k + cP.pts_cell;
 
       int glob_C = glob_k*fnx*fny + glob_j*fnx + glob_i;   
 
@@ -455,7 +455,7 @@ init_nucl_status(float* ph, int* nucl_status, int cnx, int cny, int cnz, int fnx
 __inline__ __device__ float 
 nuncl_possibility(float delT, float d_delT)
 {
-  float slope = 0.5f*(delT-cP.undcool_mean)*(delT-cP.undcool_mean)/cP.undcool_std/cP.undcool_std;
+  float slope = -0.5f*(delT-cP.undcool_mean)*(delT-cP.undcool_mean)/cP.undcool_std/cP.undcool_std;
   slope = expf(slope); 
   float density = cP.nuc_Nmax/(sqrtf(2.0f*M_PI)*cP.undcool_std) *slope*d_delT;
    // float nuc_posb = 4.0f*cP.nuc_rad*cP.nuc_rad*density; // 2D
@@ -491,7 +491,7 @@ add_nucl(int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float*
       float delT = cP.Tliq - T_cell_dt;
       float d_delT = T_cell - T_cell_dt;
       float nuc_posb = nuncl_possibility(delT, d_delT);
-
+      //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
       if (curand_uniform(states+C)<nuc_posb)
       {
          printf("nucleation starts at cell no. %d \n", C);
@@ -703,6 +703,7 @@ void APTPhaseField::evolve()
       num_block_c = (cnx*cny*cnz + blocksize_2d-1)/blocksize_2d;   
 
       cudaMalloc((void **) &dStates, sizeof(curandState) * (length+params.noi_period));
+      cudaMalloc((void **) &nucleationStatus, sizeof(int) * cnx*cny*cnz);
       init_rand_num<<<(length+params.noi_period+blocksize_2d-1)/blocksize_2d, blocksize_2d>>>(dStates, params.seed_val, length+params.noi_period);
 
       init_nucl_status<<<num_block_c, blocksize_2d>>>(phi_old, nucleationStatus, cnx, cny, cnz, fnx, fny);
@@ -759,7 +760,7 @@ void APTPhaseField::evolve()
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    while (kt < 1000)
+    while (kt < 5000)
     {
         //for (int kt=0; kt<params.Mt/2; kt++){
         //for (int kt=0; kt<0; kt++){

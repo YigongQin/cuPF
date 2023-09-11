@@ -31,9 +31,9 @@ zmin = 0
 
 
 # nuleation parameters
-undcool_mean = 0.75   # Kelvin  nuleantion barrier
-undcool_std = 0.1   # Kelvin fixed
-nuc_Nmax = 0      # 1/um^2 density; 0 to very big number 
+undcool_mean = 2   # Kelvin  nuleantion barrier
+undcool_std = 0.5   # Kelvin fixed
+nuc_Nmax = 0.001      # 1/um^2 density; 0 to very big number 
 nuc_rad = 0.3      # 0.2 um radius of a nucleai
 
 ## noise
@@ -125,7 +125,7 @@ for i in range(nx*ny*nz*nt):
     ti = int(i/(nx*ny*nz))
     
     #T[i] = 920 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
-    T[i] = G*( z[zi] - Rmax*t[ti] - z0)    
+    T[i] = Tmelt - c_infty*m_slope + G*( z[zi] - Rmax*t[ti] - z0)    
     if i==nx*ny*nz*nt-1: print(T[i], G, z[zi], Rmax, t[ti], z0)
     if ti==0:
        psi[i] = z0 - z[zi]      
