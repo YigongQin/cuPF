@@ -389,8 +389,17 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 
 void PhaseField::output(const string outputFolder, bool save3DField)
 {
-
-    string outputFormat = "Epita_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
+    const DesignSettingData* designSetting = GetSetDesignSetting(); 
+    string grainType;
+    if (designSetting->includeNucleation)
+    {
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax);
+    }
+    else
+    {
+        grainType = "Epita";
+    }
+    string outputFormat = grainType + "_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
