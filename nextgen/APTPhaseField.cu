@@ -466,7 +466,7 @@ nuncl_possibility(float delT, float d_delT)
 
 
 __global__ void
-add_nucl(float ph, int arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
+add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
         float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
