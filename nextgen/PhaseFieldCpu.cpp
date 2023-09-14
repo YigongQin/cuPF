@@ -8,12 +8,14 @@
 #include <string>
 #include <hdf5.h>
 #include <random>
+#include <assert.h>
 
 #define LS -0.995
 
 using namespace std;
 
-void PhaseField::parseInputParams(std::string fileName){
+void PhaseField::parseInputParams(std::string fileName)
+{
     const DesignSettingData* designSetting = GetSetDesignSetting();
 
     float nts;
@@ -395,7 +397,7 @@ void PhaseField::initField(){
 std::string to_stringp(float a_value, int n );
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype);
 
-void PhaseField::output(const string outputFolder, bool save3DField)
+void PhaseField::output()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     string grainType;
@@ -411,7 +413,7 @@ void PhaseField::output(const string outputFolder, bool save3DField)
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
-    outputFile = outputFolder + '/' + outputFile;
+    outputFile = designSetting->outputFolder + '/' + outputFile;
     cout << "save file name" << outputFile << endl;
 
     hid_t  h5_file; 
@@ -423,7 +425,7 @@ void PhaseField::output(const string outputFolder, bool save3DField)
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
-    if (save3DField == true)
+    if (designSetting->save3DField == true)
     {   
         if (designSetting->useLineConfig)
         {
@@ -446,6 +448,15 @@ void PhaseField::output(const string outputFolder, bool save3DField)
     }
 
     H5Fclose(h5_file);
+
+    if (designSetting->save3DField == true)
+    {
+        string cmd = "python3 saveVTKdata.py --rawdat_dir " + designSetting->outputFolder + " --rank " + to_string(GetMPIManager()->rank) + " --seed " + to_string(params.seed_val);
+        int result = system(cmd.c_str()); 
+        assert(result == 0);
+    }
+
+
 }
 
 std::string to_stringp(float a_value, int n )
