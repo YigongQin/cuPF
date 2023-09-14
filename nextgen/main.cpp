@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     cout << "cuda setup" <<endl;
     PFSolver->cudaSetup();
     PFSolver->evolve();
-    PFSolver->output(designSetting->outputFolder, designSetting->save3DField);
+    PFSolver->output();
 
     MPI_Finalize();
 

@@ -18,7 +18,7 @@ public:
 	void initField();
 	virtual void cudaSetup(); // setup cuda for every GPU
 	virtual void evolve(); // evolve the field with input
-    void output(const std::string outputFolder, bool save3DField); 
+    void output(); 
 	inline void SetMPIManager(MPIsetting* mpiManager);
 	inline MPIsetting* GetMPIManager() const;
 	inline void SetDesignSetting(const DesignSettingData* designSetting);
