@@ -14,6 +14,7 @@
 using namespace std;
 
 void PhaseField::parseInputParams(std::string fileName){
+    const DesignSettingData* designSetting = GetSetDesignSetting();
 
     float nts;
     float ictype;
@@ -169,7 +170,14 @@ void PhaseField::parseInputParams(std::string fileName){
 
     params.nx = (int) round(params.lxd/params.dx/params.W0);//global cells 
     params.ny = (int) round(params.asp_ratio_yx*params.nx);
-    params.nz = (int) round(params.moving_ratio*params.nx);
+    if (designSetting->useLineConfig == true)
+    {
+        params.nz = (int) round(params.moving_ratio*params.nx);
+    }
+    else
+    {
+        params.nz = (int) round(params.asp_ratio_zx*params.nx);
+    }
     params.nz_full = (int) round(params.asp_ratio_zx*params.nx);
     params.lxd = params.nx*dxd;
     params.lyd = params.ny*dxd;
