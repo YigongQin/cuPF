@@ -32,6 +32,7 @@ using namespace std;
 
 
 __constant__ GlobalConstants cP;
+__constant__ DesignSettingData dP;
 
 __inline__ __device__ float
 kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
@@ -331,7 +332,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 }
                 else
                 {
-                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                    Tinterp = - cP.R*1e6 *t;
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
@@ -609,6 +610,7 @@ void APTPhaseField::cudaSetup()
 
     // pass all the read-only params into global constant
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
+    cudaMemcpyToSymbol(dP, GetSetDesignSetting, sizeof(DesignSettingData))
 
     // create forcing field
     

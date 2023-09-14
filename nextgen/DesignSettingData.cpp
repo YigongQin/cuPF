@@ -6,7 +6,8 @@
 using namespace std;
 
 DesignSettingData::DesignSettingData()
-: useMPI(false), useLineConfig(false), includeNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0)
+: useMPI(false), useLineConfig(false), includeNucleation(false), pureNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0),
+  bcX(0), bcY(0), bcZ(0)
 {
 }
 
@@ -28,13 +29,14 @@ void DesignSettingData::getOptions(int argc, char** argv)
         {"savebulk", 1, 0,  'b'},
         {"lineConfig",     1, 0,  'l'},
         {"includeNuclean", 1, 0,  'n'},
+        {"boundaryCondition", 1, 0,  'bc'},
         {0 ,0, 0, 0}
     };
 
     int opt;    
 
 
-    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:l:n?", long_options, NULL)) != EOF) 
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:l:n:bc?", long_options, NULL)) != EOF) 
     {
         switch (opt) 
         {
@@ -62,7 +64,15 @@ void DesignSettingData::getOptions(int argc, char** argv)
                 break;
             case 'n':
                 includeNucleation = true;
+                if (atoi(optarg) == 1)
+                    pureNucleation = true;
                 break;            
+            case 'bc':
+                int givenBC = atoi(optarg);
+                bcX = (int) (givenBC/100);
+                bcY = (int) ((givenBC - 100*bcX)/10);
+                bcZ = (int) (givenBC%10);
+                break;
         }
     }
 }

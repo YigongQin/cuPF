@@ -339,55 +339,55 @@ void PhaseField::initField(){
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    
-    for(int id=0; id<length; id++){
+    for(int id=0; id<length; id++)
+    {
       int k = id/(fnx*fny);
       int k_r = id - k*fnx*fny;
       int j = k_r/fnx;
       int i = k_r%fnx; 
       
-      if ( (i>params.haloWidth-1) && (i<fnx-params.haloWidth) && (j>params.haloWidth-1) && (j<fny-params.haloWidth) && (k>params.haloWidth-1) && (k<fnz-params.haloWidth)){
-      int kx = (int) (( x[i] - mac.X_mac[0] )/Dx);
-      float delta_x = ( x[i] - mac.X_mac[0] )/Dx - kx;
-         //printf("%f ",delta_x);
-      int ky = (int) (( y[j] - mac.Y_mac[0] )/Dy);
-      float delta_y = ( y[j] - mac.Y_mac[0] )/Dy - ky;
+      if ( (i>params.haloWidth-1) && (i<fnx-params.haloWidth) && (j>params.haloWidth-1) && (j<fny-params.haloWidth) && (k>params.haloWidth-1) && (k<fnz-params.haloWidth))
+      {
+        int kx = (int) (( x[i] - mac.X_mac[0] )/Dx);
+        float delta_x = ( x[i] - mac.X_mac[0] )/Dx - kx;
+            //printf("%f ",delta_x);
+        int ky = (int) (( y[j] - mac.Y_mac[0] )/Dy);
+        float delta_y = ( y[j] - mac.Y_mac[0] )/Dy - ky;
 
-      int kz = (int) (( z[k] - mac.Z_mac[0] )/Dz);
-      float delta_z = ( z[k] - mac.Z_mac[0] )/Dz - kz;
+        int kz = (int) (( z[k] - mac.Z_mac[0] )/Dz);
+        float delta_z = ( z[k] - mac.Z_mac[0] )/Dz - kz;
 
-      if (kx==mac.Nx-1) {kx = mac.Nx-2; delta_x =1.0f;}
-      if (ky==mac.Ny-1) {ky = mac.Ny-2; delta_y =1.0f;}
-      if (kz==mac.Nz-1) {kz = mac.Nz-2; delta_z =1.0f;}
+        if (kx==mac.Nx-1) {kx = mac.Nx-2; delta_x =1.0f;}
+        if (ky==mac.Ny-1) {ky = mac.Ny-2; delta_y =1.0f;}
+        if (kz==mac.Nz-1) {kz = mac.Nz-2; delta_z =1.0f;}
 
-      int offset =  kx + ky*mac.Nx + kz*mac.Nx*mac.Ny;
-      int offset_n =  kx + ky*mac.Nx + (kz+1)*mac.Nx*mac.Ny;
-      //if (offset>mac.Nx*mac.Ny-1-1-mac.Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
-      psi[id] = ( (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset+mac.Nx ] \
-               +delta_x*(1.0f-delta_y)*mac.psi_mac[ offset+1 ] +   delta_x*delta_y*mac.psi_mac[ offset+mac.Nx+1 ] )*(1.0f-delta_z) + \
-             ( (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset_n ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset_n+mac.Nx ] \
-               +delta_x*(1.0f-delta_y)*mac.psi_mac[ offset_n+1 ] +   delta_x*delta_y*mac.psi_mac[ offset_n+mac.Nx+1 ] )*delta_z;
+        int offset =  kx + ky*mac.Nx + kz*mac.Nx*mac.Ny;
+        int offset_n =  kx + ky*mac.Nx + (kz+1)*mac.Nx*mac.Ny;
+        //if (offset>mac.Nx*mac.Ny-1-1-mac.Nx) printf("%d, %d, %d, %d  ", i,j,kx,ky);
+        psi[id] = ( (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset+mac.Nx ] \
+                +delta_x*(1.0f-delta_y)*mac.psi_mac[ offset+1 ] +   delta_x*delta_y*mac.psi_mac[ offset+mac.Nx+1 ] )*(1.0f-delta_z) + \
+                ( (1.0f-delta_x)*(1.0f-delta_y)*mac.psi_mac[ offset_n ] + (1.0f-delta_x)*delta_y*mac.psi_mac[ offset_n+mac.Nx ] \
+                +delta_x*(1.0f-delta_y)*mac.psi_mac[ offset_n+1 ] +   delta_x*delta_y*mac.psi_mac[ offset_n+mac.Nx+1 ] )*delta_z;
 
-  
-     //   psi[id]=0.0;
-      psi[id] = psi[id]/params.W0;
-      phi[id]=tanhf(psi[id]/params.sqrt2);
-     //   Uc[id]=0.0;
-      if (phi[id]>LS){
+        psi[id] = psi[id]/params.W0;
+        phi[id]=tanhf(psi[id]/params.sqrt2);
 
-        alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.haloWidth)+(i-1)];
-       if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<"found alpha out of bounds at "<<(j-1)*(fnx-2*params.haloWidth)+(i-1)<< " alpha "<<alpha[id]<<endl;
-       }
-
-      else {alpha[id]=0;}
+        if (phi[id]>LS && GetSetDesignSetting()->pureNucleation == false)
+        {
+            alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.haloWidth)+(i-1)];
+            if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<"found alpha out of bounds at "<<(j-1)*(fnx-2*params.haloWidth)+(i-1)<< " alpha "<<alpha[id]<<endl;
+        }
+        else 
+        {
+            alpha[id]=0;
+        }
       }
-
-    else{
-       psi[id]=0.0f;
-       phi[id]=0.0f;
-     //  Uc[id]=0.0f;
-       alpha[id]=0;
- 
-    }
+      else
+      {
+        psi[id]=0.0f;
+        phi[id]=0.0f;
+        alpha[id]=0;
+      }
     }
 
 

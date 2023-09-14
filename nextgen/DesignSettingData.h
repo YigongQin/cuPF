@@ -14,11 +14,13 @@ public:
     bool useMPI;
     bool useLineConfig;
     bool includeNucleation;
+    bool pureNucleation;
     bool useAPT;
     bool save3DField;
 
-    int  mpiDim;
-    int  seedValue;
+    int mpiDim;
+    int seedValue;
+    int bcX, bcY, bcZ;
 
     std::string inputFile;
     std::string thermalInputFolder;
