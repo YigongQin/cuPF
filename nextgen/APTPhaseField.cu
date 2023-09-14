@@ -32,7 +32,6 @@ using namespace std;
 
 
 __constant__ GlobalConstants cP;
-__constant__ DesignSettingData dP;
 
 __inline__ __device__ float
 kine_ani(float ux, float uy, float uz, float cosa, float sina, float cosb, float sinb){
@@ -610,7 +609,6 @@ void APTPhaseField::cudaSetup()
 
     // pass all the read-only params into global constant
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
-    cudaMemcpyToSymbol(dP, GetSetDesignSetting, sizeof(DesignSettingData));
 
     // create forcing field
     
