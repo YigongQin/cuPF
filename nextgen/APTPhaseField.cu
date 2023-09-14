@@ -610,7 +610,7 @@ void APTPhaseField::cudaSetup()
 
     // pass all the read-only params into global constant
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
-    cudaMemcpyToSymbol(dP, GetSetDesignSetting, sizeof(DesignSettingData))
+    cudaMemcpyToSymbol(dP, GetSetDesignSetting, sizeof(DesignSettingData));
 
     // create forcing field
     
