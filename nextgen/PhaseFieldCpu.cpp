@@ -451,7 +451,7 @@ void PhaseField::output()
 
     if (designSetting->save3DField == true)
     {
-        string cmd = "python3 saveVTKdata.py --rawdat_dir " + designSetting->outputFolder + " --rank " + to_string(GetMPIManager()->rank) + " --seed " + to_string(params.seed_val);
+        string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --rank=" + to_string(GetMPIManager()->rank) + " --seed=" + to_string(params.seed_val);
         int result = system(cmd.c_str()); 
         assert(result == 0);
     }
