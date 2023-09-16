@@ -6,7 +6,7 @@
 using namespace std;
 
 DesignSettingData::DesignSettingData()
-: useMPI(false), useLineConfig(false), includeNucleation(false), pureNucleation(false), useAPT(true), save3DField(false), mpiDim(1), seedValue(0),
+: useMPI(false), useLineConfig(false), includeNucleation(false), pureNucleation(false), useAPT(true), save3DField(0), mpiDim(1), seedValue(0),
   bcX(0), bcY(0), bcZ(0)
 {
 }
@@ -56,7 +56,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
                 mpiDim = atoi(optarg);
                 break;
             case 'b':
-                save3DField = true;    
+                save3DField = atoi(optarg);    
                 cout << "save entire 3D data" << endl;
                 break;
             case 'l':

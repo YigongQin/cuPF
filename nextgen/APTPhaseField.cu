@@ -88,69 +88,10 @@ APTini_PF(float* PFs, float* phi, int* alpha_m, int* active_args){
   }
 }
 
-__global__ void
-APTset_BC_3D(float* ph, int* active_args, int max_area){
-   // periodic x-y plance, no flux in z 
-   // dimension with R^{2D} * PF
 
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF;
-  int pf = index/max_area;
-  int bc_idx = index- pf*max_area;     
-
-  int area_z = fnx*fny;
-  if ( (bc_idx<area_z) && (pf<NUM_PF) ){
-     int zj = bc_idx/fnx;
-     int zi = bc_idx - zj*fnx;
-
-     int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
-     int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
-     int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
-     int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
-     ph[d_out] = ph[d_in];
-     ph[u_out] = ph[u_in];
-     active_args[d_out] = active_args[d_in];
-     active_args[u_out] = active_args[u_in];
-
-  }
-
-  int area_y = fnx*fnz;
-  if ( (bc_idx<area_y) && (pf<NUM_PF) ){
-     int zk = bc_idx/fnx;
-     int zi = bc_idx - zk*fnx;
-
-     int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
-     int b_in = L2G_4D(zi, fny-2, zk, pf, fnx, fny, fnz);
-     int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
-     int t_in = L2G_4D(zi, 1, zk, pf, fnx, fny, fnz);
-     ph[b_out] = ph[b_in];
-     ph[t_out] = ph[t_in];
-     active_args[b_out] = active_args[b_in];
-     active_args[t_out] = active_args[t_in];
-
-  }
-
-  int area_x = fny*fnz;
-  if ( (bc_idx<area_x) && (pf<NUM_PF) ){
-
-     int zk = bc_idx/fny;
-     int zj = bc_idx - zk*fny;
-
-     int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
-     int l_in = L2G_4D(fnx-2, zj, zk, pf, fnx, fny, fnz);
-     int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
-     int r_in = L2G_4D(1, zj, zk, pf, fnx, fny, fnz);
-     ph[l_out] = ph[l_in];
-     ph[r_out] = ph[r_in];
-     active_args[l_out] = active_args[l_in];
-     active_args[r_out] = active_args[r_in];     
-
-  }
-
-}
 
 __global__ void
-APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
+APTsetBC3D(float* ph, int* active_args, int max_area,
                    int processorIDX, int processorIDY, int processorIDZ, int numProcessorX, int numProcessorY, int numProcessorZ)
 {
 
@@ -167,17 +108,19 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
   {
      int zj = bc_idx/fnx;
      int zi = bc_idx - zj*fnx;
+     int exchangeZIndex_d = cP.bcZ==0 ? 2 : fnz-2;
+     int exchangeZIndex_u = cP.bcZ==0 ? fnz-3 : 1;
      if (processorIDZ==0)
      {
         int d_out = L2G_4D(zi, zj, 0, pf, fnx, fny, fnz);
-        int d_in  = L2G_4D(zi, zj, 2, pf, fnx, fny, fnz);
+        int d_in  = L2G_4D(zi, zj, exchangeZIndex_d, pf, fnx, fny, fnz);
         ph[d_out] = ph[d_in];
         active_args[d_out] = active_args[d_in];
      }
      if (processorIDZ==numProcessorZ-1)
      {
         int u_out = L2G_4D(zi, zj, fnz-1, pf, fnx, fny, fnz);
-        int u_in  = L2G_4D(zi, zj, fnz-3, pf, fnx, fny, fnz);
+        int u_in  = L2G_4D(zi, zj, exchangeZIndex_u, pf, fnx, fny, fnz);
         ph[u_out] = ph[u_in];
         active_args[u_out] = active_args[u_in];
      }
@@ -188,17 +131,19 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
   {
      int zk = bc_idx/fnx;
      int zi = bc_idx - zk*fnx;
+     int exchangeYIndex_b = cP.bcY==0 ? 2 : fny-2;
+     int exchangeYIndex_t = cP.bcY==0 ? fny-3 : 1;
      if (processorIDY==0)
      {
         int b_out = L2G_4D(zi, 0, zk, pf, fnx, fny, fnz);
-        int b_in = L2G_4D(zi, 2, zk, pf, fnx, fny, fnz);
+        int b_in = L2G_4D(zi, exchangeYIndex_b, zk, pf, fnx, fny, fnz);
         ph[b_out] = ph[b_in];
         active_args[b_out] = active_args[b_in];
      }
      if (processorIDY==numProcessorY-1)
      {
         int t_out = L2G_4D(zi, fny-1, zk, pf, fnx, fny, fnz);
-        int t_in = L2G_4D(zi, fny-3, zk, pf, fnx, fny, fnz);
+        int t_in = L2G_4D(zi, exchangeYIndex_t, zk, pf, fnx, fny, fnz);
         ph[t_out] = ph[t_in];
         active_args[t_out] = active_args[t_in];
      }
@@ -207,20 +152,21 @@ APTset_nofluxBC_3D(float* ph, int* active_args, int max_area,
   int area_x = fny*fnz;
   if ( (bc_idx<area_x) && (pf<NUM_PF))
   {
-
      int zk = bc_idx/fny;
      int zj = bc_idx - zk*fny;
+     int exchangeXIndex_l = cP.bcX==0 ? 2 : fnx-2;
+     int exchangeXIndex_r = cP.bcX==0 ? fnx-3 : 1;
      if (processorIDX==0)
      {
         int l_out = L2G_4D(0, zj, zk, pf, fnx, fny, fnz);
-        int l_in = L2G_4D(2, zj, zk, pf, fnx, fny, fnz);
+        int l_in = L2G_4D(exchangeXIndex_l, zj, zk, pf, fnx, fny, fnz);
         ph[l_out] = ph[l_in];
         active_args[l_out] = active_args[l_in];
      }
      if (processorIDX==numProcessorX-1)
      {
         int r_out = L2G_4D(fnx-1, zj, zk, pf, fnx, fny, fnz);
-        int r_in = L2G_4D(fnx-3, zj, zk, pf, fnx, fny, fnz);
+        int r_in = L2G_4D(exchangeXIndex_r, zj, zk, pf, fnx, fny, fnz);
         ph[r_out] = ph[r_in];
         active_args[r_out] = active_args[r_in]; 
      }
@@ -683,7 +629,7 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
        movingDomainManager->tip_front -=1 ;
     }
 
-    APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+    APTsetBC3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
     movingDomainManager->lowsl = 1;
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -694,15 +640,10 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
 void APTPhaseField::setBC(bool useLineConfig, float* ph, int* active_args)
 {
     MPIsetting* mpiManager = GetMPIManager();
-    if (useLineConfig == true)
-    {
-        APTset_BC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area);
-    }
-    else
-    {
-        APTset_nofluxBC_3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area,
+
+    APTsetBC3D<<<num_block_PF1d, blocksize_1d>>>(ph, active_args, max_area,
              mpiManager->processorIDX, mpiManager->processorIDY, mpiManager->processorIDZ, mpiManager->numProcessorX, mpiManager->numProcessorY, mpiManager->numProcessorZ);
-    }
+
 }
 
 
@@ -837,6 +778,8 @@ void APTPhaseField::evolve()
                 moveDomain(movingDomainManager);
             }
         }
+
+        if ()
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
         APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);

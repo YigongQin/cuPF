@@ -196,6 +196,10 @@ void PhaseField::parseInputParams(std::string fileName)
 
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/top.txt", &params.top);
+
+    params.bcX = designSetting->bcX;
+    params.bcY = designSetting->bcY;
+    params.bcZ = designSetting->bcZ;
   //  params.num_samples = (int) (params.top/params.dx/params.W0); // (params.nts+1);
   //  params.num_samples = 100*(params.num_samples/100);
 
@@ -425,7 +429,7 @@ void PhaseField::output()
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
-    if (designSetting->save3DField == true)
+    if (designSetting->save3DField > 0)
     {   
         if (designSetting->useLineConfig)
         {
@@ -449,7 +453,7 @@ void PhaseField::output()
 
     H5Fclose(h5_file);
 
-    if (designSetting->save3DField == true)
+    if (designSetting->save3DField > 0)
     {
         string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --rank=" + to_string(GetMPIManager()->rank) + " --seed=" + to_string(params.seed_val)
                      + " --lxd=" + to_string(params.lxd);
