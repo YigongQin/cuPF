@@ -735,7 +735,7 @@ void APTPhaseField::evolve()
 
     float t_cur_step;
     int kts = params.Mt/params.nts;
-    int fieldkts = params.Mt/designSetting->save3DField;
+    int fieldkts = designSetting->save3DField>0 ? params.Mt/designSetting->save3DField : 1e8;
     printf("steps between qois %d, no. qois %d\n", kts, params.nts);
     printf("steps between fields %d, no. fields %d\n", fieldkts, designSetting->save3DField);
 

@@ -16,7 +16,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
     inputFile = argv[1]; 
     thermalInputFolder = "forcing/case";
     // this output folder should be specified differently for each system
-    outputFolder = "/scratch/07428/ygqin/graph/"; 
+    outputFolder = "/scratch1/07428/ygqin/graph/"; 
 
     static struct option long_options[] = 
     {
@@ -26,17 +26,17 @@ void DesignSettingData::getOptions(int argc, char** argv)
         {"seed",     1, 0,  's'},
         {"output",   1, 0,  'o'},
         {"mpiDim",   1, 0,  'm'},
-        {"savebulk", 1, 0,  'b'},
+        {"saveField", 1, 0,  'd'},
         {"lineConfig",     1, 0,  'l'},
         {"includeNuclean", 1, 0,  'n'},
-        {"boundaryCondition", 1, 0,  'c'},
+        {"boundaryCondition", 1, 0,  'b'},
         {0 ,0, 0, 0}
     };
 
     int opt;    
 
 
-    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:l:n:c?", long_options, NULL)) != EOF) 
+    while ((opt = getopt_long(argc, argv, "b:f:o:a:s:m:l:n:d?", long_options, NULL)) != EOF) 
     {
         switch (opt) 
         {
@@ -55,7 +55,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
             case 'm':
                 mpiDim = atoi(optarg);
                 break;
-            case 'b':
+            case 'd':
                 save3DField = atoi(optarg);    
                 cout << "save entire 3D data" << endl;
                 break;
@@ -65,10 +65,12 @@ void DesignSettingData::getOptions(int argc, char** argv)
             case 'n':
                 includeNucleation = true;
                 if (atoi(optarg) == 1)
+                {
                     pureNucleation = true;
+                }
                 break;            
-            case 'c':
-                int givenBC = atoi(optarg);
+            case 'b':
+                givenBC = atoi(optarg);
                 bcX = (int) (givenBC/100);
                 bcY = (int) ((givenBC - 100*bcX)/10);
                 bcZ = (int) (givenBC%10);
