@@ -29,7 +29,7 @@ QOILine::QOILine(const GlobalConstants params)
 
 
 
-void QOILine::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
                         const float* z, const int* loss_area, int move_count)
 {
 
@@ -152,7 +152,7 @@ void QOILine::searchJunctionsOnImage(const GlobalConstants& params, const int* a
      }
 }
 
-void QOILine::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz)
+void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz)
 {
 
      bool contin_flag = true;
@@ -187,7 +187,7 @@ QOI3D::QOI3D(const GlobalConstants params)
 }
 
 
-void QOI3D::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
+void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
 {
 
      // cur_tip here inludes the halo

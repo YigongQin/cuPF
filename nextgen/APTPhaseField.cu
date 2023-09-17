@@ -272,13 +272,16 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
                 float Tinterp;
 
-                if (cP.useLineConfig)
+                if (cP.thermalType == 1)
                 {
-                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
-                }
-                else if (cP.underCoolingRate>0.0f)
-                {
-                    Tinterp = - cP.underCoolingRate*1e6 *t;
+                    if (cP.underCoolingRate>0.0f)
+                    {
+                        Tinterp = - cP.underCoolingRate*1e6 *t;
+                    }
+                    else
+                    {
+                        Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                    }        
                 }
                 else
                 {
@@ -814,14 +817,7 @@ void APTPhaseField::evolve()
   // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
   // cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
 
-   if (designSetting->useLineConfig)
-   {
-       qois->searchJunctionsOnImage(params, alpha_i_full);
-   }
-   else
-   {
-       qois->searchJunctionsOnImage(params, alpha);
-   }
+
 }
 
 
