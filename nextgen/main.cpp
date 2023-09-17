@@ -61,7 +61,16 @@ int main(int argc, char** argv)
     PFSolver->params.seed_val = designSetting->seedValue;
     PFSolver->parseInputParams(designSetting->inputFile);
     PFSolver->cpuSetup(mpiManager);
-    PFSolver->qois = new QOI(PFSolver->params);
+
+    if (designSetting->useLineConfig == true)
+    {
+        PFSolver->qois = new QOILine(PFSolver->params);
+    }
+    else
+    {
+        PFSolver->qois = new QOI3D(PFSolver->params);
+    }
+    
 
     PFSolver->SetMPIManager(mpiManager);
 

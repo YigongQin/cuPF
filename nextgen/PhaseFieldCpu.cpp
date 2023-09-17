@@ -423,6 +423,15 @@ void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::st
 void PhaseField::OutputQoIs()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
+    if (designSetting->useLineConfig)
+    {
+        qois->searchJunctionsOnImage(params, alpha_i_full);
+    }
+    else
+    {
+        qois->searchJunctionsOnImage(params, alpha);
+    }
+
     string grainType;
     if (designSetting->includeNucleation)
     {
