@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     cout << "cuda setup" <<endl;
     PFSolver->cudaSetup();
     PFSolver->evolve();
-    PFSolver->output();
+    PFSolver->OutputQoIs();
 
     MPI_Finalize();
 
