@@ -30,6 +30,7 @@ void PhaseField::parseInputParams(std::string fileName)
         // Output the text from the file
         //getParam(lineText, "G", params.G);
         //getParam(lineText, "R", params.R); 
+        getParam(lineText, "underCoolingRate", params.underCoolingRate); 
         getParam(lineText, "delta", params.delta); 
         getParam(lineText, "k", params.k); 
         //getParam(lineText, "c_infm", params.c_infm); 
@@ -192,7 +193,6 @@ void PhaseField::parseInputParams(std::string fileName)
     params.tmax = params.tau0*params.dt*params.Mt;
 
     params.pts_cell = (int) (params.nuc_rad/dxd);
-    params.useLineConfig = GetSetDesignSetting()->useLineConfig;
 
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/top.txt", &params.top);
@@ -200,8 +200,27 @@ void PhaseField::parseInputParams(std::string fileName)
     params.bcX = designSetting->bcX;
     params.bcY = designSetting->bcY;
     params.bcZ = designSetting->bcZ;
-  //  params.num_samples = (int) (params.top/params.dx/params.W0); // (params.nts+1);
-  //  params.num_samples = 100*(params.num_samples/100);
+
+    if (designSetting->useLineConfig || params.underCoolingRate>0.0)
+    {
+        params.thermalType = 1;
+    }
+    else
+    {
+        params.thermalType = 0;
+    }
+
+    if (GetMPIManager()->rank==0)
+    {
+        string thermalType = params.thermalType ==1 ? "analytic" : "interpolation";
+        string bcX = params.bcX == 0 ? "noflux" : "periodic";
+        string bcY = params.bcY == 0 ? "noflux" : "periodic";
+        string bcZ = params.bcZ == 0 ? "noflux" : "periodic";
+        cout << "thermalType: " << thermalType << endl;
+        cout << "bcX: " << bcX << endl;
+        cout << "bcY: " << bcY << endl;
+        cout << "bcZ: " << bcZ << endl;
+    }
 
 }
 
@@ -401,7 +420,7 @@ void PhaseField::initField(){
 std::string to_stringp(float a_value, int n );
 void h5write_1d(hid_t h5_file, const char* name, void* data, int length, std::string dtype);
 
-void PhaseField::output()
+void PhaseField::OutputQoIs()
 {
     const DesignSettingData* designSetting = GetSetDesignSetting(); 
     string grainType;
@@ -418,7 +437,7 @@ void PhaseField::output()
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
     outputFile = designSetting->outputFolder + '/' + outputFile;
-    cout << "save file name" << outputFile << endl;
+    cout << "save file name: " << outputFile << endl;
 
     hid_t  h5_file; 
 
@@ -428,18 +447,6 @@ void PhaseField::output()
     h5write_1d(h5_file, "y_coordinates", y, fny, "float");
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
-
-    if (designSetting->save3DField > 0)
-    {   
-        if (designSetting->useLineConfig)
-        {
-            h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
-        }
-        else{
-            h5write_1d(h5_file, "alpha",  alpha, length, "int");
-        }
-        
-    }
 
     for (auto & qoi : qois->mQoIVectorFloatData)
     {
@@ -452,15 +459,52 @@ void PhaseField::output()
     }
 
     H5Fclose(h5_file);
-
-    if (designSetting->save3DField > 0)
-    {
-        string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --rank=" + to_string(GetMPIManager()->rank) + " --seed=" + to_string(params.seed_val)
-                     + " --lxd=" + to_string(params.lxd);
-        int result = system(cmd.c_str()); 
-        assert(result == 0);
-    }
 }
+
+void PhaseField::OutputField(int currentStep)
+{
+    const DesignSettingData* designSetting = GetSetDesignSetting(); 
+    string grainType;
+    if (designSetting->includeNucleation)
+    {
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax);
+    }
+    else
+    {
+        grainType = "Epita";
+    }
+    string outputFormat = grainType + "_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
+                          "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
+    string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
+
+    outputFile = designSetting->outputFolder + '/' + outputFile;
+    cout << "save file name " << outputFile << endl;
+
+    hid_t  h5_file; 
+
+    h5_file = H5Fcreate(outputFile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+    h5write_1d(h5_file, "x_coordinates", x, fnx, "float");
+    h5write_1d(h5_file, "y_coordinates", y, fny, "float");
+    h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
+    h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
+
+    if (designSetting->useLineConfig)
+    {
+        h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
+    }
+    else{
+        h5write_1d(h5_file, "alpha",  alpha, length, "int");
+    }
+
+    H5Fclose(h5_file);
+
+    string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --rank=" + to_string(GetMPIManager()->rank) + " --seed=" + to_string(params.seed_val)
+                    + " --lxd=" + to_string(params.lxd);
+    int result = system(cmd.c_str()); 
+    assert(result == 0);
+}
+
 
 std::string to_stringp(float a_value, int n )
 {

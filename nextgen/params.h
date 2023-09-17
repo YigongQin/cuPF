@@ -11,7 +11,8 @@ class GlobalConstants
 {
 public:
   // processing parameters
-  float G, R, delta, kin_delta;
+  int thermalType;
+  float G, R, delta, kin_delta, underCoolingRate;
 
   // physical parameters
   float k, c_infty, m_slope, c_infm, Dl, GT;
@@ -34,10 +35,9 @@ public:
   int ictype;
   int bcX, bcY, bcZ;
   int num_theta, num_nodes;
-  bool useLineConfig;
-  bool includeInterfaceAnisotropy;
 
   // anisotropy parameters
+  bool includeInterfaceAnisotropy;
   float cosa, sina, sqrt2, a_s, epsilon, a_12;
 
   // noise parameters

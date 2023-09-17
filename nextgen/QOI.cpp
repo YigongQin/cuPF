@@ -11,7 +11,7 @@
 #include <iostream>
 using namespace std;
 
-QOI::QOI(const GlobalConstants params)
+QOILine::QOILine(const GlobalConstants params)
 {
     mQoIVectorFloatData.emplace("fractions", std::vector<float>((params.nts+1)*params.num_theta));
 
@@ -29,7 +29,7 @@ QOI::QOI(const GlobalConstants params)
 
 
 
-void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
+void QOILine::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
                         const float* z, const int* loss_area, int move_count)
 {
 
@@ -93,7 +93,7 @@ void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const i
 
 }
 
-void QOI::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
+void QOILine::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
 {
      // find the args that have active phs greater or equal 3, copy the args to mQoIVectorIntData["node_region"]
      int fnx = params.fnx, fny = params.fny;
@@ -152,7 +152,7 @@ void QOI::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha
      }
 }
 
-void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz)
+void QOILine::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fnz)
 {
 
      bool contin_flag = true;
@@ -177,3 +177,94 @@ void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fn
      cur_tip -=1;
 }
 
+QOI3D::QOI3D(const GlobalConstants params)
+{
+    mQoIVectorIntData.emplace("total_area", std::vector<int>((params.nts+1)*params.num_theta));
+    // graph related QoIs
+    int repeated_index = 5;
+    mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
+    std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
+}
+
+
+void QOI3D::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
+{
+
+     // cur_tip here inludes the halo
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz, 
+         num_grains = params.num_theta, all_time = params.nts+1;
+
+     for (int k = 1; k<fnz-1; k++)
+     {
+       int offset_z = fnx*fny*k; 
+       for (int j = 1; j<fny-1; j++)
+       { 
+            for (int i = 1; i<fnx-1; i++)
+            {
+                int C = offset_z + fnx*j + i;
+                if (alpha[C]>0)
+                { 
+                    mQoIVectorIntData["total_area"][kt*num_grains+alpha[C]-1]+=1;
+                }
+            }
+       }
+     }
+}
+
+void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
+{
+     // find the args that have active phs greater or equal 3, copy the args to mQoIVectorIntData["node_region"]
+     int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
+     int offset_node_region = 0;
+     int node_cnt = 0;
+     for (int k = 0; k<fnz-1; k++)
+     {
+        for (int j = 1; j<fny-1; j++)
+        { 
+            for (int i = 1; i<fnx-1; i++)
+            {
+                int C = k*fnx*fny + j*fnx + i;
+                unordered_map<int, int> occur;
+                for (int dk = -1; dk<=1; dk++)
+                {
+                    for (int dj = -1; dj<=1; dj++)
+                    { 
+                        for (int di = -1; di<=1; di++)
+                        {
+                            int NC = (k+dk)*fnx*fny + (j+dj)*fnx + i+di;
+                            if (occur.find(alpha[NC])!=occur.end())
+                            {
+                                occur[alpha[NC]]++;
+                            }
+                            else
+                            {
+                                occur.insert({alpha[NC], 1});
+                            }
+                        }
+                    }  
+                }
+     
+                int alpha_occur=0, max_occur=0;
+                for (auto & it : occur) 
+                {
+                    alpha_occur++;
+                    max_occur = max(max_occur, it.second);
+                }          
+                if (alpha_occur>=3 && max_occur<=13)
+                { 
+                    mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures] = i;
+                    mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +1] = j;
+                    mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +2] = k;
+                    mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +3] = max_occur;
+                    int pf_count = 0;
+                    for (auto & it: occur)
+                    {
+                        mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures + 4 + pf_count] = it.first;
+                        pf_count++;
+                    } 
+                    node_cnt++;
+                }            
+            }
+        }
+     }
+}

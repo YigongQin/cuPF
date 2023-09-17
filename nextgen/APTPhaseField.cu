@@ -271,13 +271,18 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
                 float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
                 float Tinterp;
+
                 if (cP.useLineConfig)
                 {
                     Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
                 }
+                else if (cP.underCoolingRate>0.0f)
+                {
+                    Tinterp = - cP.underCoolingRate*1e6 *t;
+                }
                 else
                 {
-                    Tinterp = - cP.R*1e6 *t;
+                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
@@ -629,7 +634,8 @@ void APTPhaseField::moveDomain(MovingDomain* movingDomainManager)
        movingDomainManager->tip_front -=1 ;
     }
 
-    APTsetBC3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area);
+    APTsetBC3D<<<num_block_PF1d, blocksize_1d>>>(PFs_old, active_args_old, max_area,
+                                                 0, 0, 0, 1, 1, 1);
     movingDomainManager->lowsl = 1;
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -726,7 +732,9 @@ void APTPhaseField::evolve()
 
     float t_cur_step;
     int kts = params.Mt/params.nts;
-    printf("kts %d, nts %d\n",kts, params.nts);
+    int fieldkts = params.Mt/designSetting->saveBulkData;
+    printf("steps between qois %d, no. qois %d\n", kts, params.nts);
+    printf("steps between fields %d, no. fields %d\n", fieldkts, designSetting->saveBulkData);
 
     int numComm = 0;
 
@@ -734,9 +742,8 @@ void APTPhaseField::evolve()
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    while (kt < 5000)
+    for (int kt=0; kt<params.Mt/2; kt++)
     {
-        //for (int kt=0; kt<params.Mt/2; kt++){
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
         {
@@ -779,7 +786,17 @@ void APTPhaseField::evolve()
             }
         }
 
-        if ()
+        if ((2*kt+2)%fieldkts==0)
+        {
+            APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+            cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+            if (designSetting->useLineConfig)
+            {
+                cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
+                cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);        
+            }           
+            OutputField(2*kt+2);
+        }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
         APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
@@ -793,16 +810,17 @@ void APTPhaseField::evolve()
    printf("no. communications performed %d \n", numComm);
    params.Mt = 2*kt; // the actual no. time steps
    
-   cudaMemset(alpha_m, 0, sizeof(int) * length);
-   APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
-   cudaMemcpy(phi, phi_old, length * sizeof(float),cudaMemcpyDeviceToHost);
-   cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+  // cudaMemset(alpha_m, 0, sizeof(int) * length);
+  // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
+  // cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
 
    if (designSetting->useLineConfig)
    {
-        cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
-        cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-        qois->searchJunctionsOnImage(params, alpha_i_full);
+       qois->searchJunctionsOnImage(params, alpha_i_full);
+   }
+   else
+   {
+       qois->searchJunctionsOnImage(params, alpha);
    }
 }
 
