@@ -21,12 +21,14 @@ class grain_visual:
                  seed: int = 1, 
                  frames: int = 1, 
                  height: int = -1,
+                 time: int = 0,
                  physical_params = {}):   
 
         self.rank = rank
         self.lxd = lxd
         self.seed = seed
         self.height = height
+        self.time = time
         self.base_width = 2
         self.frames = frames # note that frames include the initial condition
         self.physical_params = physical_params
@@ -35,7 +37,7 @@ class grain_visual:
     def load(self, rawdat_dir: str = './'):
        
         
-        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+'_*'))[0]
+        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed) + '*time'+str(self.time) + '_*'))[0]
         f = h5py.File(self.data_file, 'r')
         self.x = np.asarray(f['x_coordinates'])
         self.y = np.asarray(f['y_coordinates'])
@@ -103,13 +105,14 @@ if __name__ == '__main__':
     
     parser.add_argument("--seed", type=int, default = 0)
     parser.add_argument("--rank", type=int, default = 0)
+    parser.add_argument("--time", type=int, default = 0)
     parser.add_argument("--lxd", type=int, default = 40)
     parser.add_argument("--height", type=int, default = -1)
  
     args = parser.parse_args()
         
    # Gv = grain_visual(lxd = 20, seed = args.seed, height=20)   
-    Gv = grain_visual(rank = args.rank, lxd=args.lxd, seed=args.seed, height=args.height)  
+    Gv = grain_visual(rank = args.rank, lxd=args.lxd, seed=args.seed, height=args.height, time=args.time)  
     if args.mode == 'truth':
         
         Gv.load(rawdat_dir=args.rawdat_dir)  
