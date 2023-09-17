@@ -37,7 +37,7 @@ class grain_visual:
     def load(self, rawdat_dir: str = './'):
        
         
-        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed) + '*time'+str(self.time) + '_*'))[0]
+        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed) + '*time'+str(self.time) + '*.h5'))[0]
         f = h5py.File(self.data_file, 'r')
         self.x = np.asarray(f['x_coordinates'])
         self.y = np.asarray(f['y_coordinates'])
@@ -86,7 +86,7 @@ class grain_visual:
         
         
         
-        self.dataname = rawdat_dir + 'seed'+str(self.seed) + '_rank' + str(self.rank) + '.vtk'
+        self.dataname = rawdat_dir + '/seed'+str(self.seed) + '_rank' + str(self.rank) + '_time'+ str(self.time) +'.vtk'
                    #rawdat_dir + 'seed'+str(self.seed)+'_G'+str('%2.2f'%self.physical_params['G'])\
                    #+'_R'+str('%2.2f'%self.physical_params['R'])+'.vtk'
         write_data(grid, self.dataname)

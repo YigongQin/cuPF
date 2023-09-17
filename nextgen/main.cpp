@@ -56,6 +56,7 @@ int main(int argc, char** argv)
     }
 
     PFSolver->SetDesignSetting(designSetting);
+    PFSolver->SetMPIManager(mpiManager);
     PFSolver->mac.folder = designSetting->thermalInputFolder + to_string(designSetting->seedValue);
 
     PFSolver->params.seed_val = designSetting->seedValue;
@@ -71,9 +72,6 @@ int main(int argc, char** argv)
         PFSolver->qois = new QOI3D(PFSolver->params);
     }
     
-
-    PFSolver->SetMPIManager(mpiManager);
-
     cout << "field initialization on cpu" <<endl;
     PFSolver->initField();
     cout << "cuda setup" <<endl;

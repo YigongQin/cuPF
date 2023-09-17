@@ -803,7 +803,7 @@ void APTPhaseField::evolve()
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
         APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
-        kt++;
+        //kt++;
    }
 
 
