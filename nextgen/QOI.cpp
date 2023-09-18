@@ -11,6 +11,11 @@
 #include <iostream>
 using namespace std;
 
+QOI::QOI()
+: numActiveGrains(0)
+{
+}
+
 QOILine::QOILine(const GlobalConstants params)
 : mNumNodeFeatures(8)
 {
@@ -179,7 +184,7 @@ void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fn
 }
 
 QOI3D::QOI3D(const GlobalConstants params)
-: mNumNodeFeatures(9), numActiveGrains(0)
+: mNumNodeFeatures(9)
 {
     mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
     // graph related QoIs
