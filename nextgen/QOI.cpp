@@ -188,7 +188,7 @@ QOI3D::QOI3D(const GlobalConstants params)
 {
     mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
     // graph related QoIs
-    int repeated_index = 5;
+    int repeated_index = 20;
     mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
     std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
 }
@@ -231,7 +231,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
      int offset_node_region = 0;
      int node_cnt = 0;
-     for (int k = 0; k<fnz-1; k++)
+     for (int k = 1; k<fnz-1; k++)
      {
         for (int j = 1; j<fny-1; j++)
         { 
@@ -277,7 +277,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                     alpha_occur++;
                     max_occur = max(max_occur, it.second);
                 }          
-                if (alpha_occur>=3 && max_occur<=13) // find a node
+                if (alpha_occur==3 && max_occur<=11) // find a node
                 { 
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures] = i;
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +1] = j;

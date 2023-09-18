@@ -49,7 +49,7 @@ cfl = 1.5
 asp_ratio_yx = 1
 asp_ratio_zx = 1                    # aspect ratio
 moving_ratio = 0.2
-nts = 10          # number snapshots to save, Mt/nts must be int
+nts = 1          # number snapshots to save, Mt/nts must be int
 Lx = 20
 
 nx = 13
