@@ -12,6 +12,7 @@
 class QOI
 {
 public:
+	QOI::QOI();
     virtual void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha) = 0;
 	void calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const int* alpha, int kt, 
                         const float* z, const int* loss_area, int move_count);
