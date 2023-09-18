@@ -732,11 +732,15 @@ void APTPhaseField::evolve()
         movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
         qois->calculateLineQoIs(params, movingDomainManager->cur_tip, alpha, 0, z, movingDomainManager->loss_area_host, movingDomainManager->move_count);
     }
+    else
+    {
+        qois->calculateQoIs(params, alpha, 0)
+    }
 
     float t_cur_step;
-    int kts = params.Mt/params.nts;
+    int qoikts = params.Mt/params.nts;
     int fieldkts = designSetting->save3DField>0 ? params.Mt/designSetting->save3DField : 1e8;
-    printf("steps between qois %d, no. qois %d\n", kts, params.nts);
+    printf("steps between qois %d, no. qois %d\n", qoikts, params.nts);
     printf("steps between fields %d, no. fields %d\n", fieldkts, designSetting->save3DField);
 
     int numComm = 0;
@@ -786,6 +790,15 @@ void APTPhaseField::evolve()
             if ( (2*kt+2)%TIPP==0) 
             {
                 moveDomain(movingDomainManager);
+            }
+        }
+        else
+        {
+            if ((2*kt+2)%qoikts==0)
+            {
+                APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+                cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
+                qois->calculateQoIs(params, alpha, (2*kt+2)/qoikts);
             }
         }
 

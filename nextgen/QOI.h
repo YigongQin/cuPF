@@ -20,6 +20,8 @@ public:
 	std::map<std::string, std::vector<int> >   mQoIVectorIntData;
 	std::map<std::string, std::vector<float> > mQoIVectorFloatData;
 	std::map<std::string, int > mQoIVectorSize;
+
+	int numActiveGrains;
 };
 
 class QOILine : public QOI
@@ -29,7 +31,7 @@ public:
 	virtual ~QOILine(){};
 	void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha) override;
 private:
-	int mNumNodeFeatures = 8;
+	int mNumNodeFeatures;
 };
 
 class QOI3D : public QOI
@@ -40,5 +42,5 @@ public:
 	void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha) override;
 
 private:
-	int mNumNodeFeatures = 9;
+	int mNumNodeFeatures;
 };

@@ -432,13 +432,13 @@ void PhaseField::OutputQoIs()
     string grainType;
     if (designSetting->includeNucleation)
     {
-        grainType = "Mixed_density" + to_string(params.nuc_Nmax);
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->numActiveGrains);
     }
     else
     {
-        grainType = "Epita";
+        grainType = "Epita_grains"+to_string(params.num_theta);
     }
-    string outputFormat = grainType + "_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
+    string outputFormat = grainType + "_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
@@ -473,13 +473,13 @@ void PhaseField::OutputField(int currentStep)
     string grainType;
     if (designSetting->includeNucleation)
     {
-        grainType = "Mixed_density" + to_string(params.nuc_Nmax);
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->numActiveGrains);
     }
     else
     {
-        grainType = "Epita";
+        grainType = "Epita_grains"+to_string(params.num_theta);
     }
-    string outputFormat = grainType + "_grains"+to_string(params.num_theta)+"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
+    string outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+\
                           "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
 

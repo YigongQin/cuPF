@@ -12,6 +12,7 @@
 using namespace std;
 
 QOILine::QOILine(const GlobalConstants params)
+: mNumNodeFeatures(8)
 {
     mQoIVectorFloatData.emplace("fractions", std::vector<float>((params.nts+1)*params.num_theta));
 
@@ -178,8 +179,9 @@ void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fn
 }
 
 QOI3D::QOI3D(const GlobalConstants params)
+: mNumNodeFeatures(9), numActiveGrains(0)
 {
-    mQoIVectorIntData.emplace("total_area", std::vector<int>((params.nts+1)*params.num_theta));
+    mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
     // graph related QoIs
     int repeated_index = 5;
     mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
@@ -193,6 +195,8 @@ void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
      // cur_tip here inludes the halo
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz, 
          num_grains = params.num_theta, all_time = params.nts+1;
+     
+     unordered_set<int> active_grains;
 
      for (int k = 1; k<fnz-1; k++)
      {
@@ -204,11 +208,16 @@ void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
                 int C = offset_z + fnx*j + i;
                 if (alpha[C]>0)
                 { 
-                    mQoIVectorIntData["total_area"][kt*num_grains+alpha[C]-1]+=1;
+                    mQoIVectorIntData["volume"][kt*num_grains+alpha[C]-1]+=1;
+                    if (active_grains.find(alpha[C])==active_grains.end())
+                    {
+                        active_grains.insert(alpha[C]);
+                    }
                 }
             }
        }
      }
+     numActiveGrains = active_grains.size();
 }
 
 void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
@@ -224,7 +233,12 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
             for (int i = 1; i<fnx-1; i++)
             {
                 int C = k*fnx*fny + j*fnx + i;
+                if (alpha[C]==0) 
+                {
+                    continue;
+                }
                 unordered_map<int, int> occur;
+                int zeroOccur = 0;
                 for (int dk = -1; dk<=1; dk++)
                 {
                     for (int dj = -1; dj<=1; dj++)
@@ -232,6 +246,10 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                         for (int di = -1; di<=1; di++)
                         {
                             int NC = (k+dk)*fnx*fny + (j+dj)*fnx + i+di;
+                            if (alpha[NC]==0) 
+                            {
+                                zeroOccur++;
+                            }
                             if (occur.find(alpha[NC])!=occur.end())
                             {
                                 occur[alpha[NC]]++;
@@ -243,14 +261,18 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                         }
                     }  
                 }
-     
+                if (zeroOccur>0) 
+                {
+                    continue;
+                }
+
                 int alpha_occur=0, max_occur=0;
                 for (auto & it : occur) 
                 {
                     alpha_occur++;
                     max_occur = max(max_occur, it.second);
                 }          
-                if (alpha_occur>=3 && max_occur<=13)
+                if (alpha_occur>=3 && max_occur<=13) // find a node
                 { 
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures] = i;
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +1] = j;
