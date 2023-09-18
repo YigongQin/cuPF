@@ -745,7 +745,7 @@ void APTPhaseField::evolve()
     double startTime = CycleTimer::currentSeconds();
     int kt = 0;
 
-    for (int kt=0; kt<params.Mt/2; kt++)
+    for (kt=0; kt<params.Mt/2; kt++)
     {
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
