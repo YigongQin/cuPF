@@ -734,7 +734,7 @@ void APTPhaseField::evolve()
     }
     else
     {
-        qois->calculateQoIs(params, alpha, 0)
+        qois->calculateQoIs(params, alpha, 0);
     }
 
     float t_cur_step;
