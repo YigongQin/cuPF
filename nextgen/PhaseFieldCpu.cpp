@@ -140,9 +140,6 @@ void PhaseField::parseInputParams(std::string fileName)
     H5Sclose(memspace);
     H5Fclose(h5in_file);
     
-
-
-
     float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
@@ -355,8 +352,8 @@ void PhaseField::initField(){
         mac.cost[i] = cosf(mac.theta_arr[i]);
     }  
     mac.alpha_mac = new int [(params.nx+1)*(params.ny+1)];
-
     read_input(mac.folder+"/alpha.txt", mac.alpha_mac);
+cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] <<endl;
     //printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[(fnx-2*params.haloWidth)*(fny-2*params.haloWidth)-1]);
      
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];

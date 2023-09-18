@@ -20,7 +20,7 @@ public:
 
     int mpiDim;
     int seedValue;
-    int bcX, bcY, bcZ;
+    int givenBC, bcX, bcY, bcZ;
 
     std::string inputFile;
     std::string thermalInputFolder;
