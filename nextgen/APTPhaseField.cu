@@ -463,6 +463,7 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
         if (curand_uniform(states+C)<nuc_posb)
         {
             int rand_PF = curand(states+C);
+            rand_PF = rand_PF>0 ? rand_PF : -rand_PF;
             printf("time %f, nucleation starts at cell no. %d get the same orientation with grain no. %d\n", t, C, rand_PF);
 
             for (int lock=-cP.pts_cell; lock<=cP.pts_cell; lock++)
