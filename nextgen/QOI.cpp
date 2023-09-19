@@ -12,7 +12,7 @@
 using namespace std;
 
 QOI::QOI()
-: numActiveGrains(0)
+: mNumActiveGrains(0)
 {
 }
 
@@ -186,23 +186,27 @@ void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fn
 QOI3D::QOI3D(const GlobalConstants params)
 : mNumNodeFeatures(9)
 {
-    mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
+   // mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
+    mQoIVectorIntData.emplace("volume", std::vector<int>());
+    mQoIVectorIntData.emplace("grainToPF", std::vector<int>());
     // graph related QoIs
-    int repeated_index = 20;
-    mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
-    std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
+   // int repeated_index = 20;
+   // mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
+    mQoIVectorIntData.emplace("node_region", std::vector<int>());
+   // std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
 }
 
 
 void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
 {
-
+     mQoIVectorIntData["volume"].clear();
+     mQoIVectorIntData["grainToPF"].clear();
      // cur_tip here inludes the halo
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz, 
          num_grains = params.num_theta, all_time = params.nts+1;
      
-     unordered_set<int> active_grains;
-
+     unordered_map<int, int> active_grains;
+     mNumActiveGrains = 0;
      for (int k = 1; k<fnz-1; k++)
      {
        int offset_z = fnx*fny*k; 
@@ -212,22 +216,26 @@ void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
             {
                 int C = offset_z + fnx*j + i;
                 if (alpha[C]>0)
-                { 
-                    mQoIVectorIntData["volume"][kt*num_grains+alpha[C]-1]+=1;
+                {                   
                     if (active_grains.find(alpha[C])==active_grains.end())
                     {
-                        active_grains.insert(alpha[C]);
+                        active_grains.insert({alpha[C], mNumActiveGrains});
+                        mNumActiveGrains++;
                     }
+                    mQoIVectorIntData["volume"][active_grains[alpha[C]]] +=1;
                 }
             }
        }
      }
-     numActiveGrains = active_grains.size();
+    // mNumActiveGrains = active_grains.size();
 }
 
 void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alpha)
 {
      // find the args that have active phs greater or equal 3, copy the args to mQoIVectorIntData["node_region"]
+     mQoIVectorIntData["node_region"].clear();
+     mQoIVectorIntData["node_region"].resize(40*mNumActiveGrains*mNumNodeFeatures);
+
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
      int offset_node_region = 0;
      int node_cnt = 0;

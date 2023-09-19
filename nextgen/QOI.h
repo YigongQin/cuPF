@@ -22,7 +22,7 @@ public:
 	std::map<std::string, std::vector<float> > mQoIVectorFloatData;
 	std::map<std::string, int > mQoIVectorSize;
 
-	int numActiveGrains;
+	int mNumActiveGrains;
 };
 
 class QOILine : public QOI
