@@ -43,8 +43,9 @@ class grain_visual:
         self.y = np.asarray(f['y_coordinates'])
         self.z = np.asarray(f['z_coordinates']) 
         self.angles = np.asarray(f['angles']) 
-        self.theta_z = np.zeros(1 + len(self.angles)//2)
-        self.theta_z[1:] = self.angles[len(self.angles)//2+1:]
+        num_theta = len(self.angles)//2
+        self.theta_z = np.zeros(1 + num_theta)
+        self.theta_z[1:] = self.angles[num_theta+1:]
         
         assert int(self.lxd) == int(self.x[-2])
         
@@ -74,7 +75,7 @@ class grain_visual:
         
         
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
-        self.alpha_pde = self.theta_z[self.alpha_pde]/pi*180
+        self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
         
        # print(self.alpha_pde)
     

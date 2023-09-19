@@ -221,6 +221,8 @@ void QOI::calculateQoIs(const GlobalConstants& params, const int* alpha, int kt)
                     {
                         active_grains.insert({alpha[C], mNumActiveGrains});
                         mNumActiveGrains++;
+                        mQoIVectorIntData["grainToPF"].push_back(alpha[C]);
+                        mQoIVectorIntData["volume"].push_back(0);
                     }
                     mQoIVectorIntData["volume"][active_grains[alpha[C]]] +=1;
                 }
