@@ -237,7 +237,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
      // find the args that have active phs greater or equal 3, copy the args to mQoIVectorIntData["node_region"]
      mQoIVectorIntData["node_region"].clear();
      mQoIVectorIntData["node_region"].resize(40*mNumActiveGrains*mNumNodeFeatures);
-
+     std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
      int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
      int offset_node_region = 0;
      int node_cnt = 0;
@@ -287,7 +287,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                     alpha_occur++;
                     max_occur = max(max_occur, it.second);
                 }          
-                if (alpha_occur==3 && max_occur<=11) // find a node
+                if (alpha_occur==4 && max_occur<=11) // find a node
                 { 
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures] = i;
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +1] = j;
