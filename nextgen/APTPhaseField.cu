@@ -736,7 +736,10 @@ void APTPhaseField::evolve()
     }
     else
     {
-        qois->calculateQoIs(params, alpha, 0);
+        if (designSetting->includeNucleation == false)
+        {
+            qois->calculateQoIs(params, alpha, 0);
+        }
     }
 
     float t_cur_step;

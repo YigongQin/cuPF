@@ -432,7 +432,7 @@ void PhaseField::OutputQoIs()
     string grainType;
     if (designSetting->includeNucleation)
     {
-        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->numActiveGrains);
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->mNumActiveGrains);
     }
     else
     {
@@ -473,7 +473,7 @@ void PhaseField::OutputField(int currentStep)
     string grainType;
     if (designSetting->includeNucleation)
     {
-        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->numActiveGrains);
+        grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->mNumActiveGrains);
     }
     else
     {
