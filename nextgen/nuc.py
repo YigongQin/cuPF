@@ -25,7 +25,7 @@ U0 = -1                    # initial value for U, -1 < U0 < 0
 ictype = 0                    # initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
 
 ## MPI
-haloWidth = 1;
+haloWidth = 1
 xmin = 0
 ymin = 0
 zmin = 0
@@ -61,34 +61,10 @@ Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
 top = 10
 
-
 seed = int(sys.argv[1])
-''' for test use seed > 10000'''
-if seed<10000:  
-   ''' grid sampling'''  
-   G_list = np.linspace(10, 0.5, 39)
-   R_list = np.linspace(2, 0.2, 37)
-   
-   Gid = seed%len(G_list)
-   Rid = seed//len(G_list)
-   G = G_list[Gid]
-   Rmax = 1e6*R_list[Rid]
 
-   print('samples in G, R domain: ', len(G_list), len(R_list))
-
-else:
-   np.random.seed(seed)
-   G = np.random.random()*(10-0.5) + 0.5
-   Rmax = np.random.random()*(2-0.2) + 0.2
-   Rmax *= 1e6
-
-if seed == 54320:
-    G = 10
-    Rmax = 2e6
-
-if seed == 0:
-    G = 10
-    Rmax = 20e5
+G = 10
+Rmax = 20e5
 
 print('sampled G, R values: ', G, Rmax)
 
@@ -107,16 +83,37 @@ U = np.zeros(nx*ny*nz)
 
 '''create graph'''
 
-
 g1 = graph(lxd = Lx, seed = seed) 
 print('input shape of alpha_field, ', g1.alpha_field.shape)
-rot = 0 # rotation
+
 alpha = g1.alpha_field
-alpha = np.rot90(alpha, rot)
-NG = len(g1.regions)
+
+# create nucleation pool
+num_nucleatioon_theta = 1000
+
+# sample orientations
+ux = np.random.randn(num_nucleatioon_theta)
+uy = np.random.randn(num_nucleatioon_theta)
+uz = np.random.randn(num_nucleatioon_theta)
+
+u = np.sqrt(ux**2+uy**2+uz**2)
+ux = ux/u
+uy = uy/u
+uz = uz/u
+
+theta_x = np.zeros(1 + num_nucleatioon_theta)
+theta_z = np.zeros(1 + num_nucleatioon_theta)
+theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
+theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+
+NG = len(g1.regions) + num_nucleatioon_theta
 NN = len(g1.vertices)
+
 print('no. nodes', NN, 'no. regions', NG)
-theta = np.hstack([0, g1.theta_x[1:]-rot*pi/2, g1.theta_z[1:]])
+
+theta = np.hstack([0, g1.theta_x[1:], theta_x[1:], g1.theta_z[1:], theta_z[1:]])
+
+
 
 for i in range(nx*ny*nz*nt):
     
@@ -124,8 +121,7 @@ for i in range(nx*ny*nz*nt):
     yi = int( (i%(nx*ny))/nx )
     zi = int( (i%(nx*ny*nz))/(nx*ny) )
     ti = int(i/(nx*ny*nz))
-    
-    #T[i] = 920 + G*( y[yi] - 0.5*Rmax*(t[ti]**2/tmax) - y0)
+ 
     #T[i] = Tmelt - c_infty*m_slope + G*( z[zi] - Rmax*t[ti] - z0)    
     T[i] = Tmelt - c_infty*m_slope - underCoolingRate*1e6*t[ti]
     if i==nx*ny*nz*nt-1: print(T[i], G, z[zi], Rmax, t[ti], z0)

@@ -254,10 +254,11 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
                 {
-                        sina = sint[PF_id];
-                        cosa = cost[PF_id];
-                        sinb = sint[PF_id+cP.num_theta];
-                        cosb = cost[PF_id+cP.num_theta];
+                        int theta_id = PF_id % cP.num_theta;
+                        sina = sint[theta_id];
+                        cosa = cost[theta_id];
+                        sinb = sint[theta_id+cP.num_theta];
+                        cosb = cost[theta_id+cP.num_theta];
                 }
                 else
                 {
@@ -461,7 +462,7 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
         //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
         if (curand_uniform(states+C)<nuc_posb)
         {
-            int rand_PF = curand(states+C)%cP.num_theta;
+            int rand_PF = curand(states+C);
             printf("time %f, nucleation starts at cell no. %d get the same orientation with grain no. %d\n", t, C, rand_PF);
 
             for (int lock=-cP.pts_cell; lock<=cP.pts_cell; lock++)
