@@ -70,7 +70,7 @@ seed = int(sys.argv[1])
 if seed<10000:  
    ''' grid sampling'''  
    UC_list = np.linspace(1, 10, 10)
-   Nmax_list = np.linspace(0.05, 0.5, 10)
+   Nmax_list = np.linspace(0.005, 0.05, 10)
    
    Uid = seed%len(UC_list)
    Nid = seed//len(Nmax_list)
