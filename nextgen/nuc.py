@@ -17,6 +17,9 @@ beta0 = 1e-7                    # linear coefficient
 
 mu_k = 0.217e6                         #um/s/K
 Tmelt = 933.3
+
+G = 10
+Rmax = 20e5
 underCoolingRate = 10
 
 eps = 1e-8                       # divide-by-zero treatment
@@ -35,7 +38,7 @@ zmin = 0
 undcool_mean = 2   # Kelvin  nuleantion barrier
 undcool_std = 0.5   # Kelvin fixed
 nuc_Nmax = 0.05      # 1/um^2 density; 0 to very big number 
-nuc_rad = 0.3      # 0.2 um radius of a nucleai
+nuc_rad = 0.4      # 0.2 um radius of a nucleai
 
 ## noise
 eta = 0.0  
@@ -60,15 +63,24 @@ Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
 top = 10
+z0 = 2
+
 
 seed = int(sys.argv[1])
 
-G = 10
-Rmax = 20e5
+''' for test use seed > 10000'''
+if seed<10000:  
+   ''' grid sampling'''  
+   UC_list = np.linspace(1, 10, 10)
+   Nmax_list = np.linspace(0.05, 0.5, 10)
+   
+   Uid = seed%len(UC_list)
+   Nid = seed//len(Nmax_list)
+   underCoolingRate = UC_list[Uid]
+   nuc_Nmax = Nmax_list[Nid]
 
-print('sampled G, R values: ', G, Rmax)
-
-z0 = 2
+print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
+print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
 
 x = np.linspace(0-BC,Lx+BC,nx)
 y = np.linspace(0-BC,Ly+BC,ny)
