@@ -18,7 +18,7 @@ beta0 = 1e-7                    # linear coefficient
 mu_k = 0.217e6                         #um/s/K
 Tmelt = 933.3
 
-G = 10
+G = 0
 Rmax = 20e5
 underCoolingRate = 10
 
@@ -77,6 +77,8 @@ if seed<10000:
    underCoolingRate = UC_list[Uid]
    nuc_Nmax = Nmax_list[Nid]
 
+if G>0:
+   Rmax = underCoolingRate*1e6/G
 print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
 print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
 
@@ -133,7 +135,7 @@ for i in range(nx*ny*nz*nt):
     ti = int(i/(nx*ny*nz))
  
     #T[i] = Tmelt - c_infty*m_slope + G*( z[zi] - Rmax*t[ti] - z0)    
-    T[i] = Tmelt - c_infty*m_slope - underCoolingRate*1e6*t[ti]
+    T[i] = G(z[zi] - z0) - underCoolingRate*1e6*t[ti]
     if i==nx*ny*nz*nt-1: print(T[i], G, z[zi], Rmax, t[ti], z0)
     if ti==0:
        psi[i] = -10 #z0 - z[zi]      

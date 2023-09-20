@@ -275,18 +275,11 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
                 if (cP.thermalType == 1)
                 {
-                    if (cP.underCoolingRate>0.0f)
-                    {
-                        Tinterp = - cP.underCoolingRate*1e6 *t;
-                    }
-                    else
-                    {
-                        Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
-                    }        
+                    Tinterp = cP.G*(z[k] - cP.z0) - cP.underCoolingRate*1e6 *t;   
                 }
                 else
                 {
-                    Tinterp = cP.G*(z[k] - cP.R*1e6 *t - 2);
+                    Tinterp = cP.G*(z[k] - cP.z0) - cP.underCoolingRate*1e6 *t; 
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
@@ -456,7 +449,7 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
                                             Nx, Ny, Nz, Nt, Dx, Dt);
         float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
                                             Nx, Ny, Nz, Nt, Dx, Dt);                                        
-        float delT = cP.Tliq - T_cell_dt;
+        float delT = - T_cell_dt;
         float d_delT = T_cell - T_cell_dt;
         float nuc_posb = nuncl_possibility(delT, d_delT);
         //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
