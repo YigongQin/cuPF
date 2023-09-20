@@ -30,7 +30,7 @@ void PhaseField::parseInputParams(std::string fileName)
         // Output the text from the file
         //getParam(lineText, "G", params.G);
         //getParam(lineText, "R", params.R); 
-        getParam(lineText, "underCoolingRate", params.underCoolingRate); 
+        //getParam(lineText, "underCoolingRate", params.underCoolingRate); 
         getParam(lineText, "delta", params.delta); 
         getParam(lineText, "k", params.k); 
         //getParam(lineText, "c_infm", params.c_infm); 
@@ -44,7 +44,7 @@ void PhaseField::parseInputParams(std::string fileName)
         getParam(lineText, "L_cp", params.L_cp);
         getParam(lineText, "mu_k", params.mu_k);
         getParam(lineText, "eps", params.eps);
-        getParam(lineText, "alpha0", params.alpha0);
+      //  getParam(lineText, "alpha0", params.alpha0);
         getParam(lineText, "dx", params.dx);
         getParam(lineText, "asp_ratio_yx", params.asp_ratio_yx);
         getParam(lineText, "asp_ratio_zx", params.asp_ratio_zx);
@@ -54,7 +54,7 @@ void PhaseField::parseInputParams(std::string fileName)
       //  getParam(lineText, "Mt", Mt);
       //  params.Mt = (int)Mt;
         getParam(lineText, "eta", params.eta);
-        getParam(lineText, "U0", params.U0);
+       // getParam(lineText, "U0", params.U0);
         getParam(lineText, "nts", nts);
         params.nts = (int)nts;
         getParam(lineText, "ictype", ictype);
@@ -64,10 +64,7 @@ void PhaseField::parseInputParams(std::string fileName)
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
         getParam(lineText, "kin_delta", params.kin_delta);
-      //  params.kin_delta = 0.05 + atoi(argv[3])/10.0*0.25;
         getParam(lineText, "beta0", params.beta0);
-        // new multiple
-        //getParam(lineText, "Ti", params.Ti);
         getParam(lineText, "haloWidth", haloWidth);
         params.haloWidth = (int)haloWidth;
         getParam(lineText, "xmin", params.xmin);
@@ -84,7 +81,7 @@ void PhaseField::parseInputParams(std::string fileName)
         getParam(lineText, "Tmelt", params.Tmelt);
         getParam(lineText, "undcool_mean", params.undcool_mean);
         getParam(lineText, "undcool_std", params.undcool_std);
-        getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
+       // getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
         getParam(lineText, "nuc_rad", params.nuc_rad);
 
         getParam(lineText, "moving_ratio", params.moving_ratio);
@@ -119,6 +116,11 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/Rmax.txt", &params.R);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
     read_input(mac.folder+"/NN.txt", &params.num_nodes);
+    read_input(mac.folder+"/UC.txt", &params.underCoolingRate);
+    read_input(mac.folder+"/Nmax.txt", &params.nuc_Nmax);
+    read_input(mac.folder+"/z0.txt", &params.z0);
+    read_input(mac.folder+"/top.txt", &params.top);
+
     mac.theta_arr = new float[2*params.num_theta+1];
     mac.cost = new float[2*params.num_theta+1];
     mac.sint = new float[2*params.num_theta+1];
@@ -190,9 +192,6 @@ void PhaseField::parseInputParams(std::string fileName)
     params.tmax = params.tau0*params.dt*params.Mt;
 
     params.pts_cell = (int) (params.nuc_rad/dxd);
-
-    read_input(mac.folder+"/z0.txt", &params.z0);
-    read_input(mac.folder+"/top.txt", &params.top);
 
     params.bcX = designSetting->bcX;
     params.bcY = designSetting->bcY;

@@ -23,8 +23,6 @@ Rmax = 20e5
 underCoolingRate = 10
 
 eps = 1e-8                       # divide-by-zero treatment
-alpha0 = 0                       # misorientation angle in degree
-U0 = -1                    # initial value for U, -1 < U0 < 0
 ictype = 0                    # initial condtion: 0 for semi-circular, 1 for planar interface, 2 for sum of sines
 
 ## MPI
@@ -157,8 +155,12 @@ np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'alpha.txt', alpha, fmt='%d',delimiter='\n')
 np.savetxt(mac_folder+'theta.txt', theta, fmt='%1.4e',delimiter='\n')
+
 np.savetxt(mac_folder+'G.txt', np.asarray([G]), fmt='%1.4e',delimiter='\n')
 np.savetxt(mac_folder+'Rmax.txt', np.asarray([Rmax*1e-6]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'Nmax.txt', np.asarray([nuc_Nmax]), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'UC.txt', np.asarray([underCoolingRate]), fmt='%1.4e',delimiter='\n')
+
 np.savetxt(mac_folder+'NG.txt', np.asarray([NG]), fmt='%d',delimiter='\n')
 np.savetxt(mac_folder+'NN.txt', np.asarray([NN]), fmt='%d',delimiter='\n')
 np.savetxt(mac_folder+'z0.txt', np.asarray([z0]), fmt='%1.4e',delimiter='\n')
