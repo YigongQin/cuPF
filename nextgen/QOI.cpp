@@ -262,7 +262,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                     { 
                         for (int di = -1; di<=1; di++)
                         {
-                            if (di*di + dj*dj + dk*dk >1) 
+                            if (di*di + dj*dj + dk*dk >2) 
                             {
                                 continue;
                             }
@@ -293,7 +293,7 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
                     alpha_occur++;
                     max_occur = max(max_occur, it.second);
                 }          
-                if (alpha_occur==4) // find a node
+                if (alpha_occur==4 && max_occur<=10) // find a node
                 { 
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures] = i;
                     mQoIVectorIntData["node_region"][offset_node_region + node_cnt*mNumNodeFeatures +1] = j;
