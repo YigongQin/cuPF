@@ -428,9 +428,9 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
   {
     if (nucl_status[C]==0)
     {
-      int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell;
-      int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell; 
-      int glob_k = (2*cP.pts_cell+1)*k + cP.pts_cell; 
+      int glob_i = (2*cP.pts_cell+1)*i + cP.pts_cell + cP.haloWidth;;
+      int glob_j = (2*cP.pts_cell+1)*j + cP.pts_cell + cP.haloWidth;; 
+      int glob_k = (2*cP.pts_cell+1)*k + cP.pts_cell + cP.haloWidth;; 
       int glob_C = glob_k*fnx*fny + glob_j*fnx + glob_i;
     
       for (int pf_id = 0; pf_id<cP.NUM_PF; pf_id++)
@@ -675,9 +675,9 @@ void APTPhaseField::evolve()
     curandState* dStates;
     if (designSetting->includeNucleation)
     {
-      cnx = fnx/(2*params.pts_cell+1);
-      cny = fny/(2*params.pts_cell+1);
-      cnz = fnz/(2*params.pts_cell+1);
+      cnx = (fnx - 1 - 2*params.haloWidth)/(2*params.pts_cell+1);
+      cny = (fny - 1 - 2*params.haloWidth)/(2*params.pts_cell+1);
+      cnz = (fnz - 1 - 2*params.haloWidth)/(2*params.pts_cell+1);
       num_block_c = (cnx*cny*cnz + blocksize_2d-1)/blocksize_2d;   
 
       cudaMalloc((void **) &dStates, sizeof(curandState) * (length+params.noi_period));
