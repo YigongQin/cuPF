@@ -60,7 +60,7 @@ nt = 11
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 10
+top = 20
 z0 = 2
 
 
@@ -69,8 +69,8 @@ seed = int(sys.argv[1])
 ''' for test use seed > 10000'''
 if seed<10000:  
    ''' grid sampling'''  
-   UC_list = np.linspace(1, 10, 10)
-   Nmax_list = np.linspace(0.005, 0.05, 10)
+   UC_list = np.linspace(5, 50, 10)
+   Nmax_list = np.linspace(0.001, 0.01, 10)
    
    Uid = seed%len(UC_list)
    Nid = seed//len(Nmax_list)
@@ -135,7 +135,7 @@ for i in range(nx*ny*nz*nt):
     ti = int(i/(nx*ny*nz))
  
     #T[i] = Tmelt - c_infty*m_slope + G*( z[zi] - Rmax*t[ti] - z0)    
-    T[i] = G(z[zi] - z0) - underCoolingRate*1e6*t[ti]
+    T[i] = G*(z[zi] - z0) - underCoolingRate*1e6*t[ti]
     if i==nx*ny*nz*nt-1: print(T[i], G, z[zi], Rmax, t[ti], z0)
     if ti==0:
        psi[i] = -10 #z0 - z[zi]      

@@ -468,7 +468,7 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
                         int os_loc = glob_C + lock*fnx*fny + locj*fnx + loci;
                         float dist_C = cP.dx*( (1.0f+cP.pts_cell)/2.0f - sqrtf(loci*loci + locj*locj + lock*lock) );
                         ph[os_loc] = tanhf( dist_C /cP.sqrt2 );
-                        if (ph[os_loc]>LS)
+                        if (ph[os_loc]>-0.9999f)
                         {
                             arg[os_loc] = rand_PF;
                         }

@@ -37,7 +37,7 @@ class grain_visual:
     def load(self, rawdat_dir: str = './'):
        
         
-        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed) + '*time'+str(self.time) + '*.h5'))[0]
+        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '_' + '*time'+str(self.time) + '*.h5'))[0]
         f = h5py.File(self.data_file, 'r')
         self.x = np.asarray(f['x_coordinates'])
         self.y = np.asarray(f['y_coordinates'])
@@ -57,10 +57,10 @@ class grain_visual:
         print('grid ', fnx, fny, fnz)
         
         
-        G = re.search('G(\d+)', self.data_file).group(1)
-        R = re.search('Rmax(\d+)', self.data_file).group(1)
+        G = re.search('G(\d+\.\d+)', self.data_file).group(1)
+        UC = re.search('UC(\d+\.\d+)', self.data_file).group(1)
         data_frames = int(re.search('frames(\d+)', self.data_file).group(1))+1
-        self.physical_params = {'G':G, 'R':R}
+        self.physical_params = {'G':G, 'UC':UC}
         print(self.physical_params)
         
         
@@ -74,6 +74,7 @@ class grain_visual:
             self.alpha_pde = self.alpha_pde.reshape((fnx, fny,fnz),order='F')[1:-1, 1:-1, 1:top_z]       
         
         
+        print(len(np.unique(self.alpha_pde)))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
         self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
         
