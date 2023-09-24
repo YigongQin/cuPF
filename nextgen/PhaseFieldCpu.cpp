@@ -146,7 +146,7 @@ void PhaseField::parseInputParams(std::string fileName)
     if (designSetting->includeNucleation)
     {
         float domainScaleFactor = cbrt(0.01/params.nuc_Nmax);
-        params.lxd = 2*(params.lxd*domainScaleFactor/2);
+        params.lxd = 2*((int) (params.lxd*domainScaleFactor/2));
     }
 
  

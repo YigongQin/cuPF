@@ -457,7 +457,7 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
         {
             int rand_PF = curand(states+C);
             rand_PF = rand_PF>0 ? rand_PF : -rand_PF;
-            printf("time %f, nucleation starts at cell no. %d get the same orientation with grain no. %d\n", t, C, rand_PF);
+            printf("time %f, nucleation starts at location %f, %f, %f, get the same orientation with grain no. %d\n", 1000000.0f*t, x[glob_i], y[glob_j], z[glob_k], rand_PF);
 
             for (int lock=-cP.pts_cell; lock<=cP.pts_cell; lock++)
             {
@@ -679,10 +679,11 @@ void APTPhaseField::evolve()
       cny = (fny - 1 - 2*params.haloWidth)/(2*params.pts_cell+1);
       cnz = (fnz - 1 - 2*params.haloWidth)/(2*params.pts_cell+1);
       num_block_c = (cnx*cny*cnz + blocksize_2d-1)/blocksize_2d;   
+      int lenCell = cnx*cny*cnz;
 
-      cudaMalloc((void **) &dStates, sizeof(curandState) * (length+params.noi_period));
-      cudaMalloc((void **) &nucleationStatus, sizeof(int) * cnx*cny*cnz);
-      init_rand_num<<<(length+params.noi_period+blocksize_2d-1)/blocksize_2d, blocksize_2d>>>(dStates, params.seed_val, length+params.noi_period);
+      cudaMalloc((void **) &dStates, sizeof(curandState) * (lenCell+params.noi_period));
+      cudaMalloc((void **) &nucleationStatus, sizeof(int) * lenCell);
+      init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, params.seed_val, lenCell+params.noi_period);
 
       init_nucl_status<<<num_block_c, blocksize_2d>>>(phi_old, nucleationStatus, cnx, cny, cnz, fnx, fny);
     }

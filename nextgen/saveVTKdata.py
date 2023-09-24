@@ -74,7 +74,7 @@ class grain_visual:
             self.alpha_pde = self.alpha_pde.reshape((fnx, fny,fnz),order='F')[1:-1, 1:-1, 1:top_z]       
         
         
-        print(len(np.unique(self.alpha_pde)))
+        print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
         self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
         
