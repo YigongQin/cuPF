@@ -1,5 +1,5 @@
-# PF_cpp
-Phase field simulation written in C++, CUDA. Scaling: CUDA-aware MPI. 
+# cuPF
+Phase field solvers written in C++, CUDA. Scaling: CUDA-aware MPI. 
 
 ## Cite
 
