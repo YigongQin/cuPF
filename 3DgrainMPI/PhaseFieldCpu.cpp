@@ -28,63 +28,52 @@ void PhaseField::parseInputParams(std::string fileName)
     while (parseFile.good()){
         std::getline (parseFile, lineText);
         // Output the text from the file
-        //getParam(lineText, "G", params.G);
-        //getParam(lineText, "R", params.R); 
-        //getParam(lineText, "underCoolingRate", params.underCoolingRate); 
-        getParam(lineText, "delta", params.delta); 
-        getParam(lineText, "k", params.k); 
-        //getParam(lineText, "c_infm", params.c_infm); 
+
+        
+        getParam(lineText, "Tmelt", params.Tmelt);
         getParam(lineText, "Dh", params.Dh); 
-        //getParam(lineText, "d0", params.d0); 
-        getParam(lineText, "W0", params.W0);  
-        getParam(lineText, "c_infty", params.c_infty);
-        getParam(lineText, "m_slope", params.m_slope);
-        //getParam(lineText, "beta0", params.beta0);
-        getParam(lineText, "GT", params.GT);
         getParam(lineText, "L_cp", params.L_cp);
+        getParam(lineText, "beta0", params.beta0);
+        getParam(lineText, "GT", params.GT);
         getParam(lineText, "mu_k", params.mu_k);
+        getParam(lineText, "kin_delta", params.kin_delta);
+        getParam(lineText, "delta", params.delta); 
+
+        getParam(lineText, "undcool_mean", params.undcool_mean);
+        getParam(lineText, "undcool_std", params.undcool_std);
+        getParam(lineText, "nuc_rad", params.nuc_rad);
+
+
         getParam(lineText, "eps", params.eps);
-      //  getParam(lineText, "alpha0", params.alpha0);
         getParam(lineText, "dx", params.dx);
+        getParam(lineText, "W0", params.W0);  
         getParam(lineText, "asp_ratio_yx", params.asp_ratio_yx);
         getParam(lineText, "asp_ratio_zx", params.asp_ratio_zx);
+        getParam(lineText, "moving_ratio", params.moving_ratio);
+
         getParam(lineText, "Lx", params.lxd);
-      //  getParam(lineText, "nx", nx);
-      //  params.nx = (int)nx;
-      //  getParam(lineText, "Mt", Mt);
-      //  params.Mt = (int)Mt;
+  
         getParam(lineText, "eta", params.eta);
-       // getParam(lineText, "U0", params.U0);
+
         getParam(lineText, "nts", nts);
         params.nts = (int)nts;
         getParam(lineText, "ictype", ictype);
         params.ictype = (int)ictype;
-    //   getParam(lineText, "seed_val", seed_val);
-    //    params.seed_val = (int)seed_val;
         getParam(lineText, "noi_period", nprd);
         params.noi_period = (int)nprd;
-        getParam(lineText, "kin_delta", params.kin_delta);
-        getParam(lineText, "beta0", params.beta0);
+
+        
         getParam(lineText, "haloWidth", haloWidth);
         params.haloWidth = (int)haloWidth;
         getParam(lineText, "xmin", params.xmin);
         getParam(lineText, "ymin", params.ymin);
         getParam(lineText, "zmin", params.zmin);
-      //  getParam(lineText, "num_theta", num_thetaf);
-      //  params.num_theta = (int) num_thetaf;
+
         getParam(lineText, "nx", temp_Nx);
         getParam(lineText, "ny", temp_Ny);
         getParam(lineText, "nz", temp_Nz);
         getParam(lineText, "nt", temp_Nt);
         getParam(lineText, "cfl", params.cfl); 
-
-        getParam(lineText, "Tmelt", params.Tmelt);
-        getParam(lineText, "undcool_mean", params.undcool_mean);
-        getParam(lineText, "undcool_std", params.undcool_std);
-       // getParam(lineText, "nuc_Nmax", params.nuc_Nmax);
-        getParam(lineText, "nuc_rad", params.nuc_rad);
-
-        getParam(lineText, "moving_ratio", params.moving_ratio);
     }
     
     // Close the file
@@ -149,8 +138,6 @@ void PhaseField::parseInputParams(std::string fileName)
         params.lxd = 2*((int) (params.lxd*domainScaleFactor/2));
     }
 
- 
-
     float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
@@ -158,18 +145,11 @@ void PhaseField::parseInputParams(std::string fileName)
     params.Ti = params.Tsol;   
     params.d0 = params.GT/params.L_cp;
     params.beta0 = 1.0/(params.mu_k*params.L_cp);
-    //params.lT = params.c_infm*( 1.0/params.k-1 )/params.G;//       # thermal length           um
     params.lamd = 0.8839*params.W0/params.d0;//     # coupling constant
-    //params.tau0 = 0.6267*params.lamd*params.W0*params.W0/params.Dl; //    # time scale  
     params.tau0 = params.beta0*params.lamd*params.W0/0.8839;
-    //params.kin_coeff = tauk/params.tau0;
-    //params.R_tilde = params.R*params.tau0/params.W0;
-    //params.Dl_tilde = params.Dl*params.tau0/pow(params.W0,2);
-    //params.lT_tilde = params.lT/params.W0;
     params.beta0_tilde = params.beta0*params.W0/params.tau0;
     params.dt = params.cfl*params.dx*params.beta0_tilde;
-//    params.ny = (int) (params.asp_ratio*params.nx);
-//    params.lyd = params.asp_ratio*params.lxd;
+
     params.hi = 1.0/params.dx;
     params.cosa = cos(params.alpha0/180*M_PI);
     params.sina = sin(params.alpha0/180*M_PI);
@@ -361,7 +341,7 @@ void PhaseField::initField(){
     }  
     mac.alpha_mac = new int [(params.nx+1)*(params.ny+1)];
     read_input(mac.folder+"/alpha.txt", mac.alpha_mac);
-cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] <<endl;
+    cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] <<endl;
     //printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[(fnx-2*params.haloWidth)*(fny-2*params.haloWidth)-1]);
      
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
@@ -400,10 +380,13 @@ cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] 
         psi[id] = psi[id]/params.W0;
         phi[id]=tanhf(psi[id]/params.sqrt2);
 
-        if (phi[id]>LS && GetSetDesignSetting()->pureNucleation == false)
+        if (phi[id]>LS && GetSetDesignSetting()->pureNucleation == false && GetSetDesignSetting()->useLineConfig)
         {
             alpha[id] = mac.alpha_mac[(j-1)*(fnx-2*params.haloWidth)+(i-1)];
-            if (alpha[id]<1 || alpha[id]>params.num_theta) cout<<"found alpha out of bounds at "<<(j-1)*(fnx-2*params.haloWidth)+(i-1)<< " alpha "<<alpha[id]<<endl;
+            if (alpha[id]<1 || alpha[id]>params.num_theta)
+            {
+                cout<<"found alpha out of bounds at "<<(j-1)*(fnx-2*params.haloWidth)+(i-1)<< " alpha "<<alpha[id]<<endl;
+            }
         }
         else 
         {
