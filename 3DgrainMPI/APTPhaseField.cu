@@ -415,7 +415,7 @@ nuncl_possibility(float delT, float d_delT)
 
 __global__ void
 add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
-        float dt, float t, float* X, float* Y, float* Z, float* Tmac, float* u_3d, int Nx, int Ny, int Nz, int Nt)
+        float dt, float t, thermalInputData thm)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id;
@@ -445,10 +445,10 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
       if (nucl_status[C]==0)
       {
 
-        float T_cell = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t-Tmac[0], 
-                                            Nx, Ny, Nz, Nt, Dx, Dt);
-        float T_cell_dt = interp4Dtemperature(u_3d, x[glob_i] - X[0], y[glob_j] - Y[0], z[glob_k] - Z[0], t+dt-Tmac[0], 
-                                            Nx, Ny, Nz, Nt, Dx, Dt);                                        
+        float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X[0], y[glob_j] - thm.Y[0], z[glob_k] - thm.Z[0], t - thm.Tmac[0], 
+            thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);
+        float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X[0], y[glob_j] - thm.Y[0], z[glob_k] - thm.Z[0], t+dt - thm.Tmac[0], 
+            thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);                                        
         float delT = - T_cell_dt;
         float d_delT = T_cell - T_cell_dt;
         float nuc_posb = nuncl_possibility(delT, d_delT);
@@ -765,7 +765,7 @@ void APTPhaseField::evolve()
         if (designSetting->includeNucleation)
         {
             add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
-                2.0f*params.dt*params.tau0, t_cur_step, Mgpu.X_mac, Mgpu.Y_mac, Mgpu.Z_mac, Mgpu.t_mac, Mgpu.T_3D, mac.Nx, mac.Ny, mac.Nz, mac.Nt); 
+                2.0f*params.dt*params.tau0, t_cur_step, Mgpu); 
         }
 
 

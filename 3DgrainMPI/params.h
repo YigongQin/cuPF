@@ -13,6 +13,7 @@ public:
   // processing parameters
   int thermalType;
   float G, R, delta, kin_delta, underCoolingRate;
+  float underCoolingRate0, nuc_Nmax0;
 
   // physical parameters
   float k, c_infty, m_slope, c_infm, Dl, GT;
