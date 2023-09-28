@@ -231,6 +231,9 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             }
         }
 
+       float Dt = thm.t_mac[1] - thm.t_mac[0];
+       float Dx = thm.X_mac[1] - thm.X_mac[0]; 
+
        for (arg_index = 0; arg_index<NUM_PF; arg_index++)
        {
             if (local_args[arg_index]==-1)
@@ -279,7 +282,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 }
                 else
                 {
-                    Tinterp = cP.G*(z[k] - cP.z0) - cP.underCoolingRate*1e6 *t; 
+                    Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t - thm.t_mac[0], 
+                        cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
