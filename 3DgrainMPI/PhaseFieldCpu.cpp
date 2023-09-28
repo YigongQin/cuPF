@@ -101,7 +101,6 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/t.txt", mac.t_mac);
    // read_input(mac.folder+"/alpha.txt",mac.alpha_mac);
     read_input(mac.folder+"/psi.txt",mac.psi_mac);
-    read_input(mac.folder+"/U.txt",mac.U_mac);
     read_input(mac.folder+"/G.txt", &params.G);
     read_input(mac.folder+"/Rmax.txt", &params.R);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
@@ -185,6 +184,11 @@ void PhaseField::parseInputParams(std::string fileName)
     params.bcX = designSetting->bcX;
     params.bcY = designSetting->bcY;
     params.bcZ = designSetting->bcZ;
+
+    params.Nx = mac.Nx;
+    params.Ny = mac.Ny;
+    params.Nz = mac.Nz;
+    params.Nt = mac.Nt;
 
     if (designSetting->useLineConfig || params.underCoolingRate>0.0)
     {

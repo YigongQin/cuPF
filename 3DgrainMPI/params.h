@@ -31,6 +31,7 @@ public:
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, haloWidth;
   int Mt, nts, NUM_PF; 
   float dx, dt, hi, cfl, dt_sqrt;
+  int Nx, Ny, Nz, Nt;
 
   // initial/boundary condition parameters
   int ictype;

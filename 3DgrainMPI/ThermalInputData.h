@@ -18,7 +18,6 @@ public:
     float* t_mac;
     int* alpha_mac;
     float* psi_mac;
-    float* U_mac;
     float* T_3D;
     float* theta_arr;
     float* cost;

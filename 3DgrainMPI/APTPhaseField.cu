@@ -446,9 +446,9 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
       {
 
         float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t - thm.t_mac[0], 
-            thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);
+            cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
         float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t+dt - thm.t_mac[0], 
-            thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);                                        
+            cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);                                        
         float delT = - T_cell_dt;
         float d_delT = T_cell - T_cell_dt;
         float nuc_posb = nuncl_possibility(delT, d_delT);
