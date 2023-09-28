@@ -18,11 +18,6 @@ void PhaseField::parseInputParams(std::string fileName)
 {
     const DesignSettingData* designSetting = GetSetDesignSetting();
 
-    float nts;
-    float ictype;
-    float haloWidth;
-    float temp_Nx, temp_Ny, temp_Nz, temp_Nt;
-    float nprd;
     ifstream parseFile(fileName);
     string lineText;
     while (parseFile.good()){
@@ -57,24 +52,19 @@ void PhaseField::parseInputParams(std::string fileName)
   
         getParam(lineText, "eta", params.eta);
 
-        getParam(lineText, "nts", nts);
-        params.nts = (int)nts;
-        getParam(lineText, "ictype", ictype);
-        params.ictype = (int)ictype;
-        getParam(lineText, "noi_period", nprd);
-        params.noi_period = (int)nprd;
-
+        getParam(lineText, "nts", params.nts);
+        getParam(lineText, "ictype", params.ictype);
+        getParam(lineText, "noi_period", params.noi_period);
         
-        getParam(lineText, "haloWidth", haloWidth);
-        params.haloWidth = (int)haloWidth;
+        getParam(lineText, "haloWidth", params.haloWidth);
         getParam(lineText, "xmin", params.xmin);
         getParam(lineText, "ymin", params.ymin);
         getParam(lineText, "zmin", params.zmin);
 
-        getParam(lineText, "nx", temp_Nx);
-        getParam(lineText, "ny", temp_Ny);
-        getParam(lineText, "nz", temp_Nz);
-        getParam(lineText, "nt", temp_Nt);
+        getParam(lineText, "nx", params.Nx);
+        getParam(lineText, "ny", params.Ny);
+        getParam(lineText, "nz", params.Nz);
+        getParam(lineText, "nt", params.Nt);
         getParam(lineText, "cfl", params.cfl); 
         getParam(lineText, "preMt", params.preMt); 
 
@@ -85,10 +75,10 @@ void PhaseField::parseInputParams(std::string fileName)
 
 
     // macro input
-    mac.Nx = (int) temp_Nx;
-    mac.Ny = (int) temp_Ny;
-    mac.Nz = (int) temp_Nz;
-    mac.Nt = (int) temp_Nt;
+    mac.Nx = params.Nx;
+    mac.Ny = params.Ny;
+    mac.Nz = params.Nz;
+    mac.Nt = params.Nt;
     mac.X_mac = new float[mac.Nx];
     mac.Y_mac = new float[mac.Ny];
     mac.Z_mac = new float[mac.Nz];
@@ -188,11 +178,6 @@ void PhaseField::parseInputParams(std::string fileName)
     params.bcX = designSetting->bcX;
     params.bcY = designSetting->bcY;
     params.bcZ = designSetting->bcZ;
-
-    params.Nx = mac.Nx;
-    params.Ny = mac.Ny;
-    params.Nz = mac.Nz;
-    params.Nt = mac.Nt;
 
     if (designSetting->useLineConfig || params.underCoolingRate>0.0)
     {
