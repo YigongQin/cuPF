@@ -93,7 +93,7 @@ void PhaseField::parseInputParams(std::string fileName)
     mac.t_mac = new float[mac.Nt];
     
     mac.psi_mac = new float [mac.Nx*mac.Ny*mac.Nz];
-    mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
+    //mac.U_mac = new float [mac.Nx*mac.Ny*mac.Nz];
     mac.T_3D = new float[mac.Nx*mac.Ny*mac.Nz*mac.Nt];
 
 

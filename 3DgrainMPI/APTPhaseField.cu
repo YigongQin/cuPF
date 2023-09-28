@@ -176,7 +176,7 @@ APTsetBC3D(float* ph, int* active_args, int max_area,
 
 // psi equation
 __global__ void
-APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData Mgpu)
+APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData thm)
 {
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -258,10 +258,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 if (phC>LS)
                 {
                         int theta_id = PF_id % cP.num_theta;
-                        sina = Mgpu.sint[theta_id];
-                        cosa = Mgpu.cost[theta_id];
-                        sinb = Mgpu.sint[theta_id+cP.num_theta];
-                        cosb = Mgpu.cost[theta_id+cP.num_theta];
+                        sina = thm.sint[theta_id];
+                        cosa = thm.cost[theta_id];
+                        sinb = thm.sint[theta_id+cP.num_theta];
+                        cosb = thm.cost[theta_id+cP.num_theta];
                 }
                 else
                 {
