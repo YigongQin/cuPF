@@ -675,7 +675,7 @@ void APTPhaseField::evolve()
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
-    set_minus1<<< num_block_2d, blocksize_2d >>>(phi_old,length);
+    
     curandState* dStates;
     if (designSetting->includeNucleation)
     {
@@ -688,7 +688,6 @@ void APTPhaseField::evolve()
       cudaMalloc((void **) &dStates, sizeof(curandState) * (lenCell+params.noi_period));
       cudaMalloc((void **) &nucleationStatus, sizeof(int) * lenCell);
       init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, params.seed_val, lenCell+params.noi_period);
-
       init_nucl_status<<<num_block_c, blocksize_2d>>>(phi_old, nucleationStatus, cnx, cny, cnz, fnx, fny);
     }
 
@@ -721,12 +720,47 @@ void APTPhaseField::evolve()
 
     // get initial fields
     APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
+
+    float t_cur_step;
+    int kt = 0;
+    if (params.preMt>0)
+    {
+        for (kt=0; kt<params.preMt/2; kt++)
+        {
+            if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
+            {
+                mpiManager->MPItransferData(4*kt + 10, mpiManager->data_new_float, mpiManager->PFBuffer);
+                mpiManager->MPItransferData(4*kt + 12, mpiManager->data_new_int, mpiManager->ArgBuffer);
+            }
+            setBC(designSetting->useLineConfig, PFs_new, active_args_new);
+    
+            t_cur_step = (2*kt+1)*params.dt*params.tau0;
+            APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
+    
+            if (designSetting->includeNucleation)
+            {
+                add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
+                    2.0f*params.dt*params.tau0, t_cur_step, Mgpu); 
+            }
+            if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
+            {
+                mpiManager->MPItransferData(4*kt + 11, mpiManager->data_old_float, mpiManager->PFBuffer);
+                mpiManager->MPItransferData(4*kt + 13, mpiManager->data_old_int, mpiManager->ArgBuffer);
+            }
+            setBC(designSetting->useLineConfig, PFs_old, active_args_old);
+    
+            t_cur_step = (2*kt+2)*params.dt*params.tau0;
+            APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
+        }
+        
+    }
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
-    cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-    cudaMemcpy(args_cpu, active_args_new, NUM_PF*length * sizeof(int),cudaMemcpyDeviceToHost);
-
-
+    cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
+    
+    APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+    APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
+    
     if (designSetting->useLineConfig)
     {
         movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
@@ -740,17 +774,16 @@ void APTPhaseField::evolve()
         }
     }
 
-    float t_cur_step;
     int qoikts = params.Mt/params.nts;
     int fieldkts = designSetting->save3DField>0 ? params.Mt/designSetting->save3DField : 1e8;
     printf("steps between qois %d, no. qois %d\n", qoikts, params.nts);
     printf("steps between fields %d, no. fields %d\n", fieldkts, designSetting->save3DField);
 
     int numComm = 0;
+    kt = 0;
 
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
-    int kt = 0;
 
     for (kt=0; kt<params.Mt/2; kt++)
     {

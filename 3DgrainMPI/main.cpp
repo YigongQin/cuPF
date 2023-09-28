@@ -47,14 +47,6 @@ int main(int argc, char** argv)
         cout << "use full PF" << endl;
     }
 
-    // run the python initialization for temperature and orientation field
-    if (mpiManager->rank == 0)
-    {
-        string cmd = "python3 " + designSetting->inputFile + " " + to_string(designSetting->seedValue);
-        int result = system(cmd.c_str()); 
-        assert(result == 0);
-    }
-
     PFSolver->SetDesignSetting(designSetting);
     PFSolver->SetMPIManager(mpiManager);
     PFSolver->mac.folder = designSetting->thermalInputFolder + to_string(designSetting->seedValue);

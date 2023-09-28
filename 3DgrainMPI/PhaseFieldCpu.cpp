@@ -39,6 +39,8 @@ void PhaseField::parseInputParams(std::string fileName)
         getParam(lineText, "kin_delta", params.kin_delta);
         getParam(lineText, "delta", params.delta); 
 
+        getParam(lineText, "underCoolingRate0", params.underCoolingRate0);
+        getParam(lineText, "nuc_Nmax0", params.nuc_Nmax0);
         getParam(lineText, "undcool_mean", params.undcool_mean);
         getParam(lineText, "undcool_std", params.undcool_std);
         getParam(lineText, "nuc_rad", params.nuc_rad);
