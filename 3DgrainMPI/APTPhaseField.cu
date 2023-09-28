@@ -415,14 +415,14 @@ nuncl_possibility(float delT, float d_delT)
 
 __global__ void
 add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
-        float dt, float t, thermalInputData thm)
+        float dt, float t, ThermalInputData thm)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id;
   G2L_3D(C, i, j, k, PF_id, cnx, cny, cnz);
 
-  float Dt = Tmac[1]-Tmac[0];
-  float Dx = X[1]-X[0]; 
+  float Dt = thm.Tmac[1]-thm.Tmac[0];
+  float Dx = thm.X[1]-thm.X[0]; 
 
   if ( (i<cnx) && (j<cny) && (k<cnz)) 
   {
