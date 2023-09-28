@@ -421,8 +421,8 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
   int i, j, k, PF_id;
   G2L_3D(C, i, j, k, PF_id, cnx, cny, cnz);
 
-  float Dt = thm.Tmac[1]-thm.Tmac[0];
-  float Dx = thm.X[1]-thm.X[0]; 
+  float Dt = thm.t_mac[1]-thm.t_mac[0];
+  float Dx = thm.X_mac[1]-thm.X_mac[0]; 
 
   if ( (i<cnx) && (j<cny) && (k<cnz)) 
   {
@@ -445,9 +445,9 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
       if (nucl_status[C]==0)
       {
 
-        float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X[0], y[glob_j] - thm.Y[0], z[glob_k] - thm.Z[0], t - thm.Tmac[0], 
+        float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t - thm.t_mac[0], 
             thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);
-        float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X[0], y[glob_j] - thm.Y[0], z[glob_k] - thm.Z[0], t+dt - thm.Tmac[0], 
+        float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t+dt - thm.t_mac[0], 
             thm.Nx, thm.Ny, thm.Nz, thm.Nt, Dx, Dt);                                        
         float delT = - T_cell_dt;
         float d_delT = T_cell - T_cell_dt;
