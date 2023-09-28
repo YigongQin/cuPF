@@ -176,7 +176,7 @@ APTsetBC3D(float* ph, int* active_args, int max_area,
 
 // psi equation
 __global__ void
-APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, float* sint, float* cost)
+APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData Mgpu)
 {
 
   int C = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -255,10 +255,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 if (phC>LS)
                 {
                         int theta_id = PF_id % cP.num_theta;
-                        sina = sint[theta_id];
-                        cosa = cost[theta_id];
-                        sinb = sint[theta_id+cP.num_theta];
-                        cosb = cost[theta_id+cP.num_theta];
+                        sina = Mgpu.sint[theta_id];
+                        cosa = Mgpu.cost[theta_id];
+                        sinb = Mgpu.sint[theta_id+cP.num_theta];
+                        cosb = Mgpu.cost[theta_id+cP.num_theta];
                 }
                 else
                 {
@@ -560,7 +560,7 @@ void APTPhaseField::cudaSetup()
     cudaMemcpyToSymbol(cP, &params, sizeof(GlobalConstants) );
 
     // create forcing field
-    
+    //cudaMalloc((void **)&(Mgpu),  sizeof(ThermalInputData)); 
     cudaMalloc((void **)&(Mgpu.X_mac),  sizeof(float) * mac.Nx);
     cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
     cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
@@ -577,7 +577,7 @@ void APTPhaseField::cudaSetup()
     cudaMemcpy(Mgpu.theta_arr, mac.theta_arr, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.sint, mac.sint, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
-
+    
 
 }
 
@@ -716,7 +716,7 @@ void APTPhaseField::evolve()
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     // get initial fields
-    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
+    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
     cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
@@ -760,7 +760,7 @@ void APTPhaseField::evolve()
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu.sint, Mgpu.cost);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
 
         if (designSetting->includeNucleation)
         {
@@ -814,7 +814,7 @@ void APTPhaseField::evolve()
         }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu.sint, Mgpu.cost);
+        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu);
         //kt++;
    }
 
