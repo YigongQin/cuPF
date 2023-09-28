@@ -24,10 +24,10 @@ nuc_Nmax = 0.05                 # 1/um^2 density; 0 to very big number
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 13
-ny = 13
-nz = 13
-nt = 11
+nx = 43
+ny = 43
+nz = 43
+nt = 5
 
 
 ## MPI
@@ -57,33 +57,45 @@ BC = Lx/(nx-3)
 top = 20
 z0 = 2
 r0 = 0.9*Lx
-Mt = 0
 
 G = 0
 Rmax = 20e5
 underCoolingRate = 10
 
 
+# initial liquid param
+underCoolingRate0 = 50
+nuc_Nmax0 = 0.01
+preMt = 1000
+
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
+    parser.add_argument("--outfile_folder", type=str, default = '')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 1)
     parser.add_argument("--save3Ddata", type=int, default = 0)
-    parser.add_argument("--meltpool", type=str, default = 'uniform')
+    parser.add_argument("--meltpool", type=str, default = 'cylinder')
     parser.add_argument("--boundary", type=str, default = '000')
+    parser.add_argument("--mpi", type=int, default = 1)
 
     parser.add_argument("--nucleation", dest='nucl', action='store_true')
     parser.set_defaults(nucl=False)
+
+    parser.add_argument("--liquidStart", dest='liquid', action='store_true')
+    parser.set_defaults(liquid=False)
 
     parser.add_argument("--lineConfig", dest='line', action='store_true')
     parser.set_defaults(line=False)
     
     parser.add_argument("--nuclGridSampl", dest='nuclGrid', action='store_true')
-    parser.set_defaults(line=False)
+    parser.set_defaults(nuclGrid=False)
 
     parser.add_argument("--grGridSampl", dest='grGrid', action='store_true')
-    parser.set_defaults(line=False)
+    parser.set_defaults(grGrid=False)
+    
+
     
     args = parser.parse_args()     
     
@@ -111,7 +123,7 @@ if __name__ == '__main__':
 
     
     
-    '''create graph'''
+    '''create a planar graph'''
     
     g1 = graph(lxd = Lx, seed = seed) 
     print('input shape of alpha_field, ', g1.alpha_field.shape)
@@ -149,10 +161,8 @@ if __name__ == '__main__':
     y = np.linspace(0-BC,Ly+BC,ny)
     z = np.linspace(0-BC,Lz+BC,nz)
     
-    if Mt>0:
-        pass
-    else:
-        t = np.linspace(0,top/Rmax,nt)
+
+    t = np.linspace(0,top/Rmax,nt)
     
     tmax = t[-1]
     
@@ -170,7 +180,7 @@ if __name__ == '__main__':
         ti = int(i/(nx*ny*nz))
     
     
-        T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti])
+        T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0)
 
         if ti==0:
             
@@ -207,3 +217,18 @@ if __name__ == '__main__':
     hf = h5py.File(mac_folder+'Temp.h5', 'w')
     hf.create_dataset('Temp', data=T)
     hf.close()
+    
+    cmd = "./phase_field" + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
+    if args.liquid:
+        cmd = cmd + " -n 1"
+    elif args.nucl:
+        cmd = cmd + " -n 2"
+    else:
+        cmd = cmd
+        
+    if args.mpi>1:
+        cmd = "ibrun -n " + str(args.mpi) + " "
+    
+    print(cmd)
+    
+    os.system(cmd)  

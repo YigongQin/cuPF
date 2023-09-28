@@ -17,7 +17,7 @@ class ThermalProfile:
 
     def pointwiseTempConstGR(self, profile, x, y, z, t, z0=0, r0=0):
         
-        return self.G*self.dist2Interface(self, profile, x, y, z, z0, r0) - self.U*t
+        return self.G*self.dist2Interface(profile, x, y, z, z0, r0) - self.U*t
     
     def dist2Interface(self, profile, x, y, z, z0=0, r0=0):
         
@@ -25,38 +25,38 @@ class ThermalProfile:
             return 0
         
         if profile == 'line':
-            return self.lineProfile(x, y, z, 2)
+            return self.lineProfile(x, y, z, z0)
         
         if profile == 'cylinder':
-            return self.cylinderProfile(x, y, z, r0, [self.lx/2, self.lz])
+            return self.cylinderProfile(x, y, z, z0, r0, [self.lx/2, self.lz])
         
         if profile == 'sphere4':
-            return self.sphereProfile(x, y, z, r0, [self.lx/2, self.ly, self.lz])
+            return self.sphereProfile(x, y, z, z0, r0, [self.lx/2, self.ly, self.lz])
         
         if profile == 'sphere8':
-            return self.sphereProfile(x, y, z, r0, [self.lx, self.ly, self.lz])
+            return self.sphereProfile(x, y, z, z0, r0, [self.lx, self.ly, self.lz])
 
   
 
-    def lineProfile(x, y, z,  z0):
+    def lineProfile(self, x, y, z, z0):
         
 
         return z - z0
     
     
     """ x-z cross-section """
-    def cylinderProfile(x, y, z, r0, centerline):
+    def cylinderProfile(self, x, y, z, z0, r0, centerline):
         
-        x0, z0 = centerline
-        dist = np.sqrt((x - x0)**2 + (z - z0)**2)
+        xc, zc = centerline
+        dist = np.sqrt((x - xc)**2 + (z + z0 - zc)**2)
 
         return r0 - dist
     
     
-    def sphereProfile(x, y, z, r0, center):
+    def sphereProfile(self, x, y, z, z0, r0, center):
         
-        x0, y0, z0 = center
-        dist = np.sqrt((x - x0)**2 + (y - y0)**2 + (z - z0)**2)
+        xc, yc, zc = center
+        dist = np.sqrt((x - xc)**2 + (y - yc)**2 + (z + z0 - zc)**2)
   
         return r0 - dist
 
