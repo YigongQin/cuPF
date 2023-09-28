@@ -18,7 +18,7 @@ public:
 
 
 protected:
-	virtual void initPhaseFieldFromliquid();
+	virtual void initPhaseFieldFromliquid(){};
 	virtual void moveDomain(MovingDomain* movingDomainManager);
 	virtual void getLineQoIs(MovingDomain* movingDomainManager);
 	void setBC(bool useLineConfig, float* ph, int* active_args);

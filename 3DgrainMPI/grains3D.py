@@ -72,7 +72,7 @@ preMt = 1000
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
-    parser.add_argument("--outfile_folder", type=str, default = '')
+    parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 1)
     parser.add_argument("--save3Ddata", type=int, default = 0)
@@ -218,7 +218,7 @@ if __name__ == '__main__':
     hf.create_dataset('Temp', data=T)
     hf.close()
     
-    cmd = "./phase_field" + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
+    cmd = "./phase_field grains3D.py" + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
     if args.liquid:
         cmd = cmd + " -n 1"
     elif args.nucl:

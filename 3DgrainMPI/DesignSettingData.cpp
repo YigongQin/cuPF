@@ -16,7 +16,7 @@ void DesignSettingData::getOptions(int argc, char** argv)
     inputFile = argv[1]; 
     thermalInputFolder = "forcing/case";
     // this output folder should be specified differently for each system
-    outputFolder = "/scratch1/07428/ygqin/graph/"; 
+    outputFolder = ""; 
 
     static struct option long_options[] = 
     {
