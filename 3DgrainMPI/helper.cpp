@@ -57,6 +57,22 @@ void getParam(std::string lineText, std::string key, float& param){
     }
 }
 
+void getParam(std::string lineText, std::string key, int& param){
+    std::stringstream iss(lineText);
+    std::string word;
+    while (iss >> word){
+        //cout << word << endl;
+        std::string myKey=key;
+        if(word!=myKey) continue;
+        iss>>word;
+        std::string equalSign="=";
+        if(word!=equalSign) continue;
+        iss>>word;
+        param=std::stof(word);
+        
+    }
+}
+
 
 void read_input(std::string input, float* target){
     std::string line;

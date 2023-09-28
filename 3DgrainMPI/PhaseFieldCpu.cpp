@@ -76,6 +76,8 @@ void PhaseField::parseInputParams(std::string fileName)
         getParam(lineText, "nz", temp_Nz);
         getParam(lineText, "nt", temp_Nt);
         getParam(lineText, "cfl", params.cfl); 
+        getParam(lineText, "preMt", params.preMt); 
+
     }
     
     // Close the file
