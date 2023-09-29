@@ -405,11 +405,11 @@ init_nucl_status(float* ph, int* nucl_status, int cnx, int cny, int cnz, int fnx
 }
 
 __inline__ __device__ float 
-nuncl_possibility(float delT, float d_delT)
+nuncl_possibility(float delT, float d_delT, float nuc_Nmax)
 {
   float slope = -0.5f*(delT-cP.undcool_mean)*(delT-cP.undcool_mean)/cP.undcool_std/cP.undcool_std;
   slope = expf(slope); 
-  float density = cP.nuc_Nmax/(sqrtf(2.0f*M_PI)*cP.undcool_std) *slope*d_delT;
+  float density = nuc_Nmax/(sqrtf(2.0f*M_PI)*cP.undcool_std) *slope*d_delT;
    // float nuc_posb = 4.0f*cP.nuc_rad*cP.nuc_rad*density; // 2D
   float nuc_posb = 8.0f*cP.nuc_rad*cP.nuc_rad*cP.nuc_rad*density; // 3D
   return nuc_posb; 
@@ -419,7 +419,7 @@ nuncl_possibility(float delT, float d_delT)
 
 __global__ void
 add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float* x, float* y, float* z, int fnx, int fny, int fnz, curandState* states, 
-        float dt, float t, ThermalInputData thm)
+        float dt, float t, ThermalInputData thm, bool, useInitialUnderCooling)
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id;
@@ -448,14 +448,24 @@ add_nucl(float* ph, int* arg, int* nucl_status, int cnx, int cny, int cnz, float
 
       if (nucl_status[C]==0)
       {
-
-        float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t - thm.t_mac[0], 
-            cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
-        float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t+dt - thm.t_mac[0], 
-            cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);                                        
-        float delT = - T_cell_dt;
-        float d_delT = T_cell - T_cell_dt;
-        float nuc_posb = nuncl_possibility(delT, d_delT);
+        float nuc_posb;
+        if (useInitialUnderCooling)
+        {
+            float delT = cP.underCoolingRate0*1e6*(t+dt);
+            float d_delT = cP.underCoolingRate0*1e6*dt;
+            nuc_posb = nuncl_possibility(delT, d_delT, cP.nuc_Nmax0);
+        }
+        else
+        {
+            float T_cell = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t - thm.t_mac[0], 
+                cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
+            float T_cell_dt = interp4Dtemperature(thm.T_3D, x[glob_i] - thm.X_mac[0], y[glob_j] - thm.Y_mac[0], z[glob_k] - thm.Z_mac[0], t+dt - thm.t_mac[0], 
+                cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);                                        
+            float delT = - T_cell_dt;
+            float d_delT = T_cell - T_cell_dt;
+            nuc_posb = nuncl_possibility(delT, d_delT, cP.nuc_Nmax);
+        }
+        
         //printf("nucleation possibility at cell no. %f, %f \n", delT, d_delT);
         if (curand_uniform(states+C)<nuc_posb)
         {
@@ -736,12 +746,10 @@ void APTPhaseField::evolve()
     
             t_cur_step = (2*kt+1)*params.dt*params.tau0;
             APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu);
-    
-            if (designSetting->includeNucleation)
-            {
-                add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
-                    2.0f*params.dt*params.tau0, t_cur_step, Mgpu); 
-            }
+
+            add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
+                    2.0f*params.dt*params.tau0, t_cur_step, Mgpu, true); 
+
             if (mpiManager->numProcessor >1 && ((2*kt + 2)%mpiManager->haloWidth)==0 )
             {
                 mpiManager->MPItransferData(4*kt + 11, mpiManager->data_old_float, mpiManager->PFBuffer);
@@ -802,7 +810,7 @@ void APTPhaseField::evolve()
         if (designSetting->includeNucleation)
         {
             add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
-                2.0f*params.dt*params.tau0, t_cur_step, Mgpu); 
+                2.0f*params.dt*params.tau0, t_cur_step, Mgpu, false); 
         }
 
 
