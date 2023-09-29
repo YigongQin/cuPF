@@ -332,11 +332,14 @@ void PhaseField::initField(){
         mac.sint[i] = sinf(mac.theta_arr[i]);
         mac.cost[i] = cosf(mac.theta_arr[i]);
     }  
-    mac.alpha_mac = new int [(params.nx+1)*(params.ny+1)];
-    read_input(mac.folder+"/alpha.txt", mac.alpha_mac);
-    cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] <<endl;
-    //printf("%d %d\n", mac.alpha_mac[0], mac.alpha_mac[(fnx-2*params.haloWidth)*(fny-2*params.haloWidth)-1]);
-     
+
+    if (GetSetDesignSetting()->pureNucleation == false && GetSetDesignSetting()->useLineConfig)
+    {
+        mac.alpha_mac = new int [(params.nx+1)*(params.ny+1)];
+        read_input(mac.folder+"/alpha.txt", mac.alpha_mac);
+        cout << mac.alpha_mac[0] << " " << mac.alpha_mac[(params.nx+1)*(params.ny+1)-1] <<endl;
+    }
+
     float Dx = mac.X_mac[mac.Nx-1] - mac.X_mac[mac.Nx-2];
     float Dy = mac.Y_mac[mac.Ny-1] - mac.Y_mac[mac.Ny-2];
     float Dz = mac.Z_mac[mac.Nz-1] - mac.Z_mac[mac.Nz-2];    
