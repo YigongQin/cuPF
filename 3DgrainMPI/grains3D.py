@@ -20,7 +20,7 @@ kin_delta = 0.11
 # nuleation parameters
 undcool_mean = 2                # Kelvin  nuleantion barrier
 undcool_std = 0.5               # Kelvin fixed
-nuc_Nmax = 0.05                 # 1/um^2 density; 0 to very big number 
+nuc_Nmax = 0.01                 # 1/um^2 density; 0 to very big number 
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
@@ -47,16 +47,16 @@ dx = 0.8                            # mesh width
 W0 = 0.1                    # interface thickness      um
 cfl = 1.5
 asp_ratio_yx = 1
-asp_ratio_zx = 1                    # aspect ratio
+asp_ratio_zx = 0.5                    # aspect ratio
 moving_ratio = 0.2
 nts = 1          # number snapshots to save, Mt/nts must be int
 Lx = 20
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 20
-z0 = 2
-r0 = 0.9*Lx
+top = 0.01
+z0 = 1
+r0 = 0.9*Lz
 
 G = 0
 Rmax = 20e5
@@ -64,9 +64,9 @@ underCoolingRate = 10
 
 
 # initial liquid param
-underCoolingRate0 = 50
+underCoolingRate0 = 10
 nuc_Nmax0 = 0.01
-preMt = 1000
+preMt = 4000
 
 
 if __name__ == '__main__':
@@ -184,8 +184,11 @@ if __name__ == '__main__':
 
         if ti==0:
             
-           psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi])  
-            
+           psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0)  
+    
+    T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
+    psi3d = psi.reshape(nx,ny,nz, order='F')       
+    
     mac_folder = './forcing/case' + str(seed) + '/'
     
     isExist = os.path.exists(mac_folder)

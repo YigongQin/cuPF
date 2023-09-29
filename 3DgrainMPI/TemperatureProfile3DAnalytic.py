@@ -48,7 +48,7 @@ class ThermalProfile:
     def cylinderProfile(self, x, y, z, z0, r0, centerline):
         
         xc, zc = centerline
-        dist = np.sqrt((x - xc)**2 + (z + z0 - zc)**2)
+        dist = np.sqrt((x - xc)**2 + (z - z0 - zc)**2)
 
         return r0 - dist
     
