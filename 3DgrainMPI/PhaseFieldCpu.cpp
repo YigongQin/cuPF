@@ -226,7 +226,7 @@ void PhaseField::cpuSetup(MPIsetting* mpiManager){
 
     cout<<"number of grains = "<<params.num_theta<<endl;
     cout<<"number of time steps = "<<params.Mt<<endl;
-
+    cout<<"number of time steps for initial condition = "<<params.preMt<<endl;
     }
 
     mpiManager->nxLocal = params.nx/mpiManager->numProcessorX;

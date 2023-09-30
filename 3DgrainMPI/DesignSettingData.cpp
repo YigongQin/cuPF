@@ -6,7 +6,7 @@
 using namespace std;
 
 DesignSettingData::DesignSettingData()
-: useMPI(false), useLineConfig(false), includeNucleation(false), pureNucleation(false), useAPT(true), save3DField(0), mpiDim(1), seedValue(0),
+: useMPI(false), useLineConfig(false), includeNucleation(false), pureNucleation(false), useAPT(true), save3DField(1), mpiDim(1), seedValue(0),
   bcX(0), bcY(0), bcZ(0)
 {
 }
