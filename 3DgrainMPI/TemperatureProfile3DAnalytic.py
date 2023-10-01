@@ -17,7 +17,7 @@ class ThermalProfile:
 
     def pointwiseTempConstGR(self, profile, x, y, z, t, z0=0, r0=0):
         
-        return self.G*self.dist2Interface(profile, x, y, z, z0, r0) - self.U*t
+        return self.G*self.dist2Interface(profile, x, y, z, z0, r0) - self.U*t*1e6
     
     def dist2Interface(self, profile, x, y, z, z0=0, r0=0):
         
