@@ -73,7 +73,7 @@ void PhaseField::parseInputParams(std::string fileName)
     // Close the file
     parseFile.close();
 
-
+    cout  << "init undercool " << params.underCoolingRate0 <<endl;
     // macro input
     mac.Nx = params.Nx;
     mac.Ny = params.Ny;

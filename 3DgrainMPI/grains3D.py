@@ -54,19 +54,19 @@ Lx = 20
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 0.01
+top = 10
 z0 = 1
 r0 = 0.9*Lz
 
 G = 0
 Rmax = 20e5
-underCoolingRate = 10
+underCoolingRate = 20
 
 
 # initial liquid param
-underCoolingRate0 = 10
+underCoolingRate0 = 20
 nuc_Nmax0 = 0.01
-preMt = 4000
+preMt = 2000
 
 
 if __name__ == '__main__':

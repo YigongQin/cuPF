@@ -22,7 +22,7 @@ class ThermalProfile:
     def dist2Interface(self, profile, x, y, z, z0=0, r0=0):
         
         if profile == 'uniform':
-            return 0
+            return -10
         
         if profile == 'line':
             return self.lineProfile(x, y, z, z0)
@@ -41,7 +41,7 @@ class ThermalProfile:
     def lineProfile(self, x, y, z, z0):
         
 
-        return z - z0
+        return z0 - z
     
     
     """ x-z cross-section """
@@ -50,7 +50,7 @@ class ThermalProfile:
         xc, zc = centerline
         dist = np.sqrt((x - xc)**2 + (z - z0 - zc)**2)
 
-        return r0 - dist
+        return dist - r0
     
     
     def sphereProfile(self, x, y, z, z0, r0, center):
@@ -58,7 +58,7 @@ class ThermalProfile:
         xc, yc, zc = center
         dist = np.sqrt((x - xc)**2 + (y - yc)**2 + (z + z0 - zc)**2)
   
-        return r0 - dist
+        return dist - r0
 
 
 
