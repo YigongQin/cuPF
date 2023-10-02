@@ -17,6 +17,7 @@ from tvtk.api import tvtk, write_data
 class grain_visual:
     def __init__(self, 
                  rank: int = 0,
+                 maxRank: int = 2,
                  lxd: float = 40, 
                  seed: int = 1, 
                  frames: int = 1, 
@@ -25,6 +26,7 @@ class grain_visual:
                  physical_params = {}):   
 
         self.rank = rank
+        self.maxRank = maxRank
         self.lxd = lxd
         self.seed = seed
         self.height = height
@@ -37,7 +39,7 @@ class grain_visual:
     def load(self, rawdat_dir: str = './'):
        
         
-        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '_' + '*time'+str(self.time) + '*.h5'))[0]
+        self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '*rank'+str(self.rank) + '_' + '*time'+str(self.time) + '*.h5'))[0]
         f = h5py.File(self.data_file, 'r')
         self.x = np.asarray(f['x_coordinates'])
         self.y = np.asarray(f['y_coordinates'])
@@ -47,7 +49,7 @@ class grain_visual:
         self.theta_z = np.zeros(1 + num_theta)
         self.theta_z[1:] = self.angles[num_theta+1:]
         
-        assert int(self.lxd) == int(self.x[-2])
+       # assert int(self.lxd) == int(self.x[-2])
         
         
         dx = self.x[1] - self.x[0]
@@ -79,8 +81,8 @@ class grain_visual:
         self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
         
        # print(self.alpha_pde)
-    
-        grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=(0, 0, 0), 
+        origin = (self.x[1], self.y[1], self.z[1]) 
+        grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
         
         grid.point_data.scalars = self.alpha_pde.ravel(order='F')
