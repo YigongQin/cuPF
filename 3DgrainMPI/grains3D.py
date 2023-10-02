@@ -45,7 +45,7 @@ ictype = 0                    # initial condtion
 # simulation parameters
 dx = 0.8                            # mesh width
 W0 = 0.1                    # interface thickness      um
-cfl = 1.5
+cfl = 1.0
 asp_ratio_yx = 1
 asp_ratio_zx = 0.5                    # aspect ratio
 moving_ratio = 0.2
@@ -58,8 +58,8 @@ top = 10
 z0 = 1
 r0 = 0.9*Lz
 
-G = 0
-Rmax = 20e5
+G = 10
+Rmax = 2e6
 underCoolingRate = 20
 
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         cmd = cmd
         
     if args.mpi>1:
-        cmd = "ibrun -n " + str(args.mpi) + " "
+        cmd = "ibrun -n " + str(args.mpi) + " " + cmd
     
     print(cmd)
     
