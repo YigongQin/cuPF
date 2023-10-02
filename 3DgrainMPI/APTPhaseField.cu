@@ -729,7 +729,7 @@ void APTPhaseField::evolve()
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     // get initial fields
-    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, true);
+    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
 
     float t_cur_step;
     int kt = 0;
@@ -785,7 +785,7 @@ void APTPhaseField::evolve()
             qois->calculateQoIs(params, alpha, 0);
         }
     }
-    params.Mt = 2;
+   // params.Mt = 2;
     int qoikts = params.Mt/params.nts;
     int fieldkts = designSetting->save3DField>0 ? params.Mt/designSetting->save3DField : 1e8;
     printf("steps between qois %d, no. qois %d\n", qoikts, params.nts);
@@ -852,6 +852,7 @@ void APTPhaseField::evolve()
 
         if ((2*kt+2)%fieldkts==0)
         {
+            cudaMemset(alpha_m, 0, sizeof(int) * length);
             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
             cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost); 
             if (designSetting->useLineConfig)
