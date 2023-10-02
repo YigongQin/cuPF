@@ -54,7 +54,7 @@ class grain_visual:
         
         dx = self.x[1] - self.x[0]
         
-        self.x /= self.lxd; self.y /= self.lxd; self.z /= self.lxd
+        #self.x /= self.lxd; self.y /= self.lxd; self.z /= self.lxd
         fnx, fny, fnz = len(self.x), len(self.y), len(self.z)
         print('grid ', fnx, fny, fnz)
         
@@ -82,6 +82,7 @@ class grain_visual:
         
        # print(self.alpha_pde)
         origin = (self.x[1], self.y[1], self.z[1]) 
+        print(origin)
         grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
         
