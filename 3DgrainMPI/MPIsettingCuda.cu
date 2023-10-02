@@ -8,7 +8,7 @@ collectData1D(T* field, int numFields, int offset, T* sendBufferL, T* sendBuffer
 {
     int C = blockIdx.x * blockDim.x + threadIdx.x;
     int i, j, k, PF_id, fnx, fny, fnz;
-    G2L_3D(C, i, j, k, PF_id, haloWidth, nyLocal, nzLocal);
+    G2L_4D(C, i, j, k, PF_id, haloWidth, nyLocal, nzLocal);
     if ( (i<haloWidth) && (j<nyLocal) && (k<nzLocal) && (PF_id<numFields))
     {
         fnx = nxLocal + haloWidth*2;
@@ -28,7 +28,7 @@ distributeData1D(T* field, int numFields, int offset, T* recvBufferL, T* recvBuf
 {
   int C = blockIdx.x * blockDim.x + threadIdx.x;
   int i, j, k, PF_id, fnx, fny, fnz;
-  G2L_3D(C, i, j, k, PF_id, haloWidth, nyLocal, nzLocal);
+  G2L_4D(C, i, j, k, PF_id, haloWidth, nyLocal, nzLocal);
 
   if ( (i<haloWidth) && (j<nyLocal) && (k<nzLocal) && (PF_id<numFields))
   {

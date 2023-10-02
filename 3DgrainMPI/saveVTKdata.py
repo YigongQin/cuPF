@@ -81,7 +81,10 @@ class grain_visual:
         self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
         
        # print(self.alpha_pde)
-        origin = (self.x[1], self.y[1], self.z[1]) 
+        if self.rank == 0:
+           origin = (self.x[1], self.y[1], self.z[1]) 
+        else:
+           origin = (self.x[0], self.y[1], self.z[1])
         print(origin)
         grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
