@@ -24,7 +24,7 @@ nuc_Nmax = 0.01                 # 1/um^2 density; 0 to very big number
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 43
+nx = 83
 ny = 43
 nz = 43
 nt = 5
@@ -46,33 +46,33 @@ ictype = 0                    # initial condtion
 dx = 0.8                            # mesh width
 W0 = 0.1                    # interface thickness      um
 cfl = 1.0
-asp_ratio_yx = 1
+asp_ratio_yx = 0.25
 asp_ratio_zx = 0.5                    # aspect ratio
 moving_ratio = 0.2
 nts = 1          # number snapshots to save, Mt/nts must be int
-Lx = 20
+Lx = 40
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 10
+top = 15
 z0 = 1
 r0 = 0.9*Lz
 
-G = 10
+G = 1
 Rmax = 2e6
-underCoolingRate = 20
+underCoolingRate = 2
 
 
 # initial liquid param
 underCoolingRate0 = 20
 nuc_Nmax0 = 0.01
-preMt = 2000
+preMt = 3000
 
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
-    parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/')
+    parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cylinder/')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 1)
     parser.add_argument("--save3Ddata", type=int, default = 0)
