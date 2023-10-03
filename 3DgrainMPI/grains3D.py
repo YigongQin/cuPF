@@ -231,6 +231,9 @@ if __name__ == '__main__':
         
     if args.mpi>1:
         cmd = "ibrun -n " + str(args.mpi) + " " + cmd
+        
+    if args.line:
+        cmd = cmd + " -l 1"
     
     print(cmd)
     
