@@ -28,10 +28,10 @@ class ThermalProfile:
             return self.lineProfile(x, y, z, z0)
         
         if profile == 'cylinder':
-            return self.cylinderProfile(x, y, z, z0, r0, [self.lx/2, self.lz])
+            return self.cylinderProfile(x, y, z, z0, r0, [self.ly/2, self.lz])
         
         if profile == 'sphere4':
-            return self.sphereProfile(x, y, z, z0, r0, [self.lx/2, self.ly, self.lz])
+            return self.sphereProfile(x, y, z, z0, r0, [self.lx, self.ly/2, self.lz])
         
         if profile == 'sphere8':
             return self.sphereProfile(x, y, z, z0, r0, [self.lx, self.ly, self.lz])
@@ -44,11 +44,11 @@ class ThermalProfile:
         return z0 - z
     
     
-    """ x-z cross-section """
+    """ y-z cross-section """
     def cylinderProfile(self, x, y, z, z0, r0, centerline):
         
-        xc, zc = centerline
-        dist = np.sqrt((x - xc)**2 + (z - z0 - zc)**2)
+        yc, zc = centerline
+        dist = np.sqrt((y - yc)**2 + (z - z0 - zc)**2)
 
         return dist - r0
     

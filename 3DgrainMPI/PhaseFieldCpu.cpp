@@ -179,7 +179,7 @@ void PhaseField::parseInputParams(std::string fileName)
     params.bcY = designSetting->bcY;
     params.bcZ = designSetting->bcZ;
 
-    if (designSetting->useLineConfig || params.underCoolingRate>0.0)
+    if (designSetting->useLineConfig)
     {
         params.thermalType = 1;
     }
@@ -420,15 +420,13 @@ void PhaseField::OutputQoIs()
     if (designSetting->includeNucleation)
     {
         grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->mNumActiveGrains);
-        outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
-                          "_G"+to_stringp(params.G,3)+"_UC"+to_stringp(params.underCoolingRate,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     }
     else
     {
         grainType = "Epita_grains"+to_string(params.num_theta);
-        outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
-                          "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
-    }   
+    } 
+    outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
+                    "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_UC"+to_stringp(params.underCoolingRate,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);  
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
     outputFile = designSetting->outputFolder + '/' + outputFile;
@@ -463,15 +461,13 @@ void PhaseField::OutputField(int currentStep)
     if (designSetting->includeNucleation)
     {
         grainType = "Mixed_density" + to_string(params.nuc_Nmax) + "_grains" + to_string(qois->mNumActiveGrains);
-        outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
-                          "_G"+to_stringp(params.G,3)+"_UC"+to_stringp(params.underCoolingRate,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     }
     else
     {
         grainType = "Epita_grains"+to_string(params.num_theta);
-        outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
-                          "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);
     }
+    outputFormat = grainType +"_nodes"+to_string(params.num_nodes)+"_frames"+to_string(params.nts)+"_lxd"+to_string(params.lxd)+\
+                    "_G"+to_stringp(params.G,3)+"_Rmax"+to_stringp(params.R,3)+"_UC"+to_stringp(params.underCoolingRate,3)+"_seed"+to_string(params.seed_val)+"_Mt"+to_string(params.Mt);      
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
 
     outputFile = designSetting->outputFolder + '/' + outputFile;
