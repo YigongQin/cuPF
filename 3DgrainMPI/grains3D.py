@@ -6,68 +6,49 @@ from math import pi
 import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
 
-# constant physical parameters
-Tmelt = 933.3
-Dh = 8.43e7                     # heat diffusion
-L_cp = 229
-GT = 0.347                      # Gibbs-Thompson coefficient [K*um]
-beta0 = 1e-7                    # linear coefficient
-mu_k = 0.217e6                  # [um/s/K]
-delta = 0.01                    # strength of the surface tension anisotropy         
-kin_delta = 0.11                # kinetic anisotropy
+def UN_sampling(seed):
+
+    ''' grid sampling'''  
+    UC_list = np.linspace(5, 50, 10)
+    Nmax_list = np.linspace(0.001, 0.01, 10)
+    
+    Uid = seed%len(UC_list)
+    Nid = seed//len(Nmax_list)
+    underCoolingRate = UC_list[Uid]
+    nuc_Nmax = Nmax_list[Nid]
+           
+    return underCoolingRate, nuc_Nmax
 
 
-# nuleation parameters
-undcool_mean = 2                # Kelvin  nuleantion barrier
-undcool_std = 0.5               # Kelvin fixed
-nuc_Nmax = 0.01                 # density [1/um^2] 
-nuc_rad = 0.4                   # radius of a nucleai
+def UN_random_sampling(seed):
+    
+    np.random.seed(seed)
+    underCoolingRate = np.random.random()*(50-5) + 5
+    nuc_Nmax = np.random.random()*(0.01-0.001) + 0.001
 
-# macro grid parameters
-nx = 83
-ny = 43
-nz = 43
-nt = 5
+    return underCoolingRate, nuc_Nmax
 
-
-## MPI
-haloWidth = 1
-xmin = 0
-ymin = 0
-zmin = 0
-
-## noise
-eta = 0.0  
-noi_period = 200
-eps = 1e-8                      # divide-by-zero treatment
-ictype = 0                      # initial condtion
-
-# simulation parameters
-dx = 0.8                        # mesh width
-W0 = 0.1                        # interface thickness [um]
-cfl = 1.0                       # cfl number
-asp_ratio_yx = 0.25             # aspect ratio of domain z/x
-asp_ratio_zx = 0.5              # aspect ratio of domain z/x
-moving_ratio = 0.2
-nts = 1                         # number snapshots to save, Mt/nts must be int
-Lx = 40
-Ly = Lx*asp_ratio_yx
-Lz = Lx*asp_ratio_zx
-BC = Lx/(nx-3) 
-top = 15
-z0 = 1
-r0 = 0.9*Lz
-
-G = 1
-Rmax = 2e6
-underCoolingRate = 2
+def GR_sampling(seed):
+    
+    G_list = np.linspace(10, 0.5, 39)
+    R_list = np.linspace(2, 0.2, 37)
+    
+    Gid = seed%len(G_list)
+    Rid = seed//len(G_list)
+    G = G_list[Gid]
+    Rmax = 1e6*R_list[Rid]
+    
+    return G, Rmax
 
 
-# initial liquid param
-underCoolingRate0 = 20
-nuc_Nmax0 = 0.01
-preMt = 3000
+def GR_random_sampling(seed):
 
+    np.random.seed(seed)
+    G = np.random.random()*(10-0.5) + 0.5
+    Rmax = np.random.random()*(2-0.2) + 0.2
+    Rmax *= 1e6
+
+    return G, Rmax
 
 if __name__ == '__main__':
     
@@ -102,16 +83,22 @@ if __name__ == '__main__':
 
     seed = args.seed
     
-    if args.nuclGrid:
-        if seed<10000:  
-           ''' grid sampling'''  
-           UC_list = np.linspace(5, 50, 10)
-           Nmax_list = np.linspace(0.001, 0.01, 10)
-           
-           Uid = seed%len(UC_list)
-           Nid = seed//len(Nmax_list)
-           underCoolingRate = UC_list[Uid]
-           nuc_Nmax = Nmax_list[Nid]
+    if args.meltpool == 'cylinder':
+        from cylinder import *
+    
+    if args.meltpool == 'line':
+        from line import *    
+    
+    if seed<10000: 
+        if args.nuclGrid:
+            underCoolingRate, nuc_Nmax = UN_sampling(seed)
+        if args.grGrid:
+            G, Rmax = GR_sampling(seed)
+    else:
+         if args.nuclGrid:
+            underCoolingRate, nuc_Nmax = UN_random_sampling(seed)
+         if args.grGrid:
+            G, Rmax = GR_random_sampling(seed)           
         
     if G>0:
        Rmax = underCoolingRate*1e6/G
@@ -124,8 +111,8 @@ if __name__ == '__main__':
     
     
     '''create a planar graph'''
-    BC = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
-    g1 = graph(lxd = Lx, seed = seed, BC = BC) 
+    bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
+    g1 = graph(lxd = Lx, seed = seed, BC = bc) 
     print('input shape of alpha_field, ', g1.alpha_field.shape)
     
     alpha = g1.alpha_field
@@ -221,7 +208,10 @@ if __name__ == '__main__':
     hf.create_dataset('Temp', data=T)
     hf.close()
     
-    cmd = "./phase_field grains3D.py" + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
+    cmd = "./phase_field " + args.meltpool + ".py"
+    
+    cmd = cmd + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
+    
     if args.liquid:
         cmd = cmd + " -n 1"
     elif args.nucl:
