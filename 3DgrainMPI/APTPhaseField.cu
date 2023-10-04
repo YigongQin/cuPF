@@ -801,11 +801,16 @@ void APTPhaseField::evolve()
 
     int numComm = 0;
     kt = 0;
+    int kt_max = params.Mt/2;
+    if (designSetting->useLineConfig)
+    {
+        kt_max += 1000;
+    }
 
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
-
-    for (kt=0; kt<params.Mt/2; kt++)
+    
+    for (kt=0; kt<kt_max; kt++)
     {
         //for (int kt=0; kt<0; kt++){
         if (mpiManager->numProcessor >1 && mpiManager->haloWidth == 1)
