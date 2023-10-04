@@ -16,10 +16,10 @@ nuc_Nmax = 0.01                 # 1/um^2 density; 0 to very big number
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 83
-ny = 43
-nz = 43
-nt = 5
+nx = 13
+ny = 13
+nz = 13
+nt = 11
 
 
 ## MPI
@@ -53,3 +53,8 @@ r0 = 0.9*Lz
 G = 10
 Rmax = 2e6
 underCoolingRate = 20
+
+# initial liquid param
+underCoolingRate0 = 20
+nuc_Nmax0 = 0.01
+preMt = 3000
