@@ -67,8 +67,8 @@ def periodic_move(p, pc):
     y += -1*(rel_y>0.5) + 1*(rel_y<-0.5) 
     
     
-    #assert -0.5<x - xc<0.5
-    #assert -0.5<y - yc<0.5
+    assert -0.5<x - xc<0.5
+    assert -0.5<y - yc<0.5
     return [x, y]
 
 
@@ -192,7 +192,7 @@ def random_lattice(dx=0.05, noise=0.0001, BC='periodic'):
 
         
 class graph:
-    def __init__(self, lxd: float = 40, seed: int = 1, noise: float = 0.01, \
+    def __init__(self, lxd: float = 40, seed: int = 1, noise: float = 0.01, BC: str = 'periodic',\
                  adjust_grain_size = False, adjust_grain_orien = False):
         self.mesh_size = 0.08
         self.patch_size = 40
@@ -215,10 +215,12 @@ class graph:
         self.region_coors = defaultdict(list)
         self.region_edge = defaultdict(set)
         self.region_center = defaultdict(list)
+        self.quadruples = {}
+        self.corner_grains = [0, 0, 0, 0]
        # self.region_coors = [] ## region corner coordinates
         self.density = self.ini_grain_size/lxd
         self.noise = noise/lxd/(lxd/self.patch_size)
-        self.BC = 'periodic'
+        self.BC = BC
         self.alpha_field = np.zeros((self.imagesize[0], self.imagesize[1]), dtype=int)
       #  self.alpha_field_dummy = np.zeros((2*self.imagesize[0], 2*self.imagesize[1]), dtype=int)
         self.error_layer = 0
@@ -230,8 +232,12 @@ class graph:
         
         if randInit:
             np.random.seed(seed)
-
-            self.random_voronoi()
+            if self.BC == 'noflux':
+                self.random_voronoi_noflux()
+            elif self.BC == 'periodic':
+                self.random_voronoi_periodic()
+            else:
+                raise KeyError()
             self.joint2vertex = dict((tuple(sorted(v)), k) for k, v in self.vertex2joint.items())
             self.alpha_pde = self.alpha_field.copy()
             self.update(init=True)
@@ -303,8 +309,8 @@ class graph:
     def compute_error_layer(self):
         self.error_layer = np.sum(self.alpha_pde!=self.alpha_field)/len(self.alpha_pde.flatten())
         print('pointwise error at current layer: ', self.error_layer)
-    
-    def random_voronoi(self):
+
+    def random_voronoi_periodic(self):
 
         mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
         vor = Voronoi(mirrored_seeds)     
@@ -419,7 +425,83 @@ class graph:
                 
         for k, v in self.vertex2joint.items():
             if len(v)!=3:
-                print(k, v)
+                print(k, v)    
+    def random_voronoi_noflux(self):
+
+        """ 
+        Output: self.vertices, self.vertex2joint
+        
+        """
+        mirrored_seeds, seeds = hexagonal_lattice(dx=self.density, noise = self.noise, BC = self.BC)
+        vor = Voronoi(mirrored_seeds)     
+    
+        vert_map = {}
+        vert_count = 0
+       # edge_count = 0
+        alpha = 1
+       # edges = []
+        
+        for region in vor.regions:
+            flag = True
+            for index in region:
+                if index == -1:
+                    flag = False
+                    break
+                else:
+                    x = vor.vertices[index, 0]
+                    y = vor.vertices[index, 1]
+                    if x<=-eps or y<=-eps or x>=1.+eps or y>=1.+eps:
+                        flag = False
+                        break
+
+                           
+            if region != [] and flag:
+
+                reordered_region = []
+                
+                for index in region:
+                    x, y = vor.vertices[index][0], vor.vertices[index][1]
+                    
+                    if (abs(x)<eps or abs(1-x)<eps) and (abs(y)<eps or abs(1-y)<eps):
+                        
+                        if abs(x)<eps and abs(y)<eps:
+                            self.corner_grains[0] = alpha + 1
+                        if abs(1-x)<eps and abs(y)<eps:
+                            self.corner_grains[1] = alpha + 1
+                        if abs(x)<eps and abs(1-y)<eps:
+                            self.corner_grains[2] = alpha + 1
+                        if abs(1-x)<eps and abs(1-y)<eps:
+                            self.corner_grains[3] = alpha + 1
+                        
+                        continue
+                
+                    
+                    point = (x, y)
+                    if point not in vert_map:
+                        self.vertices[vert_count] = point
+                        vert_map[point] = vert_count
+                        reordered_region.append(vert_count)
+                        vert_count += 1
+                    else:
+                        reordered_region.append(vert_map[point])
+                
+
+                alpha += 1                           
+              #  sorted_vert = reordered_region    
+                for i in range(len(reordered_region)):
+
+                    self.vertex2joint[reordered_region[i]].add(alpha)  
+          
+          
+        for k, v in self.vertex2joint.copy().items():
+            if len(v)<3:
+                self.vertex2joint[k].add(1)
+
+
+
+       # for k, v in self.vertex2joint.copy().items():
+          #  if len(v)<3:
+           #     print(k, self.vertices[k], v)
                 
                 
 
@@ -438,11 +520,14 @@ class graph:
           
         # Add polygons 
         for region_id, poly in self.region_coors.items():
+            
+            if self.BC == 'noflux' and region_id == 1: continue
+            
             Rid = region_id//(255*255)
             Gid = (region_id - Rid*255*255)//255
             Bid = region_id - Rid*255*255 - Gid*255
             orientation = tuple([Rid, Gid, Bid])
-            p = []
+            p = []            
 
             #poly = np.asarray(poly*pic_size[0], dtype=int) 
             for i in range(len(poly)):
@@ -460,6 +545,12 @@ class graph:
 
        # self.para_pixel(img, s)
         self.alpha_field = np.max(img, axis=0)    
+        
+        patch = np.meshgrid(np.arange(0,s), np.arange(0,s))
+        patch = 2*patch[0]//s + 2*(2*patch[1]//s)
+        
+        if self.BC == 'noflux':
+            self.alpha_field  = self.alpha_field + np.array(self.corner_grains)[patch]*(self.alpha_field==0)
 
         if self.raise_err:
             assert np.all(self.alpha_field>0), self.seed
@@ -536,6 +627,7 @@ class graph:
         edge_count = 0
 
         for region, verts in self.region_coors.items():
+
             if len(verts)<=1: continue
         #    assert len(verts)>1, ('one vertex is not a grain ', region, self.regions[region])
             
@@ -543,9 +635,9 @@ class graph:
 
             vert_in_region = self.regions[region]
                 
-            
-            for i in range(1, len(vert_in_region)):
-                verts[i] = periodic_move(verts[i], verts[i-1]) 
+            if self.BC == 'periodic':
+                for i in range(1, len(vert_in_region)):
+                    verts[i] = periodic_move(verts[i], verts[i-1]) 
 
                 
             inbound = [True, True]
@@ -565,6 +657,8 @@ class graph:
             sort_index = sorted(range(len(moved_region)), \
                 key = lambda x: counterclock(moved_region[x], self.region_center[region]))  
             
+            if self.BC == 'noflux' and region == 1:
+                sort_index.reverse()
                 
             self.region_coors[region] = [moved_region[i] for i in sort_index]
             
@@ -878,9 +972,9 @@ if __name__ == '__main__':
     if args.mode == 'check':
 
         seed = 4
-        g1 = graph(lxd = 40, seed=seed) 
+        g1 = graph(lxd = 40, seed = seed, BC = 'noflux') 
 
-       # g1.show_data_struct()
+        g1.show_data_struct()
        # g1.plot_grain_distribution()
     
     if args.mode == 'instance':
