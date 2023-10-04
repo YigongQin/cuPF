@@ -135,7 +135,7 @@ if __name__ == '__main__':
     theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
     theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
     
-    NG = len(g1.regions) + num_nucleatioon_theta
+    NG = len(g1.regions) 
     NN = len(g1.vertices)
     
     print('no. nodes', NN, 'no. regions', NG)
