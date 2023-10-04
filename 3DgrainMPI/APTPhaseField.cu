@@ -280,6 +280,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                     Tinterp = - cP.underCoolingRate0*1e6 *t;   
                 }
+                else if (cP.thermalType == 1)
+                {
+                    Tinterp = cP.G*(z[k]-cP.z0)- cP.underCoolingRate*1e6 *t;
+                }
                 else
                 {
                     Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t - thm.t_mac[0], 
@@ -762,7 +766,7 @@ void APTPhaseField::evolve()
             APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, true);
         }
         
-    }
+    
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_new, alpha_m, active_args_new);
   //  cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
@@ -770,9 +774,13 @@ void APTPhaseField::evolve()
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);    
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
+    }
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
-    
+
+    cudaMemset(alpha_m, 0, sizeof(int) * length);
+    APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_new, alpha_m, active_args_new);
+    cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);    
     if (designSetting->useLineConfig)
     {
         movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
@@ -785,7 +793,7 @@ void APTPhaseField::evolve()
             qois->calculateQoIs(params, alpha, 0);
         }
     }
-   // params.Mt = 2;
+    //params.Mt = 2;
     int qoikts = params.Mt/params.nts;
     int fieldkts = designSetting->save3DField>0 ? params.Mt/designSetting->save3DField : 1e8;
     printf("steps between qois %d, no. qois %d\n", qoikts, params.nts);
