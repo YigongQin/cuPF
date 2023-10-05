@@ -116,31 +116,37 @@ if __name__ == '__main__':
     print('input shape of alpha_field, ', g1.alpha_field.shape)
     
     alpha = g1.alpha_field
-    
-    # create nucleation pool
-    num_nucleatioon_theta = 1000
-    
-    # sample orientations
-    ux = np.random.randn(num_nucleatioon_theta)
-    uy = np.random.randn(num_nucleatioon_theta)
-    uz = np.random.randn(num_nucleatioon_theta)
-    
-    u = np.sqrt(ux**2+uy**2+uz**2)
-    ux = ux/u
-    uy = uy/u
-    uz = uz/u
-    
-    theta_x = np.zeros(1 + num_nucleatioon_theta)
-    theta_z = np.zeros(1 + num_nucleatioon_theta)
-    theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
-    theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
-    
+
     NG = len(g1.regions) 
     NN = len(g1.vertices)
     
     print('no. nodes', NN, 'no. regions', NG)
     
-    theta = np.hstack([0, g1.theta_x[1:], theta_x[1:], g1.theta_z[1:], theta_z[1:]])
+    if args.liquid or args.nucl:
+
+       # create nucleation pool
+        num_nucleatioon_theta = 1000
+        
+        # sample orientations
+        ux = np.random.randn(num_nucleatioon_theta)
+        uy = np.random.randn(num_nucleatioon_theta)
+        uz = np.random.randn(num_nucleatioon_theta)
+        
+        u = np.sqrt(ux**2+uy**2+uz**2)
+        ux = ux/u
+        uy = uy/u
+        uz = uz/u
+        
+        theta_x = np.zeros(1 + num_nucleatioon_theta)
+        theta_z = np.zeros(1 + num_nucleatioon_theta)
+        theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
+        theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+
+        NG += num_nucleatioon_theta
+        theta = np.hstack([0, g1.theta_x[1:], theta_x[1:], g1.theta_z[1:], theta_z[1:]])
+
+    else:
+        theta = np.hstack([0, g1.theta_x[1:], g1.theta_z[1:]])
     
   
     
