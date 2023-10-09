@@ -215,6 +215,7 @@ class graph:
         self.region_coors = defaultdict(list)
         self.region_edge = defaultdict(set)
         self.region_center = defaultdict(list)
+        self.region_bound = defaultdict(list)
         self.quadruples = {}
         self.corner_grains = [0, 0, 0, 0]
        # self.region_coors = [] ## region corner coordinates
@@ -443,6 +444,7 @@ class graph:
         
         for region in vor.regions:
             flag = True
+            indomain_count = 0
             for index in region:
                 if index == -1:
                     flag = False
@@ -453,9 +455,10 @@ class graph:
                     if x<=-eps or y<=-eps or x>=1.+eps or y>=1.+eps:
                         flag = False
                         break
-
+                    if x>eps and x<1-eps and y>eps and y<1-eps:
+                        indomain_count += 1
                            
-            if region != [] and flag:
+            if region != [] and flag and indomain_count>0:
 
                 reordered_region = []
                 
@@ -499,9 +502,10 @@ class graph:
 
 
 
-       # for k, v in self.vertex2joint.copy().items():
-          #  if len(v)<3:
-           #     print(k, self.vertices[k], v)
+        for k, v in self.vertex2joint.copy().items():
+            if len(v)<3:
+                del self.vertex2joint[k]
+               # print(k, self.vertices[k], v)
                 
                 
 
@@ -595,8 +599,7 @@ class graph:
         ax[3].set_yticks([])
         p_err = int(np.round(self.error_layer*100))
       #  ax[3].set_title('error'+'%d'%(p_err)+'%')           
-              
-        
+
         if self.save:
             plt.savefig(self.save, dpi=400)
        
@@ -616,6 +619,7 @@ class graph:
         self.region_coors.clear()
         self.region_center.clear()
         self.region_edge.clear()
+        self.region_bound.clear()
         
         for k, v in self.joint2vertex.items():
             for region in set(k):
@@ -638,7 +642,10 @@ class graph:
             if self.BC == 'periodic':
                 for i in range(1, len(vert_in_region)):
                     verts[i] = periodic_move(verts[i], verts[i-1]) 
-
+            if self.BC == 'noflux' and region>1:
+                verts_array = np.array(verts)
+                self.region_bound[region] = [np.min(verts_array[:,0]), np.max(verts_array[:,0]),
+                                             np.min(verts_array[:,1]), np.max(verts_array[:,1])]
                 
             inbound = [True, True]
             
@@ -719,12 +726,39 @@ class graph:
                 print((v,n))
                # raise ValueError((v,n))
 
+
+       # self.compute_error_layer()
+        if self.BC == 'noflux':
+            remain_keys = np.array(list(self.region_bound.keys()))
+            grain_bound = np.array(list(self.region_bound.values()))
+
+            self.corner_grains[0] = remain_keys[(np.absolute(grain_bound[:,0])<eps) & (np.absolute(grain_bound[:,2])<eps)][0]  
+            self.corner_grains[1] = remain_keys[(np.absolute(1-grain_bound[:,1])<eps) & (np.absolute(grain_bound[:,2])<eps)][0]
+            self.corner_grains[2] = remain_keys[(np.absolute(grain_bound[:,0])<eps) & (1-np.absolute(grain_bound[:,3])<eps)][0]  
+            self.corner_grains[3] = remain_keys[(np.absolute(1-grain_bound[:,1])<eps) & (1-np.absolute(grain_bound[:,3])<eps)][0]  
+           # print(self.corner_grains)
+            
         if init:  
             self.plot_polygons()
-       # self.compute_error_layer()
-
-
-
+            
+            
+    def find_boundary_vertex(self, alpha, cur_joint):
+        
+        m, n = alpha.shape
+        for i in range(m-1):
+            if alpha[i, 0] != alpha[i+1, 0]:
+                cur_joint.update({tuple(sorted([1, alpha[i, 0], alpha[i+1, 0]])): [0, i/m, 3]})
+            if alpha[i, -1] != alpha[i+1, -1]:
+                cur_joint.update({tuple(sorted([1, alpha[i, -1], alpha[i+1, -1]])): [1, i/m, 3]}) 
+                
+        for i in range(n-1):
+            if alpha[0, i] != alpha[0, i+1]:
+                cur_joint.update({tuple(sorted([1, alpha[0, i], alpha[0, i+1]])): [i/n, 0, 3]})
+            if alpha[-1, i] != alpha[-1, i+1]:
+                cur_joint.update({tuple(sorted([1, alpha[-1, i], alpha[-1, i+1]])): [i/n, 1, 3]})                 
+                
+        
+        return
                 
 class GrainHeterograph:
     def __init__(self):
@@ -971,10 +1005,11 @@ if __name__ == '__main__':
         
     if args.mode == 'check':
 
-        seed = 4
+        seed = 10000
         g1 = graph(lxd = 40, seed = seed, BC = 'noflux') 
 
-        g1.show_data_struct()
+       # g1.show_data_struct()
+
        # g1.plot_grain_distribution()
     
     if args.mode == 'instance':
