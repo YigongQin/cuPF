@@ -179,9 +179,13 @@ void PhaseField::parseInputParams(std::string fileName)
     params.bcY = designSetting->bcY;
     params.bcZ = designSetting->bcZ;
 
-    if (designSetting->useLineConfig)
+    if (designSetting->inputFile.compare("line.py")==0)
     {
         params.thermalType = 1;
+    }
+    else if (designSetting->inputFile.compare("cylinder.py")==0)
+    {
+        params.thermalType = 2;
     }
     else
     {
