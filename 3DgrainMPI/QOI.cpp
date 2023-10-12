@@ -316,7 +316,7 @@ float cylindricalManifold(const GlobalConstants& params, float x, float y, float
     return -params.G*dist - params.underCoolingRate*1e6*t;
 }
 
-void QOI3D::Manifold(const GlobalConstants& params, const int* alpha, const float* x, const float* y, const float* z, float t)
+void QOI::Manifold(const GlobalConstants& params, const int* alpha, const float* x, const float* y, const float* z, float t)
 {
     int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
     for (int i = 1; i<fnx-1; i++)
