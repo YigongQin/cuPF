@@ -319,25 +319,20 @@ float cylindricalManifold(const GlobalConstants& params, float x, float y, float
 void QOI::Manifold(const GlobalConstants& params, const int* alpha, const float* x, const float* y, const float* z, float t)
 {
     int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
+    float prevTemperature, curTemperature;
     for (int i = 1; i<fnx-1; i++)
     {
         for (int j = 1; j<fny-1; j++)
         {
-            float prevTemperature = -10.0f;
+            prevTemperature = -10.0f;
             for (int k = 1; k<fnz-1; k++)
             {
-                int zeroOccur = 0;
                 int C = k*fnx*fny + j*fnx + i;
-                float curTemperature;
                 if (params.thermalType==2)
                 {
                     curTemperature = cylindricalManifold(params, x[i], y[j], z[k], t);
                 }
-                if (curTemperature >0.0f && prevTemperature <0.0f);
-                {
-                    zeroOccur++;
-                }
-                if (zeroOccur==1) 
+                if ( (curTemperature>0) && (prevTemperature<0));
                 {
                     mQoIVectorIntData["manifold"].insert(mQoIVectorIntData["manifold"].end(), {i, j, k, alpha[C]});
                 }
