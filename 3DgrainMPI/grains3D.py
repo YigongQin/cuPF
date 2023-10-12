@@ -100,7 +100,7 @@ if __name__ == '__main__':
          if args.grGrid:
             G, Rmax = GR_random_sampling(seed)           
         
-    if G>0:
+    if G>0 and args.nuclGrid:
        Rmax = underCoolingRate*1e6/G
        
        

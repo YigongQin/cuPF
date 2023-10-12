@@ -16,8 +16,8 @@ nuc_Nmax = 0.01                 # density [1/um^2]
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 83
-ny = 43
+nx = 23
+ny = 83
 nz = 43
 nt = 5
 
@@ -38,11 +38,11 @@ ictype = 0                      # initial condtion
 dx = 0.8                        # mesh width
 W0 = 0.1                        # interface thickness [um]
 cfl = 1.0                       # cfl number
-asp_ratio_yx = 0.25             # aspect ratio of domain z/x
-asp_ratio_zx = 0.5              # aspect ratio of domain z/x
+asp_ratio_yx = 4             # aspect ratio of domain z/x
+asp_ratio_zx = 2             # aspect ratio of domain z/x
 moving_ratio = 0.2
 nts = 1                         # number snapshots to save, Mt/nts must be int
-Lx = 40
+Lx = 10
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
