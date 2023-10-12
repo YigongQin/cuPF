@@ -26,6 +26,7 @@ public:
   float lx, lxd, lyd, lzd, tmax;
   float xmin, ymin, zmin; 
   float asp_ratio_yx, asp_ratio_zx, moving_ratio;
+  float z0, r0, top;
 
   // grid parameters
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, haloWidth;
@@ -49,9 +50,9 @@ public:
   float Tmelt, Ti, Tliq, Tsol;
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
 
-  // sampling parameters
-  float z0, top;
-  int num_samples;
+
+  
+
 };
 
 

@@ -102,6 +102,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/UC.txt", &params.underCoolingRate);
     read_input(mac.folder+"/Nmax.txt", &params.nuc_Nmax);
     read_input(mac.folder+"/z0.txt", &params.z0);
+    read_input(mac.folder+"/r0.txt", &params.r0);
     read_input(mac.folder+"/top.txt", &params.top);
 
     mac.theta_arr = new float[2*params.num_theta+1];
