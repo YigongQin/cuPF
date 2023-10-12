@@ -332,8 +332,8 @@ void QOI::Manifold(const GlobalConstants& params, const int* alpha, const float*
                 {
                     curTemperature = cylindricalManifold(params, x[i], y[j], z[k], t);
                 }
-                if ( (curTemperature>0) && (prevTemperature<0));
-                {
+                if ( (curTemperature>0.0f) && (prevTemperature<0.0f) )
+                {   
                     mQoIVectorIntData["manifold"].insert(mQoIVectorIntData["manifold"].end(), {i, j, k, alpha[C]});
                 }
                 prevTemperature = curTemperature;
