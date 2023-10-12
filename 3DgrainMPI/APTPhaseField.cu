@@ -284,8 +284,13 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                     Tinterp = cP.G*(z[k]-cP.z0)- cP.underCoolingRate*1e6 *t;
                 }
-                else
+                else if (cP.thermalType == 2)
                 {
+                    float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
+                    Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
+                }
+                else
+                { 
                     Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t - thm.t_mac[0], 
                         cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
                 }
