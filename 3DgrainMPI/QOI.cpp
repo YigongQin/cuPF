@@ -186,14 +186,10 @@ void QOI::sampleHeights(int& cur_tip, const int* alpha, int fnx, int fny, int fn
 QOI3D::QOI3D(const GlobalConstants params)
 : mNumNodeFeatures(9)
 {
-   // mQoIVectorIntData.emplace("volume", std::vector<int>((params.nts+1)*params.num_theta));
     mQoIVectorIntData.emplace("volume", std::vector<int>());
     mQoIVectorIntData.emplace("grainToPF", std::vector<int>());
-    // graph related QoIs
-   // int repeated_index = 20;
-   // mQoIVectorIntData.emplace("node_region", std::vector<int>(repeated_index*params.num_nodes*mNumNodeFeatures));
     mQoIVectorIntData.emplace("node_region", std::vector<int>());
-   // std::fill(mQoIVectorIntData["node_region"].begin(), mQoIVectorIntData["node_region"].end(), -1);
+    mQoIVectorIntData.emplace("manifold", std::vector<int>());
 }
 
 
@@ -310,4 +306,44 @@ void QOI3D::searchJunctionsOnImage(const GlobalConstants& params, const int* alp
             }
         }
      }
+}
+
+
+float cylindricalManifold(const GlobalConstants& params, float x, float y, float z, float t)
+{
+    float dist = sqrtf((y - 0.5f*params.lyd)*(y - 0.5f*params.lyd) + (z - params.z0 - params.lzd)*(z - params.z0 - params.lzd)) - params.r0;
+                     
+    return -params.G*dist - params.underCoolingRate*1e6*t;
+}
+
+void QOI3D::Manifold(const GlobalConstants& params, const int* alpha, const float* x, const float* y, const float* z, float t)
+{
+    int fnx = params.fnx, fny = params.fny, fnz = params.fnz;
+    for (int i = 1; i<fnx-1; i++)
+    {
+        for (int j = 1; j<fny-1; j++)
+        {
+            float prevTemperature = -10.0f;
+            for (int k = 1; k<fnz-1; k++)
+            {
+                int zeroOccur = 0;
+                int C = k*fnx*fny + j*fnx + i;
+                float curTemperature;
+                if (params.thermalType==2)
+                {
+                    curTemperature = cylindricalManifold(params, x[i], y[j], z[k], t);
+                }
+                if (curTemperature >0.0f && prevTemperature <0.0f);
+                {
+                    zeroOccur++;
+                }
+                if (zeroOccur==1) 
+                {
+                    mQoIVectorIntData["manifold"].insert(mQoIVectorIntData["manifold"].end(), {i, j, k, alpha[C]});
+                }
+                prevTemperature = curTemperature;
+            }
+        }
+    }
+
 }

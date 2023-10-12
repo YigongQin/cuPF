@@ -41,6 +41,7 @@ public:
 	QOI3D(GlobalConstants params);
 	virtual ~QOI3D(){};
 	void searchJunctionsOnImage(const GlobalConstants& params, const int* alpha) override;
+	void Manifold(const GlobalConstants& params, const int* alpha, const float* x, const float* y, const float* z, float t);
 
 private:
 	int mNumNodeFeatures;

@@ -878,6 +878,7 @@ void APTPhaseField::evolve()
                 cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
                 cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);        
             }           
+            qois->Manifold(params, alpha, x, y, z, 0.0f)
             OutputField(2*kt+2);
         }
 
