@@ -190,6 +190,7 @@ QOI3D::QOI3D(const GlobalConstants params)
     mQoIVectorIntData.emplace("grainToPF", std::vector<int>());
     mQoIVectorIntData.emplace("node_region", std::vector<int>());
     mQoIVectorIntData.emplace("manifold", std::vector<int>());
+    mQoIVectorFloatData.emplace("geodesic_y_coors", std::vector<float>());
 }
 
 
@@ -335,6 +336,13 @@ void QOI::Manifold(const GlobalConstants& params, const int* alpha, const float*
                 if ( (curTemperature>0.0f) && (prevTemperature<0.0f) )
                 {   
                     mQoIVectorIntData["manifold"].insert(mQoIVectorIntData["manifold"].end(), {i, j, k, alpha[C]});
+                    if (params.thermalType==2) // cylindrical
+                    {   
+                        if (i==1)
+                        {
+                            mQoIVectorFloatData["geodesic_y_coors"].push_back(params.r0*asin( (y[j] - 0.5f*params.lyd)/params.r0 ));
+                        }                       
+                    }
                 }
                 prevTemperature = curTemperature;
             }
