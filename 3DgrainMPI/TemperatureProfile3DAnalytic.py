@@ -7,13 +7,40 @@ Created on Tue Sep 26 17:11:06 2023
 """
 
 import numpy as np
-
+from math import pi
 
 class ThermalProfile:
-    def __init__(self, domainSize, thermal):
+    def __init__(self, domainSize, thermal, seed):
         self.lx, self.ly, self.lz = domainSize
         self.G, self.R, self.U = thermal
+        self.seed = seed
 
+    @staticmethod
+    def RandGR(t, t_end, t_sampling_freq):
+        
+        G_freq = np.arange(1,t_sampling_freq+1)/t_end*pi/2
+        G_coeff = np.random.rand(len(G_freq))
+        G_phase = np.random.rand(len(G_freq))*2*pi
+        print(G_freq, G_coeff, G_phase)
+
+        R_freq = np.arange(1,t_sampling_freq+1)/t_end*pi/2
+        R_coeff = np.random.rand(len(R_freq))
+        R_phase = np.random.rand(len(R_freq))*2*pi
+
+        G, R = np.zeros(len(t)), np.zeros(len(t))
+
+        for i in range(t_sampling_freq):
+           # print(G_coeff, G_freq[i], z, G_phase)
+            G += G_coeff[i]*np.cos(G_freq[i]*t+G_phase[i])
+            R += R_coeff[i]*np.sin(R_freq[i]*t+R_phase[i])
+
+       # G = np.mean(np.expand_dims(G_coeff, axis=-1)*np.cos(np.outer(G_freq, z) + np.expand_dims(G_phase, axis=-1)) , axis=0)
+       # R = np.mean(np.expand_dims(R_coeff, axis=-1)*np.sin(np.outer(R_freq, z) + np.expand_dims(R_phase, axis=-1)) , axis=0)    
+        
+        G = 0.5 + 9.5*(G-np.min(G))/(np.max(G)-np.min(G))
+        R = 0.2 + 1.8*(R-np.min(R))/(np.max(R)-np.min(R))
+        
+        return G, R
 
     def pointwiseTempConstGR(self, profile, x, y, z, t, z0=0, r0=0):
         
@@ -38,8 +65,7 @@ class ThermalProfile:
 
   
 
-    def lineProfile(self, x, y, z, z0):
-        
+    def lineProfile(self, x, y, z, z0):        
 
         return z0 - z
     

@@ -5,6 +5,7 @@ from graph_datastruct import graph
 from math import pi
 import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
+from matplotlib import pyplot as plt
 
 def UN_sampling(seed):
 
@@ -55,9 +56,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Generate thermal input for PF")
     parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cylinder/')
     parser.add_argument("--mode", type=str, default = 'check')
-    parser.add_argument("--seed", type=int, default = 1)
+    parser.add_argument("--seed", type=int, default = 10020)
     parser.add_argument("--save3Ddata", type=int, default = 0)
-    parser.add_argument("--meltpool", type=str, default = 'cylinder')
+    parser.add_argument("--meltpool", type=str, default = 'lineTemporal')
     parser.add_argument("--boundary", type=str, default = '000')
     parser.add_argument("--mpi", type=int, default = 1)
 
@@ -88,7 +89,10 @@ if __name__ == '__main__':
     
     if args.meltpool == 'line':
         from line import *    
-    
+
+    if args.meltpool == 'lineTemporal':
+        from lineTemporal import *   
+        
     if seed<10000: 
         if args.nuclGrid:
             underCoolingRate, nuc_Nmax = UN_sampling(seed)
@@ -154,33 +158,52 @@ if __name__ == '__main__':
     y = np.linspace(0-BC,Ly+BC,ny)
     z = np.linspace(0-BC,Lz+BC,nz)
     
-
-    t = np.linspace(0,top/Rmax,nt)
+    t_end = 1.5*top/Rmax     # make sure at t_end the interface will reach top (has travelled distance=top)
+    t = np.linspace(0, t_end, nt)
     
     tmax = t[-1]
     
-    T = np.zeros(nx*ny*nz*nt)
-    psi = np.zeros(nx*ny*nz)
-    U = np.zeros(nx*ny*nz)
-    
-    therm= ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate])
-    
-    for i in range(nx*ny*nz*nt):
-        
-        xi = i%nx
-        yi = int( (i%(nx*ny))/nx )
-        zi = int( (i%(nx*ny*nz))/(nx*ny) )
-        ti = int(i/(nx*ny*nz))
-    
-    
-        T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0)
 
-        if ti==0:
-            
-           psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0)  
     
-    T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
-    psi3d = psi.reshape(nx,ny,nz, order='F')       
+    therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
+    
+    if args.meltpool == 'lineTemporal':
+        
+        np.random.seed(seed)
+        G_rand, R_rand = therm.RandGR(t, t_end, 5)
+        xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+        
+        T = np.expand_dims(G_rand, axis=(0,1,2)) * (np.expand_dims(zz, axis=-1) - z0 - np.expand_dims(R_rand*t, axis=(0,1,2))*1e6) 
+        psi = z0 - zz
+       # plt.plot(G_rand)
+       # plt.plot(R_rand)
+        T = T.reshape((nx*ny*nz*nt), order='F')
+        psi = psi.reshape((nx*ny*nz), order='F')
+        G = np.mean(G_rand)
+        Rmax = np.mean(R_rand)*1e6
+
+    else:
+
+        T = np.zeros(nx*ny*nz*nt)
+        psi = np.zeros(nx*ny*nz)
+        U = np.zeros(nx*ny*nz)
+        
+        for i in range(nx*ny*nz*nt):
+            
+            xi = i%nx
+            yi = int( (i%(nx*ny))/nx )
+            zi = int( (i%(nx*ny*nz))/(nx*ny) )
+            ti = int(i/(nx*ny*nz))
+        
+        
+            T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0)
+    
+            if ti==0:
+                
+               psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0)  
+    
+        T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
+        psi3d = psi.reshape(nx,ny,nz, order='F')       
     
     mac_folder = './forcing/case' + str(seed) + '/'
     
@@ -196,7 +219,7 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'z.txt', z, fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'t.txt', t, fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'psi.txt', psi, fmt='%1.4e',delimiter='\n')
-    np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
+   # np.savetxt(mac_folder+'U.txt', U, fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'alpha.txt', alpha, fmt='%d',delimiter='\n')
     np.savetxt(mac_folder+'theta.txt', theta, fmt='%1.4e',delimiter='\n')
     
