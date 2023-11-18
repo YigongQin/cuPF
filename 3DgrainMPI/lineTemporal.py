@@ -19,7 +19,7 @@ nuc_rad = 0.4                   # radius of a nucleai
 nx = 13
 ny = 13
 nz = 13
-nt = 101
+nt = 501
 
 
 ## MPI

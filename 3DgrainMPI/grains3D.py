@@ -158,19 +158,15 @@ if __name__ == '__main__':
     y = np.linspace(0-BC,Ly+BC,ny)
     z = np.linspace(0-BC,Lz+BC,nz)
     
-    t_end = 1.5*top/Rmax     # make sure at t_end the interface will reach top (has travelled distance=top)
-    t = np.linspace(0, t_end, nt)
-    
-    tmax = t[-1]
-    
-
-    
     therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
     
     if args.meltpool == 'lineTemporal':
+        minR = 0.2
+        t_end = top/minR     # make sure at t_end the interface will reach top (has travelled distance=top)
+        t = np.linspace(0, t_end, nt)
         
         np.random.seed(seed)
-        G_rand, R_rand = therm.RandGR(t, t_end, 5)
+        G_rand, R_rand = therm.RandGR(t, t_end, 2**(seed%10))
         xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
         
         T = np.expand_dims(G_rand, axis=(0,1,2)) * (np.expand_dims(zz, axis=-1) - z0 - np.expand_dims(R_rand*t, axis=(0,1,2))*1e6) 
@@ -183,6 +179,9 @@ if __name__ == '__main__':
         Rmax = np.mean(R_rand)*1e6
 
     else:
+
+        t_end = top/Rmax     
+        t = np.linspace(0, t_end, nt)
 
         T = np.zeros(nx*ny*nz*nt)
         psi = np.zeros(nx*ny*nz)
