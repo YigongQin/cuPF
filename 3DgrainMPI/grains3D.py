@@ -54,7 +54,7 @@ def GR_random_sampling(seed):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
-    parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cylinder/')
+    parser.add_argument("--outfile_folder", type=str, default = '/scratch/07428/ygqin/graph/cylinder/')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 10020)
     parser.add_argument("--save3Ddata", type=int, default = 0)
@@ -161,10 +161,10 @@ if __name__ == '__main__':
     therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
     
     if args.meltpool == 'lineTemporal':
-        minR = 0.2
+        minR = 0.2*1e6
         t_end = top/minR     # make sure at t_end the interface will reach top (has travelled distance=top)
         t = np.linspace(0, t_end, nt)
-        
+        print(t_end) 
         np.random.seed(seed)
         G_rand, R_rand = therm.RandGR(t, t_end, 2**(seed%10))
         xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
