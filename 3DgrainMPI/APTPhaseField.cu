@@ -289,11 +289,11 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-                else
+		else
                 { 
-                    Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t - thm.t_mac[0], 
-                        cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt);
-                }
+                    Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t*1e6 - thm.t_mac[0]*1e6, 
+                        cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt*1e6);
+		}
                 
                 float Up = Tinterp/(cP.L_cp);  
                 float repul=0.0f;

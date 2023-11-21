@@ -41,7 +41,7 @@ interp4Dtemperature(float* u_3d, float x, float y, float z, float t,
 
   float delta_x = x/Dx - kx;
   float delta_y = y/Dx - ky;
-  float delta_z = z/Dx - ky;
+  float delta_z = z/Dx - kz;
   float delta_t = t/Dt - kt;
 
   if (kx==Nx-1) 
@@ -64,9 +64,10 @@ interp4Dtemperature(float* u_3d, float x, float y, float z, float t,
     kt = Nt-2; 
     delta_t = 1.0f;
   }
-
+  
   int offset =  kx + ky*Nx + kz*Nx*Ny + kt*Nx*Ny*Nz;
   int offset_n =  kx + ky*Nx + (kz+1)*Nx*Ny + kt*Nx*Ny*Nz;
+  //return -t;
   float u_p = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] 
              +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_z) + 
               ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] 
