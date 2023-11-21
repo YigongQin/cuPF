@@ -169,7 +169,11 @@ if __name__ == '__main__':
         G_rand, R_rand = therm.RandGR(t, t_end, 2**(seed%10))
         xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
         
-        T = np.expand_dims(G_rand, axis=(0,1,2)) * (np.expand_dims(zz, axis=-1) - z0 - np.expand_dims(R_rand*t, axis=(0,1,2))*1e6) 
+        travelled = np.zeros(len(R_rand))
+        travelled[1:] = 0.5*(R_rand[1:]+R_rand[:-1])*(t[1]-t[0])*1e6
+        travelled = z0 + np.expand_dims(np.cumsum(travelled), axis=(0,1,2))
+        T = np.expand_dims(G_rand, axis=(0,1,2)) * (np.expand_dims(zz, axis=-1) - travelled) 
+        Ttemp = T
         psi = z0 - zz
        # plt.plot(G_rand)
        # plt.plot(R_rand)
