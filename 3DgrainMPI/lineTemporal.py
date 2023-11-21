@@ -18,7 +18,7 @@ nuc_rad = 0.4                   # radius of a nucleai
 # macro grid parameters
 nx = 13
 ny = 13
-nz = 13
+nz = 23
 nt = 501
 
 
