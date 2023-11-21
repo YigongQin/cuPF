@@ -57,4 +57,4 @@ underCoolingRate = 20
 # initial liquid param
 underCoolingRate0 = 20
 nuc_Nmax0 = 0.01
-preMt = 3000
+preMt = 0
