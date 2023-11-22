@@ -107,9 +107,9 @@ if __name__ == '__main__':
     if G>0 and args.nuclGrid:
        Rmax = underCoolingRate*1e6/G
        
-       
-    print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
-    print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
+    if G>0 and args.nuclGrid:
+       underCoolingRate = G*Rmax/1e6       
+
     
 
     
@@ -207,6 +207,9 @@ if __name__ == '__main__':
     
         T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
         psi3d = psi.reshape(nx,ny,nz, order='F')       
+
+    print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
+    print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
     
     mac_folder = './forcing/case' + str(seed) + '/'
     
