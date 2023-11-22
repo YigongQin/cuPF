@@ -107,7 +107,7 @@ if __name__ == '__main__':
     if G>0 and args.nuclGrid:
        Rmax = underCoolingRate*1e6/G
        
-    if G>0 and args.nuclGrid:
+    if G>0 and args.grGrid:
        underCoolingRate = G*Rmax/1e6       
 
     
