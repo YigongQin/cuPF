@@ -23,8 +23,8 @@ QOILine::QOILine(const GlobalConstants params)
 
     mQoIVectorIntData.emplace("tip_y", std::vector<int>(params.nts+1));
     mQoIVectorIntData.emplace("cross_sec", std::vector<int>());
-    mQoIVectorIntData.emplace("extra_area", std::vector<int>((params.nts+1)*params.num_theta));
-    mQoIVectorIntData.emplace("total_area", std::vector<int>((params.nts+1)*params.num_theta));
+    mQoIVectorIntData.emplace("extra_area", std::vector<int>((params.nts+1)*params.num_theta, 0));
+    mQoIVectorIntData.emplace("total_area", std::vector<int>((params.nts+1)*params.num_theta, 0));
     mQoIVectorIntData.emplace("tip_final", std::vector<int>((params.nts+1)*params.num_theta));
 
     // graph related QoIs
@@ -68,7 +68,7 @@ void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const i
      mQoIVectorIntData["tip_y"][kt] = cur_tip + move_count; //z[cur_tip];
      printf("frame %d, ntip %d, tip %f\n", kt, mQoIVectorIntData["tip_y"][kt], z[cur_tip]);
      
-
+     //cout << fnz << " " << fny << " " << fnx <<endl;
      for (int k = 1; k<fnz-1; k++)
      {
        int offset_z = fnx*fny*k; 
@@ -79,19 +79,20 @@ void QOI::calculateLineQoIs(const GlobalConstants& params, int& cur_tip, const i
                 int C = offset_z + fnx*j + i;
                 if (alpha[C]>0)
                 { 
-                    for (int time = kt; time<all_time; time++)
-                    {
-                        mQoIVectorIntData["tip_final"][time*num_grains+alpha[C]-1] = k+move_count;
-                    } 
+                    //for (int time = kt; time<all_time; time++)
+                    //{
+                       // mQoIVectorIntData["tip_final"][time*num_grains+alpha[C]-1] = k+move_count;
+                    //} 
                     mQoIVectorIntData["total_area"][kt*num_grains+alpha[C]-1]+=1;
                     if (k > cur_tip) 
                     {
-                        mQoIVectorIntData["extra_area"][kt*num_grains+alpha[C]-1]+=1; 
+                       mQoIVectorIntData["extra_area"][kt*num_grains+alpha[C]-1]+=1; 
                     }
                 }
             }
        }
      }
+
      for (int j = 0; j<num_grains; j++)
      { 
          mQoIVectorIntData["total_area"][kt*num_grains+j]+=loss_area[j];
