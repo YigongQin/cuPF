@@ -289,7 +289,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-		else
+		if (false)
                 { 
                     Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t*1e6 - thm.t_mac[0]*1e6, 
                         cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt*1e6);
@@ -887,6 +887,20 @@ void APTPhaseField::evolve()
         //kt++;
    }
 
+        //if ( (2*kt+2 <fieldkts) && (designSetting->inputFile.compare("lineTemporal.py")==0 || designSetting->inputFile.compare("line.py")==0)  )
+        {
+            cudaMemset(alpha_m, 0, sizeof(int) * length);
+            APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
+            cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+            if (designSetting->useLineConfig)
+            {
+                printf("copy field\n");
+                cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
+                cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
+            }
+            qois->Manifold(params, alpha, x, y, z, 0.0f);
+          //  OutputField(2*kt+2);
+        }
 
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
