@@ -31,8 +31,8 @@ class ThermalProfile:
 
         for i in range(t_sampling_freq):
            # print(G_coeff, G_freq[i], z, G_phase)
-            G += G_coeff[i]*np.cos(G_freq[i]*t+G_phase[i])
-            R += R_coeff[i]*np.sin(R_freq[i]*t+R_phase[i])
+            G += G_coeff[i]*np.cos(G_freq[i]*t+G_phase[i])/(i+1)
+            R += R_coeff[i]*np.sin(R_freq[i]*t+R_phase[i])/(i+1)
 
        # G = np.mean(np.expand_dims(G_coeff, axis=-1)*np.cos(np.outer(G_freq, z) + np.expand_dims(G_phase, axis=-1)) , axis=0)
        # R = np.mean(np.expand_dims(R_coeff, axis=-1)*np.sin(np.outer(R_freq, z) + np.expand_dims(R_phase, axis=-1)) , axis=0)    
