@@ -257,7 +257,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
                 {
-                        int theta_id = PF_id % cP.num_theta;
+                        int theta_id = PF_id==cP.num_theta ? PF_id : (PF_id % cP.num_theta);
                         sina = thm.sint[theta_id];
                         cosa = thm.cost[theta_id];
                         sinb = thm.sint[theta_id+cP.num_theta];
@@ -289,7 +289,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-		if (false)
+		else
                 { 
                     Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t*1e6 - thm.t_mac[0]*1e6, 
                         cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt*1e6);
