@@ -187,11 +187,40 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) //&& (k>0) && (k<fnz-1) ) 
   {
+    // 192 KB maximum per SM shared memory for A100
+    __shared__ int  shared_args[blockDim.x+2][blockDim.y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
+    __shared__ float shared_phs[blockDim.x+2][blockDim.y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
+
+    int tx = threadIdx.x + 1;
+    int ty = threadIdx.y + 1;
+
     for (k = 1; k<fnz-1; k++){
        //=============== load active phs from global to shared memory ================
-       //  __shared__ int local_args[APT_NUM_PF]; // local active PF indices
+        __syncthreads();
+        for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
+        {  
+            int glob_C = k*fnx*fny + j*fnx + i + pf_id*fnx*fny*fnz;
+            if( threadIdx.y<1 ) // top and bottom halo
+            {
+                shared_args[tx][threadIdx.y][pf_id] = aarg[glob_C - fnx];
+                shared_phs [tx][threadIdx.y][pf_id] = ph[glob_C - fnx];
 
-       // __syncthreads();
+                shared_args[tx][threadIdx.y+blockDim.y+1][pf_id] = aarg[glob_C + blockDim.y*fnx];
+                shared_phs [tx][threadIdx.y+blockDim.y+1][pf_id] = ph[glob_C + blockDim.y*fnx];
+            }
+            if( threadIdx.x<1 ) // left and right halo
+            {
+                shared_args[threadIdx.x][ty][pf_id] = aarg[glob_C - 1];
+                shared_phs [threadIdx.x][ty][pf_id] = ph[glob_C - 1];
+
+                shared_args[threadIdx.x+blockDim.x+1][ty][pf_id] = aarg[glob_C + blockDim.x];
+                shared_phs [threadIdx.x+blockDim.x+1][ty][pf_id] = ph[glob_C + blockDim.x];
+            }
+            // 16x16 “internal” data
+            shared_args[tx][ty][pf_id] = aarg[glob_C];
+            shared_phs[tx][ty][pf_id] = ph[glob_C];
+        }
+        __syncthreads();
        //=============== load active phs from shared memory to shared memory ================
 
         int C = k*fnx*fny + j*fnx + i;
@@ -311,6 +340,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
                     - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
                 float dphi = rhs_psi / A2; 
+
                 ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
                 if (phC  +  cP.dt * dphi <-0.9999)
                 {
