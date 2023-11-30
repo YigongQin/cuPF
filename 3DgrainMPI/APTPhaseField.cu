@@ -191,15 +191,45 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
     __shared__ int  shared_args[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
     __shared__ float shared_phs[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
 
+    int up_args[APT_NUM_PF], down_args[APT_NUM_PF];
+    float up_phs[APT_NUM_PF], down_phs[APT_NUM_PF];
+
+    int local_args[APT_NUM_PF]; // local active PF indices
+    float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
+
     int tx = threadIdx.x + 1;
     int ty = threadIdx.y + 1;
 
     for (k = 1; k<fnz-1; k++){
-       //=============== load active phs from global to shared memory ================
+
+        int C = k*fnx*fny + j*fnx + i; // global index
+
+
+       //=============== load out-of-plane phs to register memory ================
+        for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
+        {
+            int glob_C = C + pf_id*length;
+            up_args[pf_id] = aarg[glob_C + fnx*fny];           
+            up_phs[pf_id] = ph[glob_C + fnx*fny];
+
+            if (k==1)
+            {
+                down_args[pf_id] = aarg[glob_C - fnx*fny];
+                down_phs[pf_id] = ph[glob_C - fnx*fny];
+            }
+            else
+            {
+                down_args[pf_id] = shared_args[tx][ty][pf_id];
+                down_phs[pf_id] = shared_phs[tx][ty][pf_id];
+            }
+        }
+
+
+       //=============== load in-plane phs from global to shared memory ================
         __syncthreads();
         for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
         {  
-            int glob_C = k*fnx*fny + j*fnx + i + pf_id*fnx*fny*fnz;
+            int glob_C = C + pf_id*length;
             if( threadIdx.y<1 ) // top and bottom halo
             {
                 shared_args[tx][threadIdx.y][pf_id] = aarg[glob_C - fnx];
@@ -221,13 +251,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             shared_phs[tx][ty][pf_id] = ph[glob_C];
         }
         __syncthreads();
-       //=============== load active phs from shared memory to shared memory ================
-
-        int C = k*fnx*fny + j*fnx + i;
-        int local_args[APT_NUM_PF]; // local active PF indices
-        float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
-
-
+        
         int globalC, target_index, stencil, arg_index;
         for (int arg_index = 0; arg_index<NUM_PF; arg_index++)
         {
@@ -238,27 +262,27 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             } 
         }
         for (stencil = -3; stencil <=3; stencil++){
-                    int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
-                    int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
-                    int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
-                    for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
-                        globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
-                        target_index = aarg[globalC];
-                        if (target_index==-1){
-                            continue;
-                        }
-                        // otherwise find/update the local_args and local_phs
-                        for (arg_index = 0; arg_index<NUM_PF; arg_index++){
-                            if (local_args[arg_index]==target_index) {
-                                break;
-                            }
-                            if (local_args[arg_index] == -1){
-                                local_args[arg_index] = target_index; 
-                                break;
-                            }
-                        }
-                        local_phs[stencil+3][arg_index] = ph[globalC];
+            int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
+            int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
+            int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
+            for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
+                globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
+                target_index = aarg[globalC];
+                if (target_index==-1){
+                    continue;
+                }
+                // otherwise find/update the local_args and local_phs
+                for (arg_index = 0; arg_index<NUM_PF; arg_index++){
+                    if (local_args[arg_index]==target_index) {
+                        break;
                     }
+                    if (local_args[arg_index] == -1){
+                        local_args[arg_index] = target_index; 
+                        break;
+                    }
+                }
+                local_phs[stencil+3][arg_index] = ph[globalC];
+            }
        }
 
       // float Dt = thm.t_mac[1] - thm.t_mac[0];
