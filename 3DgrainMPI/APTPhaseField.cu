@@ -693,7 +693,7 @@ void APTPhaseField::evolve()
     printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
     dim3 blockDim(16, 16);
     dim3 gridDim((fnx + blockDim.x - 1) / blockDim.x, (fny + blockDim.y - 1) / blockDim.y);
-
+    printf("tiling grid dim %d %d\n", gridDim.x, gridDim.y);
     // initial condition
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);
