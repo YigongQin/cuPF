@@ -237,11 +237,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 local_phs[stencil][arg_index] = -1.0f;
             } 
         }
-        stencil = 0;
-        for (int zi = -1; zi<=1; zi++)
-        {
-            for (int yi = -1; yi<=1; yi++){
-                for (int xi = -1; xi <=1; xi++){
+        for (stencil = -3; stencil <=3; stencil++){
+                    int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
+                    int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
+                    int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
                     for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
                         globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
                         target_index = aarg[globalC];
@@ -258,14 +257,9 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                                 break;
                             }
                         }
-                        if ( abs(xi) + abs(yi) + abs(zi) <=1) {
-                            local_phs[stencil][arg_index] = ph[globalC];
-                        }
+                        local_phs[stencil+3][arg_index] = ph[globalC];
                     }
-                    if ( abs(xi) + abs(yi) + abs(zi) <=1) {stencil += 1;}
-                }
-            }
-        }
+       }
 
       // float Dt = thm.t_mac[1] - thm.t_mac[0];
       // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
