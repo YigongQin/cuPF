@@ -188,8 +188,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) //&& (k>0) && (k<fnz-1) ) 
   {
     // 192 KB maximum per SM shared memory for A100
-    __shared__ int  shared_args[blockDim.x+2][blockDim.y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
-    __shared__ float shared_phs[blockDim.x+2][blockDim.y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
+    __shared__ int  shared_args[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
+    __shared__ float shared_phs[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
 
     int tx = threadIdx.x + 1;
     int ty = threadIdx.y + 1;
@@ -205,16 +205,16 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 shared_args[tx][threadIdx.y][pf_id] = aarg[glob_C - fnx];
                 shared_phs [tx][threadIdx.y][pf_id] = ph[glob_C - fnx];
 
-                shared_args[tx][threadIdx.y+blockDim.y+1][pf_id] = aarg[glob_C + blockDim.y*fnx];
-                shared_phs [tx][threadIdx.y+blockDim.y+1][pf_id] = ph[glob_C + blockDim.y*fnx];
+                shared_args[tx][threadIdx.y+BLOCK_DIM_Y+1][pf_id] = aarg[glob_C + BLOCK_DIM_Y*fnx];
+                shared_phs [tx][threadIdx.y+BLOCK_DIM_Y+1][pf_id] = ph[glob_C + BLOCK_DIM_Y*fnx];
             }
             if( threadIdx.x<1 ) // left and right halo
             {
                 shared_args[threadIdx.x][ty][pf_id] = aarg[glob_C - 1];
                 shared_phs [threadIdx.x][ty][pf_id] = ph[glob_C - 1];
 
-                shared_args[threadIdx.x+blockDim.x+1][ty][pf_id] = aarg[glob_C + blockDim.x];
-                shared_phs [threadIdx.x+blockDim.x+1][ty][pf_id] = ph[glob_C + blockDim.x];
+                shared_args[threadIdx.x+BLOCK_DIM_X+1][ty][pf_id] = aarg[glob_C + BLOCK_DIM_X];
+                shared_phs [threadIdx.x+BLOCK_DIM_X+1][ty][pf_id] = ph[glob_C + BLOCK_DIM_X];
             }
             // 16x16 “internal” data
             shared_args[tx][ty][pf_id] = aarg[glob_C];
@@ -715,7 +715,7 @@ void APTPhaseField::evolve()
     max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
     printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-    dim3 blockDim(16, 16);
+    dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
     dim3 gridDim((fnx + blockDim.x - 1) / blockDim.x, (fny + blockDim.y - 1) / blockDim.y);
     printf("tiling grid dim %d %d\n", gridDim.x, gridDim.y);
     // initial condition
