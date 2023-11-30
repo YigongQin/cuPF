@@ -194,8 +194,9 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
     int up_args[APT_NUM_PF], down_args[APT_NUM_PF];
     float up_phs[APT_NUM_PF], down_phs[APT_NUM_PF];
 
-    int local_args[APT_NUM_PF]; // local active PF indices
-    float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
+    int local_args[APT_NUM_PF];  // local active PF indices
+    float local_phs[APT_NUM_PF]; // active ph for each thread 
+    int all_args[APT_NUM_PF];    // all active PF indices in 7-stencil
 
     int tx = threadIdx.x + 1;
     int ty = threadIdx.y + 1;
@@ -203,25 +204,33 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
     for (k = 1; k<fnz-1; k++){
 
         int C = k*fnx*fny + j*fnx + i; // global index
-
+      // float Dt = thm.t_mac[1] - thm.t_mac[0];
+      // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
 
        //=============== load out-of-plane phs to register memory ================
         for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
         {
             int glob_C = C + pf_id*length;
-            up_args[pf_id] = aarg[glob_C + fnx*fny];           
-            up_phs[pf_id] = ph[glob_C + fnx*fny];
 
             if (k==1)
             {
                 down_args[pf_id] = aarg[glob_C - fnx*fny];
                 down_phs[pf_id] = ph[glob_C - fnx*fny];
+                local_args[pf_id] = aarg[glob_C];
+                local_phs[pf_id] = ph[glob_C];
             }
             else
             {
-                down_args[pf_id] = shared_args[tx][ty][pf_id];
-                down_phs[pf_id] = shared_phs[tx][ty][pf_id];
+                down_args[pf_id] = local_args[pf_id];
+                down_phs[pf_id] = local_phs[pf_id];
+                local_args[pf_id] = up_args[pf_id];
+                local_phs[pf_id] = up_phs[pf_id];
             }
+
+            up_args[pf_id] = aarg[glob_C + fnx*fny];           
+            up_phs[pf_id] = ph[glob_C + fnx*fny];
+
+            all_args[pf_id] = local_args[pf_id]; // initialize all_args with local_args
         }
 
 
@@ -253,44 +262,43 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
         __syncthreads();
         
         int globalC, target_index, stencil, arg_index;
-        for (int arg_index = 0; arg_index<NUM_PF; arg_index++)
-        {
-            local_args[arg_index] = -1;
-            for (stencil=0; stencil<7; stencil++)
-            {
-                local_phs[stencil][arg_index] = -1.0f;
-            } 
-        }
+
+        //=============== fill all args by checking args at its 6 neighbors =============
+
         for (stencil = -3; stencil <=3; stencil++){
+            if (stencil==0) continue;
             int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
             int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
             int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
             for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
-                globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
-                target_index = aarg[globalC];
+                if (zi == 0)
+                {
+                    target_index = shared_args[tx+xi][ty+yi][pf_id];
+                }
+                else
+                {
+                    target_index = (zi==1) ? up_args[pf_id] : down_args[pf_id];
+                }
                 if (target_index==-1){
                     continue;
                 }
-                // otherwise find/update the local_args and local_phs
+                // otherwise find/update the all_args
                 for (arg_index = 0; arg_index<NUM_PF; arg_index++){
-                    if (local_args[arg_index]==target_index) {
+                    if (all_args[arg_index]==target_index) {
                         break;
                     }
-                    if (local_args[arg_index] == -1){
-                        local_args[arg_index] = target_index; 
+                    if (all_args[arg_index] == -1){
+                        all_args[arg_index] = target_index; 
                         break;
                     }
                 }
-                local_phs[stencil+3][arg_index] = ph[globalC];
             }
-       }
-
-      // float Dt = thm.t_mac[1] - thm.t_mac[0];
-      // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
+        }
+         
 
        for (arg_index = 0; arg_index<NUM_PF; arg_index++)
        {
-            if (local_args[arg_index]==-1)
+            if (all_args[arg_index]==-1)
             {
                 aarg_new[C+arg_index*length] = -1;
                 ph_new[C+arg_index*length] = -1.0f;
@@ -298,17 +306,27 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             else
             {
 
-                // start dealing with one specific PF
-
-                PF_id = local_args[arg_index]; // global PF index to find the right orientation
-                float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
-                phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
+                PF_id = all_args[arg_index]; // global PF index to find the right orientation
+                // start dealing with one specific PF            
+               // float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
+               // phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
+                float phC = local_phs[arg_index];
+                float phD = -1.0f, phB = -1.0f, phL = -1.0f, phR = -1.0f, phT = -1.0f, phU = -1.0f;
+                for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
+                {
+                    if (down_args[pf_id]==PF_id) phD = down_phs[pf_id];
+                    if (up_args[pf_id]==PF_id) phU = up_phs[pf_id];
+                    if (shared_args[tx-1][ty][pf_id]==PF_id) phL = shared_phs[tx-1][ty][pf_id];
+                    if (shared_args[tx+1][ty][pf_id]==PF_id) phR = shared_phs[tx+1][ty][pf_id];
+                    if (shared_args[tx][ty-1][pf_id]==PF_id) phB = shared_phs[tx][ty-1][pf_id];
+                    if (shared_args[tx][ty+1][pf_id]==PF_id) phT = shared_phs[tx][ty+1][pf_id];
+                }
 
                 float phxn = ( phR - phL ) * 0.5f;
                 float phyn = ( phT - phB ) * 0.5f;
                 float phzn = ( phU - phD ) * 0.5f;
 
-                float cosa, sina, cosb, sinb;
+                float cosa, sina, cosb, sinb;                
                 if (phC>LS)
                 {
                         int theta_id = PF_id==cP.num_theta ? PF_id : (PF_id % cP.num_theta);
@@ -351,7 +369,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                 if (pf_id!=arg_index) 
                 {
-                    repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
+                    repul += 0.25f*(local_phs[pf_id]+1.0f)*(local_phs[pf_id]+1.0f);
                 }
                 }
 
@@ -366,7 +384,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 }
                 else
                 {
-                    aarg_new[C+arg_index*length] = local_args[arg_index];
+                    aarg_new[C+arg_index*length] = all_args[arg_index];
                 }
 
             }
