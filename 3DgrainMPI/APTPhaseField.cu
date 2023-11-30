@@ -179,15 +179,22 @@ __global__ void
 APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int* aarg, int* aarg_new, ThermalInputData thm, bool useInitialUnderCooling)
 {
 
-  int C = blockIdx.x * blockDim.x + threadIdx.x; 
-  int i, j, k, PF_id;
+  int i = blockIdx.x * blockDim.x + threadIdx.x; 
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  int k, PF_id;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF, length = cP.length;
-  G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
+ // G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
 
-  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) && (k>0) && (k<fnz-1) ) 
+  if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) //&& (k>0) && (k<fnz-1) ) 
   {
+    for (k = 1; k<fnz-1; k++){
+       //=============== load active phs from global to shared memory ================
+       //  __shared__ int local_args[APT_NUM_PF]; // local active PF indices
 
-  //=============== load active phs ================
+       // __syncthreads();
+       //=============== load active phs from shared memory to shared memory ================
+
+        int C = k*fnx*fny + j*fnx + i;
         int local_args[APT_NUM_PF]; // local active PF indices
         float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
 
@@ -231,8 +238,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             }
         }
 
-       float Dt = thm.t_mac[1] - thm.t_mac[0];
-       float Dx = thm.X_mac[1] - thm.X_mac[0]; 
+      // float Dt = thm.t_mac[1] - thm.t_mac[0];
+      // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
 
        for (arg_index = 0; arg_index<NUM_PF; arg_index++)
        {
@@ -289,11 +296,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-		else
-                { 
-                    Tinterp = interp4Dtemperature(thm.T_3D, x[i] - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], t*1e6 - thm.t_mac[0]*1e6, 
-                        cP.Nx, cP.Ny, cP.Nz, cP.Nt, Dx, Dt*1e6);
-		}
+
                 
                 float Up = Tinterp/(cP.L_cp);  
                 float repul=0.0f;
@@ -320,7 +323,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
             }
         }
-     }
+    }
+  }
 } 
 
 
@@ -687,7 +691,8 @@ void APTPhaseField::evolve()
     max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
     printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-
+    dim3 blockDim(16, 16);
+    dim3 gridDim((fnx + blockDim.x - 1) / blockDim.x, (fny + blockDim.y - 1) / blockDim.y);
 
     // initial condition
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
@@ -738,7 +743,7 @@ void APTPhaseField::evolve()
     setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
     // get initial fields
-    APTrhs_psi<<< num_block_2d, blocksize_2d >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
+    APTrhs_psi<<< gridDim, blockDim >>>(0, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
 
     float t_cur_step;
     int kt = 0;
@@ -755,7 +760,7 @@ void APTPhaseField::evolve()
             setBC(designSetting->useLineConfig, PFs_new, active_args_new);
     
             t_cur_step = (2*kt+1)*params.dt*params.tau0;
-            APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu, true);
+            APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu, true);
 
             add_nucl<<<num_block_c, blocksize_2d>>>(PFs_old, active_args_old, nucleationStatus, cnx, cny, cnz, x_device, y_device, z_device, fnx, fny, fnz, dStates, \
                     2.0f*params.dt*params.tau0, t_cur_step, Mgpu, true); 
@@ -768,7 +773,7 @@ void APTPhaseField::evolve()
             setBC(designSetting->useLineConfig, PFs_old, active_args_old);
     
             t_cur_step = (2*kt+2)*params.dt*params.tau0;
-            APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, true);
+            APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, true);
         }
         
     
@@ -827,7 +832,7 @@ void APTPhaseField::evolve()
         setBC(designSetting->useLineConfig, PFs_new, active_args_new);
 
         t_cur_step = (2*kt+1)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu, false);
+        APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_new, PFs_old, active_args_new, active_args_old, Mgpu, false);
 
         if (designSetting->includeNucleation)
         {
@@ -883,7 +888,7 @@ void APTPhaseField::evolve()
         }
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
-        APTrhs_psi<<< num_block_2d, blocksize_2d >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
+        APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
         //kt++;
    }
 
