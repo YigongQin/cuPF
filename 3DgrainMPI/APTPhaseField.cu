@@ -189,13 +189,16 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
   {
     for (k = 1; k<fnz-1; k++){
        //=============== load active phs from global to shared memory ================
-        __shared__ float local_phs[BLOCK_DIM_Y][BLOCK_DIM_X][7][APT_NUM_PF]; // 32*8*7*5*4 = 36KB
+        __shared__ float local_phs[BLOCK_DIM_Y][BLOCK_DIM_X][4][APT_NUM_PF]; // 32*8*7*5*4 = 36KB
 
        // __syncthreads();
        //=============== load active phs from shared memory to shared memory ================
 
         int C = k*fnx*fny + j*fnx + i;
         int local_args[APT_NUM_PF]; // local active PF indices
+        float cur_phs[3][APT_NUM_PF];  // organized 
+        
+
       //  float local_phs[APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
 
 
@@ -203,17 +206,21 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
         for (int arg_index = 0; arg_index<NUM_PF; arg_index++)
         {
             local_args[arg_index] = -1;
-            for (stencil=0; stencil<7; stencil++)
+            for (stencil=0; stencil<4; stencil++)
             {
                 local_phs[threadIdx.y][threadIdx.x][stencil][arg_index] = -1.0f;
             } 
+            for (stencil=0; stencil<3; stencil++)
+            {
+                cur_phs[stencil][arg_index] = -1.0f;
+            }             
         }
-        for (stencil = -3; stencil <=3; stencil++){
+        /*
+        for (stencil = -2; stencil <=2; stencil++){
                     int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
                     int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
-                    int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
                     for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
-                        globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
+                        globalC = C + xi + yi*fnx + pf_id*fnx*fny*fnz;
                         target_index = aarg[globalC];
                         if (target_index==-1){
                             continue;
@@ -228,8 +235,34 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                                 break;
                             }
                         }
-                        local_phs[threadIdx.y][threadIdx.x][stencil+3][arg_index] = ph[globalC];
+                        local_phs[threadIdx.y][threadIdx.x][stencil+2][arg_index] = ph[globalC];
                     }
+       }
+       */
+       for (int zi = -1; zi<=1; zi++)
+       {
+            int globalC = C + zi*fnx*fny;
+            for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
+            {
+                int target_index = aarg[globalC + pf_id*fnx*fny*fnz];
+                if (target_index==-1)
+                {
+                    continue;
+                }
+                for (arg_index = 0; arg_index<NUM_PF; arg_index++)
+                {
+                    if (local_args[arg_index]==target_index)
+                    {
+                        break;
+                    }
+                    if (local_args[arg_index] == -1)
+                    {
+                        local_args[arg_index] = target_index; 
+                        break;
+                    }
+                }
+                cur_phs[zi+1][arg_index] = ph[globalC + pf_id*fnx*fny*fnz];
+            }
        }
 
       // float Dt = thm.t_mac[1] - thm.t_mac[0];
@@ -248,12 +281,13 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 // start dealing with one specific PF
 
                 PF_id = local_args[arg_index]; // global PF index to find the right orientation
-                float phD=local_phs[threadIdx.y][threadIdx.x][0][arg_index], phB=local_phs[threadIdx.y][threadIdx.x][1][arg_index], phL=local_phs[threadIdx.y][threadIdx.x][2][arg_index], \
-                phC=local_phs[threadIdx.y][threadIdx.x][3][arg_index], phR=local_phs[threadIdx.y][threadIdx.x][4][arg_index], phT=local_phs[threadIdx.y][threadIdx.x][5][arg_index], phU=local_phs[threadIdx.y][threadIdx.x][6][arg_index];
+                float phC = cur_phs[1][arg_index];
+                float phB=local_phs[threadIdx.y][threadIdx.x][0][arg_index], phL=local_phs[threadIdx.y][threadIdx.x][1][arg_index], \
+                      phR=local_phs[threadIdx.y][threadIdx.x][2][arg_index], phT=local_phs[threadIdx.y][threadIdx.x][3][arg_index]; 
 
                 float phxn = ( phR - phL ) * 0.5f;
                 float phyn = ( phT - phB ) * 0.5f;
-                float phzn = ( phU - phD ) * 0.5f;
+                float phzn = ( up_phs[arg_index] - down_phs[arg_index] ) * 0.5f;
 
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
@@ -274,7 +308,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
                 float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
-                float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
+                float diff =  phR + phL + phT + phB + up_phs[arg_index] + down_phs[arg_index] - 6*phC;
                 float Tinterp;
 
                 if (useInitialUnderCooling)
@@ -298,7 +332,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                 if (pf_id!=arg_index) 
                 {
-                    repul += 0.25f*(local_phs[threadIdx.y][threadIdx.x][3][pf_id]+1.0f)*(local_phs[threadIdx.y][threadIdx.x][3][pf_id]+1.0f);
+                    repul += 0.25f*(cur_phs[1][pf_id]+1.0f)*(cur_phs[1][pf_id]+1.0f);
                 }
                 }
 
