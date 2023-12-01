@@ -189,7 +189,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
   {
     for (k = 1; k<fnz-1; k++){
        //=============== load active phs from global to shared memory ================
-        __shared__ float local_phs[BLOCK_DIM_X][BLOCK_DIM_Y][7][APT_NUM_PF]; // 32*8*7*5*4 = 36KB
+        __shared__ float local_phs[BLOCK_DIM_Y][BLOCK_DIM_X][7][APT_NUM_PF]; // 32*8*7*5*4 = 36KB
 
        // __syncthreads();
        //=============== load active phs from shared memory to shared memory ================
@@ -205,7 +205,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             local_args[arg_index] = -1;
             for (stencil=0; stencil<7; stencil++)
             {
-                local_phs[threadIdx.x][threadIdx.y][stencil][arg_index] = -1.0f;
+                local_phs[threadIdx.y][threadIdx.x][stencil][arg_index] = -1.0f;
             } 
         }
         for (stencil = -3; stencil <=3; stencil++){
@@ -228,7 +228,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                                 break;
                             }
                         }
-                        local_phs[threadIdx.x][threadIdx.y][stencil+3][arg_index] = ph[globalC];
+                        local_phs[threadIdx.y][threadIdx.x][stencil+3][arg_index] = ph[globalC];
                     }
        }
 
@@ -248,8 +248,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 // start dealing with one specific PF
 
                 PF_id = local_args[arg_index]; // global PF index to find the right orientation
-                float phD=local_phs[threadIdx.x][threadIdx.y][0][arg_index], phB=local_phs[threadIdx.x][threadIdx.y][1][arg_index], phL=local_phs[threadIdx.x][threadIdx.y][2][arg_index], \
-                phC=local_phs[threadIdx.x][threadIdx.y][3][arg_index], phR=local_phs[threadIdx.x][threadIdx.y][4][arg_index], phT=local_phs[threadIdx.x][threadIdx.y][5][arg_index], phU=local_phs[threadIdx.x][threadIdx.y][6][arg_index];
+                float phD=local_phs[threadIdx.y][threadIdx.x][0][arg_index], phB=local_phs[threadIdx.y][threadIdx.x][1][arg_index], phL=local_phs[threadIdx.y][threadIdx.x][2][arg_index], \
+                phC=local_phs[threadIdx.y][threadIdx.x][3][arg_index], phR=local_phs[threadIdx.y][threadIdx.x][4][arg_index], phT=local_phs[threadIdx.y][threadIdx.x][5][arg_index], phU=local_phs[threadIdx.y][threadIdx.x][6][arg_index];
 
                 float phxn = ( phR - phL ) * 0.5f;
                 float phyn = ( phT - phB ) * 0.5f;
@@ -298,7 +298,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                 if (pf_id!=arg_index) 
                 {
-                    repul += 0.25f*(local_phs[threadIdx.x][threadIdx.y][3][pf_id]+1.0f)*(local_phs[threadIdx.x][threadIdx.y][3][pf_id]+1.0f);
+                    repul += 0.25f*(local_phs[threadIdx.y][threadIdx.x][3][pf_id]+1.0f)*(local_phs[threadIdx.y][threadIdx.x][3][pf_id]+1.0f);
                 }
                 }
 
