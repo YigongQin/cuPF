@@ -286,8 +286,9 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 rhs_psi = rhs_psi * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
                     - cP.lamd/cP.L_cp*Tinterp* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*(repul - 0.25f*(phC+1.0f)*(phC+1.0f)) );
 
-                ph_new[C+arg_index*length] = phC  +  cP.dt * rhs_psi / kine_ani(phR - phL, phT - phB, phU - phD, cosa, sina, cosb, sinb); 
-                if (phC  +  cP.dt * dphi <-0.9999)
+                rhs_psi = cP.dt * rhs_psi / kine_ani(phR - phL, phT - phB, phU - phD, cosa, sina, cosb, sinb);
+                ph_new[C+arg_index*length] = phC  + rhs_psi; 
+                if (phC  +  rhs_psi <-0.9999)
                 {
                     aarg_new[C+arg_index*length] = -1;
                 }
