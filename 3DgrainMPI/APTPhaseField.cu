@@ -287,7 +287,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
                 float phxn = ( phR - phL ) * 0.5f;
                 float phyn = ( phT - phB ) * 0.5f;
-                float phzn = ( up_phs[arg_index] - down_phs[arg_index] ) * 0.5f;
+                float phzn = ( cur_phs[2][arg_index] - cur_phs[0][arg_index] ) * 0.5f;
 
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
@@ -308,7 +308,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
                 float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
-                float diff =  phR + phL + phT + phB + up_phs[arg_index] + down_phs[arg_index] - 6*phC;
+                float diff =  phR + phL + phT + phB + cur_phs[2][arg_index] + cur_phs[0][arg_index] - 6*phC;
                 float Tinterp;
 
                 if (useInitialUnderCooling)
