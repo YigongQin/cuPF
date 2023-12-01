@@ -189,14 +189,14 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
   {
     for (k = 1; k<fnz-1; k++){
        //=============== load active phs from global to shared memory ================
-       //  __shared__ int local_args[APT_NUM_PF]; // local active PF indices
+        __shared__ float local_phs[BLOCK_DIM_X][BLOCK_DIM_Y][7][APT_NUM_PF]; // 32*8*7*5*4 = 36KB
 
        // __syncthreads();
        //=============== load active phs from shared memory to shared memory ================
 
         int C = k*fnx*fny + j*fnx + i;
         int local_args[APT_NUM_PF]; // local active PF indices
-        float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
+      //  float local_phs[APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
 
 
         int globalC, target_index, stencil, arg_index;
@@ -205,7 +205,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             local_args[arg_index] = -1;
             for (stencil=0; stencil<7; stencil++)
             {
-                local_phs[stencil][arg_index] = -1.0f;
+                local_phs[threadIdx.x][threadIdx.y][stencil][arg_index] = -1.0f;
             } 
         }
         for (stencil = -3; stencil <=3; stencil++){
@@ -228,7 +228,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                                 break;
                             }
                         }
-                        local_phs[stencil+3][arg_index] = ph[globalC];
+                        local_phs[threadIdx.x][threadIdx.y][stencil+3][arg_index] = ph[globalC];
                     }
        }
 
@@ -248,8 +248,8 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 // start dealing with one specific PF
 
                 PF_id = local_args[arg_index]; // global PF index to find the right orientation
-                float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
-                phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
+                float phD=local_phs[threadIdx.x][threadIdx.y][0][arg_index], phB=local_phs[threadIdx.x][threadIdx.y][1][arg_index], phL=local_phs[threadIdx.x][threadIdx.y][2][arg_index], \
+                phC=local_phs[threadIdx.x][threadIdx.y][3][arg_index], phR=local_phs[threadIdx.x][threadIdx.y][4][arg_index], phT=local_phs[threadIdx.x][threadIdx.y][5][arg_index], phU=local_phs[threadIdx.x][threadIdx.y][6][arg_index];
 
                 float phxn = ( phR - phL ) * 0.5f;
                 float phyn = ( phT - phB ) * 0.5f;
@@ -298,7 +298,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                 if (pf_id!=arg_index) 
                 {
-                    repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
+                    repul += 0.25f*(local_phs[threadIdx.x][threadIdx.y][3][pf_id]+1.0f)*(local_phs[threadIdx.x][threadIdx.y][3][pf_id]+1.0f);
                 }
                 }
 
