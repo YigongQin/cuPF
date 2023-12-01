@@ -187,118 +187,62 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) //&& (k>0) && (k<fnz-1) ) 
   {
-    // 192 KB maximum per SM shared memory for A100
-    __shared__ int  shared_args[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
-    __shared__ float shared_phs[BLOCK_DIM_X+2][BLOCK_DIM_Y+2][APT_NUM_PF]; // 18*18*5*4 = 6480Bytes = 6.4KB
-
-    int up_args[APT_NUM_PF], down_args[APT_NUM_PF];
-    float up_phs[APT_NUM_PF], down_phs[APT_NUM_PF];
-
-    int local_args[APT_NUM_PF];  // local active PF indices
-    float local_phs[APT_NUM_PF]; // active ph for each thread 
-    int all_args[APT_NUM_PF];    // all active PF indices in 7-stencil
-
-    int tx = threadIdx.x + 1;
-    int ty = threadIdx.y + 1;
-
     for (k = 1; k<fnz-1; k++){
+       //=============== load active phs from global to shared memory ================
+       //  __shared__ int local_args[APT_NUM_PF]; // local active PF indices
 
-        int C = k*fnx*fny + j*fnx + i; // global index
+       // __syncthreads();
+       //=============== load active phs from shared memory to shared memory ================
+
+        int C = k*fnx*fny + j*fnx + i;
+        int local_args[APT_NUM_PF]; // local active PF indices
+        float local_phs[7][APT_NUM_PF]; // active ph for each thread ,use 7-point stencil
+
+
+        int globalC, target_index, stencil, arg_index;
+        for (int arg_index = 0; arg_index<NUM_PF; arg_index++)
+        {
+            local_args[arg_index] = -1;
+            for (stencil=0; stencil<7; stencil++)
+            {
+                local_phs[stencil][arg_index] = -1.0f;
+            } 
+        }
+        for (stencil = -3; stencil <=3; stencil++){
+                    int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
+                    int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
+                    int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
+                    for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
+                        globalC = C + xi + yi*fnx + zi*fnx*fny + pf_id*fnx*fny*fnz;
+                        target_index = aarg[globalC];
+                        if (target_index==-1){
+                            continue;
+                        }
+                        // otherwise find/update the local_args and local_phs
+                        for (arg_index = 0; arg_index<NUM_PF; arg_index++){
+                            if (local_args[arg_index]==target_index) {
+                                break;
+                            }
+                            if (local_args[arg_index] == -1){
+                                local_args[arg_index] = target_index; 
+                                break;
+                            }
+                        }
+                        local_phs[stencil+3][arg_index] = ph[globalC];
+                    }
+       }
+
       // float Dt = thm.t_mac[1] - thm.t_mac[0];
       // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
-
-       //=============== load out-of-plane phs to register memory ================
-        for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
-        {
-            int glob_C = C + pf_id*length;
-
-            if (k==1)
-            {
-                down_args[pf_id] = aarg[glob_C - fnx*fny];
-                down_phs[pf_id] = ph[glob_C - fnx*fny];
-                local_args[pf_id] = aarg[glob_C];
-                local_phs[pf_id] = ph[glob_C];
-            }
-            else
-            {
-                down_args[pf_id] = local_args[pf_id];
-                down_phs[pf_id] = local_phs[pf_id];
-                local_args[pf_id] = up_args[pf_id];
-                local_phs[pf_id] = up_phs[pf_id];
-            }
-
-            up_args[pf_id] = aarg[glob_C + fnx*fny];           
-            up_phs[pf_id] = ph[glob_C + fnx*fny];
-
-            all_args[pf_id] = local_args[pf_id]; // initialize all_args with local_args
-        }
-
-
-       //=============== load in-plane phs from global to shared memory ================
-        __syncthreads();
-        for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
-        {  
-            int glob_C = C + pf_id*length;
-            if( threadIdx.y<1 ) // top and bottom halo
-            {
-                shared_args[tx][threadIdx.y][pf_id] = aarg[glob_C - fnx];
-                shared_phs [tx][threadIdx.y][pf_id] = ph[glob_C - fnx];
-
-                shared_args[tx][threadIdx.y+BLOCK_DIM_Y+1][pf_id] = aarg[glob_C + BLOCK_DIM_Y*fnx];
-                shared_phs [tx][threadIdx.y+BLOCK_DIM_Y+1][pf_id] = ph[glob_C + BLOCK_DIM_Y*fnx];
-            }
-            if( threadIdx.x<1 ) // left and right halo
-            {
-                shared_args[threadIdx.x][ty][pf_id] = aarg[glob_C - 1];
-                shared_phs [threadIdx.x][ty][pf_id] = ph[glob_C - 1];
-
-                shared_args[threadIdx.x+BLOCK_DIM_X+1][ty][pf_id] = aarg[glob_C + BLOCK_DIM_X];
-                shared_phs [threadIdx.x+BLOCK_DIM_X+1][ty][pf_id] = ph[glob_C + BLOCK_DIM_X];
-            }
-            // 16x16 “internal” data
-            shared_args[tx][ty][pf_id] = aarg[glob_C];
-            shared_phs[tx][ty][pf_id] = ph[glob_C];
-        }
-        __syncthreads();
-        
-        int globalC, target_index, stencil, arg_index;
-
-        //=============== fill all args by checking args at its 6 neighbors =============
-
-        for (stencil = -3; stencil <=3; stencil++){
-            if (stencil==0) continue;
-            int xi = (stencil==1 || stencil==-1) ? stencil/abs(stencil) : 0;
-            int yi = (stencil==2 || stencil==-2) ? stencil/abs(stencil) : 0;
-            int zi = (stencil==3 || stencil==-3) ? stencil/abs(stencil) : 0;
-            for (int pf_id = 0; pf_id<NUM_PF; pf_id++){
-                if (zi == 0)
-                {
-                    target_index = shared_args[tx+xi][ty+yi][pf_id];
-                }
-                else
-                {
-                    target_index = (zi==1) ? up_args[pf_id] : down_args[pf_id];
-                }
-                if (target_index==-1){
-                    continue;
-                }
-                // otherwise find/update the all_args
-                for (arg_index = 0; arg_index<NUM_PF; arg_index++){
-                    if (all_args[arg_index]==target_index) {
-                        break;
-                    }
-                    if (all_args[arg_index] == -1){
-                        all_args[arg_index] = target_index; 
-                        break;
-                    }
-                }
-            }
-        }
-         
+       float repul=0.0f;
+       for (int pf_id=0; pf_id<NUM_PF; pf_id++)
+       {
+            repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
+       }
 
        for (arg_index = 0; arg_index<NUM_PF; arg_index++)
        {
-            if (all_args[arg_index]==-1)
+            if (local_args[arg_index]==-1)
             {
                 aarg_new[C+arg_index*length] = -1;
                 ph_new[C+arg_index*length] = -1.0f;
@@ -306,27 +250,13 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
             else
             {
 
-                PF_id = all_args[arg_index]; // global PF index to find the right orientation
-                // start dealing with one specific PF            
-               // float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
-               // phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
-                float phC = local_phs[arg_index];
-                float phD = -1.0f, phB = -1.0f, phL = -1.0f, phR = -1.0f, phT = -1.0f, phU = -1.0f;
-                for (int pf_id = 0; pf_id<NUM_PF; pf_id++)
-                {
-                    if (down_args[pf_id]==PF_id) phD = down_phs[pf_id];
-                    if (up_args[pf_id]==PF_id) phU = up_phs[pf_id];
-                    if (shared_args[tx-1][ty][pf_id]==PF_id) phL = shared_phs[tx-1][ty][pf_id];
-                    if (shared_args[tx+1][ty][pf_id]==PF_id) phR = shared_phs[tx+1][ty][pf_id];
-                    if (shared_args[tx][ty-1][pf_id]==PF_id) phB = shared_phs[tx][ty-1][pf_id];
-                    if (shared_args[tx][ty+1][pf_id]==PF_id) phT = shared_phs[tx][ty+1][pf_id];
-                }
+                // start dealing with one specific PF
 
-                float phxn = ( phR - phL ) * 0.5f;
-                float phyn = ( phT - phB ) * 0.5f;
-                float phzn = ( phU - phD ) * 0.5f;
+                PF_id = local_args[arg_index]; // global PF index to find the right orientation
+                float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
+                phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
 
-                float cosa, sina, cosb, sinb;                
+                float cosa = 1.0f, sina = 0.0f, cosb = 1.0f, sinb = 0.0f;
                 if (phC>LS)
                 {
                         int theta_id = PF_id==cP.num_theta ? PF_id : (PF_id % cP.num_theta);
@@ -335,17 +265,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                         sinb = thm.sint[theta_id+cP.num_theta];
                         cosb = thm.cost[theta_id+cP.num_theta];
                 }
-                else
-                {
-                        sina = 0.0f;
-                        cosa = 1.0f;
-                        sinb = 0.0f;
-                        cosb = 1.0f;
-                }
 
-                float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
-
-                float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
                 float Tinterp;
 
                 if (useInitialUnderCooling)
@@ -362,29 +282,18 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
 
-                
-                float Up = Tinterp/(cP.L_cp);  
-                float repul=0.0f;
-                for (int pf_id=0; pf_id<NUM_PF; pf_id++)
-                {
-                if (pf_id!=arg_index) 
-                {
-                    repul += 0.25f*(local_phs[pf_id]+1.0f)*(local_phs[pf_id]+1.0f);
-                }
-                }
+                float rhs_psi =  phR + phL + phT + phB + phU + phD - 6*phC;
+                rhs_psi = rhs_psi * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
+                    - cP.lamd/cP.L_cp*Tinterp* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*(repul - 0.25f*(phC+1.0f)*(phC+1.0f)) );
 
-                float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
-                    - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
-                float dphi = rhs_psi / A2; 
-
-                ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
+                ph_new[C+arg_index*length] = phC  +  cP.dt * rhs_psi / kine_ani(phR - phL, phT - phB, phU - phD, cosa, sina, cosb, sinb); 
                 if (phC  +  cP.dt * dphi <-0.9999)
                 {
                     aarg_new[C+arg_index*length] = -1;
                 }
                 else
                 {
-                    aarg_new[C+arg_index*length] = all_args[arg_index];
+                    aarg_new[C+arg_index*length] = local_args[arg_index];
                 }
 
             }
@@ -757,7 +666,7 @@ void APTPhaseField::evolve()
     max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
     printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-    dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
+    dim3 blockDim(16, 16);
     dim3 gridDim((fnx + blockDim.x - 1) / blockDim.x, (fny + blockDim.y - 1) / blockDim.y);
     printf("tiling grid dim %d %d\n", gridDim.x, gridDim.y);
     // initial condition
