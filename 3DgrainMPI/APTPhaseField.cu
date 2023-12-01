@@ -16,8 +16,8 @@
 
 using namespace std;
 
-#define BLOCK_DIM_X 16
-#define BLOCK_DIM_Y 16
+#define BLOCK_DIM_X 32
+#define BLOCK_DIM_Y 4
 #define BLOCKSIZE BLOCK_DIM_X*BLOCK_DIM_Y
 #define HALO 1//halo in global region
 #define REAL_DIM_X 14 //BLOCK_DIM_X-2*HALO
@@ -234,11 +234,6 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
 
       // float Dt = thm.t_mac[1] - thm.t_mac[0];
       // float Dx = thm.X_mac[1] - thm.X_mac[0]; 
-       float repul=0.0f;
-       for (int pf_id=0; pf_id<NUM_PF; pf_id++)
-       {
-            repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
-       }
 
        for (arg_index = 0; arg_index<NUM_PF; arg_index++)
        {
@@ -256,7 +251,11 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float phD=local_phs[0][arg_index], phB=local_phs[1][arg_index], phL=local_phs[2][arg_index], \
                 phC=local_phs[3][arg_index], phR=local_phs[4][arg_index], phT=local_phs[5][arg_index], phU=local_phs[6][arg_index];
 
-                float cosa = 1.0f, sina = 0.0f, cosb = 1.0f, sinb = 0.0f;
+                float phxn = ( phR - phL ) * 0.5f;
+                float phyn = ( phT - phB ) * 0.5f;
+                float phzn = ( phU - phD ) * 0.5f;
+
+                float cosa, sina, cosb, sinb;
                 if (phC>LS)
                 {
                         int theta_id = PF_id==cP.num_theta ? PF_id : (PF_id % cP.num_theta);
@@ -265,7 +264,17 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                         sinb = thm.sint[theta_id+cP.num_theta];
                         cosb = thm.cost[theta_id+cP.num_theta];
                 }
+                else
+                {
+                        sina = 0.0f;
+                        cosa = 1.0f;
+                        sinb = 0.0f;
+                        cosb = 1.0f;
+                }
 
+                float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
+
+                float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
                 float Tinterp;
 
                 if (useInitialUnderCooling)
@@ -282,13 +291,22 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
 
-                float rhs_psi =  phR + phL + phT + phB + phU + phD - 6*phC;
-                rhs_psi = rhs_psi * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
-                    - cP.lamd/cP.L_cp*Tinterp* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*(repul - 0.25f*(phC+1.0f)*(phC+1.0f)) );
+                
+                float Up = Tinterp/(cP.L_cp);  
+                float repul=0.0f;
+                for (int pf_id=0; pf_id<NUM_PF; pf_id++)
+                {
+                if (pf_id!=arg_index) 
+                {
+                    repul += 0.25f*(local_phs[3][pf_id]+1.0f)*(local_phs[3][pf_id]+1.0f);
+                }
+                }
 
-                rhs_psi = cP.dt * rhs_psi / kine_ani(phR - phL, phT - phB, phU - phD, cosa, sina, cosb, sinb);
-                ph_new[C+arg_index*length] = phC  + rhs_psi; 
-                if (phC  +  rhs_psi <-0.9999)
+                float rhs_psi = diff * cP.hi*cP.hi + (1.0f-phC*phC)*phC \
+                    - cP.lamd*Up* ( (1.0f-phC*phC)*(1.0f-phC*phC) - 0.5f*OMEGA*(phC+1.0f)*repul);
+                float dphi = rhs_psi / A2; 
+                ph_new[C+arg_index*length] = phC  +  cP.dt * dphi; 
+                if (phC  +  cP.dt * dphi <-0.9999)
                 {
                     aarg_new[C+arg_index*length] = -1;
                 }
@@ -667,7 +685,7 @@ void APTPhaseField::evolve()
     max_area = max(fnz*fny,max(fny*fnx,fnx*fnz));
     num_block_PF1d =  ( max_area*NUM_PF +blocksize_1d-1)/blocksize_1d;
     printf("block size %d, # blocks %d\n", blocksize_2d, num_block_2d); 
-    dim3 blockDim(16, 16);
+    dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
     dim3 gridDim((fnx + blockDim.x - 1) / blockDim.x, (fny + blockDim.y - 1) / blockDim.y);
     printf("tiling grid dim %d %d\n", gridDim.x, gridDim.y);
     // initial condition
