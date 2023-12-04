@@ -86,6 +86,9 @@ class grain_visual:
         else:
            origin = (self.x[0], self.y[1], self.z[1])
         print(origin)
+        subsample = 2
+        self.alpha_pde = self.alpha_pde[::subsample,::subsample,::subsample]
+        dx = dx*subsample
         grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
         
@@ -116,7 +119,8 @@ if __name__ == '__main__':
     parser.add_argument("--time", type=int, default = 0)
     parser.add_argument("--lxd", type=int, default = 40)
     parser.add_argument("--height", type=int, default = -1)
- 
+    parser.add_argument("--subsample", type=int, default = 1)
+
     args = parser.parse_args()
         
    # Gv = grain_visual(lxd = 20, seed = args.seed, height=20)   
