@@ -183,10 +183,23 @@ void PhaseField::parseInputParams(std::string fileName)
     if (designSetting->inputFile.compare("line.py")==0)
     {
         params.thermalType = 1;
+        cout << "profile: line" << endl;
+        cout << "z0: " << params.z0 << endl;
+        cout << "top: " << params.top << endl;
     }
     else if (designSetting->inputFile.compare("cylinder.py")==0)
     {
         params.thermalType = 2;
+        cout << "profile: cylinder" << endl;
+        cout << "z0: " << params.z0 << endl;
+        cout << "r0: " << params.r0 << endl;
+    }
+    else if (designSetting->inputFile.compare("cone.py")==0)
+    {
+        params.thermalType = 3;
+        cout << "profile: cone" << endl;
+        cout << "z0: " << params.z0 << endl;
+        cout << "r0: " << params.r0 << endl;
     }
     else
     {
@@ -195,7 +208,7 @@ void PhaseField::parseInputParams(std::string fileName)
 
     if (GetMPIManager()->rank==0)
     {
-        string thermalType = params.thermalType ==1 ? "analytic" : "interpolation";
+        string thermalType = params.thermalType >0 ? "analytic" : "interpolation";
         string bcX = params.bcX == 0 ? "noflux" : "periodic";
         string bcY = params.bcY == 0 ? "noflux" : "periodic";
         string bcZ = params.bcZ == 0 ? "noflux" : "periodic";

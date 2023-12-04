@@ -51,12 +51,32 @@ def GR_random_sampling(seed):
 
     return G, Rmax
 
+def GR_constant_sampling(seed):
+    
+    case = seed//10
+    if case == 0:
+        G, R = 5, 1
+    elif case == 1:
+        G, R = 1, 1
+    elif case == 2:
+        G, R = 8, 1
+    elif case == 3:
+        G, R = 5, 0.4
+    elif case == 4:
+        G, R = 5, 1.6
+    
+    return G, R*1e6
+    
+    
+    
+    
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
     parser.add_argument("--outfile_folder", type=str, default = '/scratch/07428/ygqin/graph/cylinder/')
     parser.add_argument("--mode", type=str, default = 'check')
-    parser.add_argument("--seed", type=int, default = 10020)
+    parser.add_argument("--seed", type=int, default = 10075)
     parser.add_argument("--save3Ddata", type=int, default = 0)
     parser.add_argument("--meltpool", type=str, default = 'lineTemporal')
     parser.add_argument("--boundary", type=str, default = '000')
@@ -77,7 +97,8 @@ if __name__ == '__main__':
     parser.add_argument("--grGridSampl", dest='grGrid', action='store_true')
     parser.set_defaults(grGrid=False)
     
-
+    parser.add_argument("--grConstSampl", dest='grGrid', action='store_true')
+    parser.set_defaults(grConstant=False)
     
     args = parser.parse_args()     
     
@@ -110,8 +131,15 @@ if __name__ == '__main__':
     if G>0 and args.grGrid:
        underCoolingRate = G*Rmax/1e6       
 
-    
+    if args.grConstant:
+        G, Rmax = GR_constant_sampling(seed)
 
+    if args.meltpool == 'cylinder':
+        if args.cylinder_scale_param == 1:
+            z0 = Lz/10*(seed%10)
+        if args.cylinder_scale_param == 2:
+            Ly = Ly/10*(seed%10)
+            Lz = Ly/2
     
     
     '''create a planar graph'''
@@ -175,8 +203,8 @@ if __name__ == '__main__':
         T = np.expand_dims(G_rand, axis=(0,1,2)) * (np.expand_dims(zz, axis=-1) - travelled) 
         Ttemp = T
         psi = z0 - zz
-       # plt.plot(G_rand)
-       # plt.plot(R_rand)
+        plt.plot(G_rand)
+        plt.plot(R_rand)
         T = T.reshape((nx*ny*nz*nt), order='F')
         psi = psi.reshape((nx*ny*nz), order='F')
         G = np.mean(G_rand)
