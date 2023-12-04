@@ -98,7 +98,7 @@ if __name__ == '__main__':
     parser.add_argument("--grGridSampl", dest='grGrid', action='store_true')
     parser.set_defaults(grGrid=False)
     
-    parser.add_argument("--grConstSampl", dest='grGrid', action='store_true')
+    parser.add_argument("--grConstSampl", dest='grConstant', action='store_true')
     parser.set_defaults(grConstant=False)
     
     args = parser.parse_args()     
