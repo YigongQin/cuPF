@@ -57,13 +57,13 @@ def GR_constant_sampling(seed):
     if case == 0:
         G, R = 5, 1
     elif case == 1:
-        G, R = 1, 1
+        G, R = 1, 0.4
     elif case == 2:
-        G, R = 8, 1
+        G, R = 1, 1.6
     elif case == 3:
-        G, R = 5, 0.4
+        G, R = 8, 0.4
     elif case == 4:
-        G, R = 5, 1.6
+        G, R = 8, 1.6
     
     return G, R*1e6
     
