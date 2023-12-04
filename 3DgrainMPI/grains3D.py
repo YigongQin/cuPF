@@ -53,7 +53,7 @@ def GR_random_sampling(seed):
 
 def GR_constant_sampling(seed):
     
-    case = seed//10
+    case = (seed//10)%5
     if case == 0:
         G, R = 5, 1
     elif case == 1:
