@@ -81,6 +81,8 @@ if __name__ == '__main__':
     parser.add_argument("--meltpool", type=str, default = 'lineTemporal')
     parser.add_argument("--boundary", type=str, default = '000')
     parser.add_argument("--mpi", type=int, default = 1)
+    parser.add_argument("--gr_sample", type=int, default = 0)
+    parser.add_argument("--nucl_sample", type=int, default = 0)
     parser.add_argument("--cylinder_scale_param", type=int, default = 0)
 
     parser.add_argument("--nucleation", dest='nucl', action='store_true')
@@ -92,14 +94,6 @@ if __name__ == '__main__':
     parser.add_argument("--lineConfig", dest='line', action='store_true')
     parser.set_defaults(line=False)
     
-    parser.add_argument("--nuclGridSampl", dest='nuclGrid', action='store_true')
-    parser.set_defaults(nuclGrid=False)
-
-    parser.add_argument("--grGridSampl", dest='grGrid', action='store_true')
-    parser.set_defaults(grGrid=False)
-    
-    parser.add_argument("--grConstSampl", dest='grConstant', action='store_true')
-    parser.set_defaults(grConstant=False)
     
     args = parser.parse_args()     
     
@@ -115,25 +109,22 @@ if __name__ == '__main__':
     if args.meltpool == 'lineTemporal':
         from lineTemporal import *   
         
-    if seed<10000: 
-        if args.nuclGrid:
-            underCoolingRate, nuc_Nmax = UN_sampling(seed)
-        if args.grGrid:
-            G, Rmax = GR_sampling(seed)
-    else:
-         if args.nuclGrid:
-            underCoolingRate, nuc_Nmax = UN_random_sampling(seed)
-         if args.grGrid:
-            G, Rmax = GR_random_sampling(seed)           
-        
-    if G>0 and args.nuclGrid:
-       Rmax = underCoolingRate*1e6/G
-       
-    if G>0 and args.grGrid:
-       underCoolingRate = G*Rmax/1e6       
 
-    if args.grConstant:
-        G, Rmax = GR_constant_sampling(seed)
+    if args.gr_sample>0:
+        if args.gr_sample == 1:
+            G, Rmax = GR_sampling(seed)
+        elif args.gr_sample == 2:
+            G, Rmax = GR_random_sampling(seed)
+        elif args.gr_sample == 3:
+            G, Rmax = GR_constant_sampling(seed)
+        underCoolingRate = G*Rmax/1e6 
+
+    if args.nucl_sample>0:
+        if args.nucl_sample == 1:
+            underCoolingRate, nuc_Nmax = UN_sampling(seed)
+        elif args.nucl_sample == 2:
+            underCoolingRate, nuc_Nmax = UN_random_sampling(seed)
+        Rmax = underCoolingRate*1e6/G
 
     if args.meltpool == 'cylinder':
         if args.cylinder_scale_param == 1:
