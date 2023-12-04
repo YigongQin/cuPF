@@ -258,7 +258,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float cosa, sina, cosb, sinb;
                 if (phC>LS)
                 {
-                        int theta_id = PF_id==cP.num_theta ? PF_id : (PF_id % cP.num_theta);
+                        int theta_id = PF_id<=cP.num_theta ? PF_id : ( (PF_id % cP.num_theta) + 1);
                         sina = thm.sint[theta_id];
                         cosa = thm.cost[theta_id];
                         sinb = thm.sint[theta_id+cP.num_theta];
