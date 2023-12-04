@@ -81,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument("--meltpool", type=str, default = 'lineTemporal')
     parser.add_argument("--boundary", type=str, default = '000')
     parser.add_argument("--mpi", type=int, default = 1)
+    parser.add_argument("--cylinder_scale_param", type=int, default = 0)
 
     parser.add_argument("--nucleation", dest='nucl', action='store_true')
     parser.set_defaults(nucl=False)
