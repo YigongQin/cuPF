@@ -209,7 +209,11 @@ if __name__ == '__main__':
 
         T = np.zeros(nx*ny*nz*nt)
         psi = np.zeros(nx*ny*nz)
-        U = np.zeros(nx*ny*nz)
+      #  U = np.zeros(nx*ny*nz)
+        if args.meltpool == 'cone':
+            angle = np.arcsin(R/V)
+        else:
+            angle = 0
         
         for i in range(nx*ny*nz*nt):
             
@@ -259,6 +263,7 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'z0.txt', np.asarray([z0]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'r0.txt', np.asarray([r0]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
+    np.savetxt(mac_folder+'angle.txt', np.asarray([angle]), fmt='%1.4e',delimiter='\n')
     
     hf = h5py.File(mac_folder+'Temp.h5', 'w')
     hf.create_dataset('Temp', data=T)
