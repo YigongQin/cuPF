@@ -202,7 +202,8 @@ void PhaseField::parseInputParams(std::string fileName)
         cout << "profile: cone" << endl;
         cout << "z0: " << params.z0 << endl;
         cout << "r0: " << params.r0 << endl;
-        cout << "angle:" << params.angle << endl;
+        cout << "angle: " << params.angle << endl;
+        cout << "speed: " << params.V << endl;
     }
     else
     {

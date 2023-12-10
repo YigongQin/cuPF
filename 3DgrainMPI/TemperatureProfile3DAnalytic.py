@@ -95,18 +95,16 @@ class ThermalProfile:
         yc, zc = centerline
         lm = (r0-z0)/np.sin(angle)
         x_start = 0
-        z_dist = zc - z0
+        z_dist = zc - z
         z_tilt = z_dist/np.cos(angle)
-        x_len_on_cone =(z_dist - z0)*np.tan(angle) - x_start
+        x_len_on_cone = x + (z_dist - z0)*np.tan(angle) - x_start
         
         if x_len_on_cone > lm:
-            return -10
+            return 10
 
         r0_x = z0 + (r0-z0)*x_len_on_cone/lm
         
         dist = np.sqrt((y-yc)**2 + z_tilt**2)
-        if dist > r0_x:
-            return -10
         
         return dist - r0_x
 
