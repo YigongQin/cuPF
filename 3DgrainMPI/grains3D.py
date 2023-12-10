@@ -108,7 +108,8 @@ if __name__ == '__main__':
 
     if args.meltpool == 'lineTemporal':
         from lineTemporal import *   
-        
+    if args.meltpool == 'cone':
+        from cone import *
 
     if args.gr_sample>0:
         if args.gr_sample == 1:
