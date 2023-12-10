@@ -97,6 +97,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/psi.txt",mac.psi_mac);
     read_input(mac.folder+"/G.txt", &params.G);
     read_input(mac.folder+"/Rmax.txt", &params.R);
+    read_input(mac.folder+"/V.txt", &params.V);
     read_input(mac.folder+"/NG.txt", &params.num_theta);
     read_input(mac.folder+"/NN.txt", &params.num_nodes);
     read_input(mac.folder+"/UC.txt", &params.underCoolingRate);

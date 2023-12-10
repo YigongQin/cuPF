@@ -12,7 +12,7 @@ class GlobalConstants
 public:
   // processing parameters
   int thermalType;
-  float G, R, delta, kin_delta, underCoolingRate;
+  float G, R, delta, kin_delta, underCoolingRate, V;
   float underCoolingRate0, nuc_Nmax0;
 
   // physical parameters
