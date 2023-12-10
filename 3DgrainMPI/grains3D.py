@@ -129,6 +129,7 @@ if __name__ == '__main__':
     if args.meltpool == 'cylinder':
         if args.cylinder_scale_param == 1:
             z0 = Lz - Lz/10*(seed%10)
+            top = Lz/10*(seed%10) + 10
         if args.cylinder_scale_param == 2:
             Ly = Ly/10*(seed%10)
             Lz = Ly/2
