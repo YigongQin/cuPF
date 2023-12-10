@@ -275,7 +275,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 float A2 = kine_ani(phxn,phyn,phzn,cosa,sina,cosb,sinb);
 
                 float diff =  phR + phL + phT + phB + phU + phD - 6*phC;
-                float Tinterp;
+                float Tinterp  = 0.0f;
 
                 if (useInitialUnderCooling)
                 {
@@ -290,7 +290,24 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + (z[k] - cP.z0 - cP.lzd)*(z[k] - cP.z0 - cP.lzd)) - cP.r0;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
+                else if (cP.thermalType == 3)
+                {
+                    float x_start = cP.V*t*1e6;
+                    float lm = (cP.r0 - cP.z0)/sinf(cP.angle);
+                    float z_dist =  cP.z0 + cP.lzd - z[k];
+                    float z_tilt = z_dist/cosf(cP.angle);
+                    float x_len_on_cone = x[i] - x_start + (z_dist - cP.z0)*tanf(cP.angle);
+                    
+                    if (x_len_on_cone > lm)
+                    {
+                        ph_new[C+arg_index*length] = -1.0f; 
+                        aarg_new[C+arg_index*length] = -1;
+                        continue;
+                    }
 
+                    float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - cP.r0;
+                    Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
+                }
                 
                 float Up = Tinterp/(cP.L_cp);  
                 float repul=0.0f;
