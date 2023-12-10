@@ -212,7 +212,7 @@ if __name__ == '__main__':
         psi = np.zeros(nx*ny*nz)
       #  U = np.zeros(nx*ny*nz)
         if args.meltpool == 'cone':
-            angle = np.arcsin(R/V)
+            angle = np.arcsin(Rmax/V)
         else:
             angle = 0
         
