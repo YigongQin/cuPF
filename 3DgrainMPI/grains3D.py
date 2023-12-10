@@ -219,11 +219,11 @@ if __name__ == '__main__':
             ti = int(i/(nx*ny*nz))
         
         
-            T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0)
+            T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0, angle = angle)
     
             if ti==0:
                 
-               psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0)  
+               psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0, angle = angle)  
     
         T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
         psi3d = psi.reshape(nx,ny,nz, order='F')       
