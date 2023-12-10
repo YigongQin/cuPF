@@ -104,6 +104,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/r0.txt", &params.r0);
     read_input(mac.folder+"/top.txt", &params.top);
+    read_input(mac.folder+"/angle.txt", &params.angle);
 
     mac.theta_arr = new float[2*params.num_theta+1];
     mac.cost = new float[2*params.num_theta+1];
@@ -200,6 +201,7 @@ void PhaseField::parseInputParams(std::string fileName)
         cout << "profile: cone" << endl;
         cout << "z0: " << params.z0 << endl;
         cout << "r0: " << params.r0 << endl;
+        cout << "angle:" << params.angle << endl;
     }
     else
     {
