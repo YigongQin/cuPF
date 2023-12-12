@@ -297,16 +297,15 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float z_dist =  cP.z0 + cP.lzd - z[k];
                     float z_tilt = z_dist/cosf(cP.angle);
                     float x_len_on_cone = x[i] - x_start + (z_dist - cP.z0)*tanf(cP.angle);
+                    float r0_x = cP.z0 + (cP.r0 - cP.z0)*x_len_on_cone/lm;
+                    float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - r0_x;
                     
-                    if (x_len_on_cone > lm)
+                    if (x_len_on_cone < lm && x_len_on_cone> lm - cP.V*cP.dt*cP.tau0*1e6 && dist<0)
                     {
                         ph_new[C+arg_index*length] = -1.0f; 
                         aarg_new[C+arg_index*length] = -1;
                         continue;
                     }
-
-                    float r0_x = cP.z0 + (cP.r0 - cP.z0)*x_len_on_cone/lm;
-                    float dist = sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - r0_x;
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
                 
