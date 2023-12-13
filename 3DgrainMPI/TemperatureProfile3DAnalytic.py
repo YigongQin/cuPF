@@ -100,7 +100,7 @@ class ThermalProfile:
         x_len_on_cone = x + (z_dist - z0)*np.tan(angle) - x_start
         
         if x_len_on_cone > lm:
-            return 10
+            return (x_len_on_cone - lm)*np.cos(angle) - 0.4
 
         r0_x = z0 + (r0-z0)*x_len_on_cone/lm
         
