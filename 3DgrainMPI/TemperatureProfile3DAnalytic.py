@@ -100,11 +100,15 @@ class ThermalProfile:
         x_len_on_cone = x + (z_dist - z0)*np.tan(angle) - x_start
 
         r0_x = z0 + (r0-z0)*x_len_on_cone/lm
+        r0_x = min(r0_x, r0)
         
         dist = np.sqrt((y-yc)**2 + z_tilt**2)
 
-        if x_len_on_cone > lm and dist<r0_x and z_dist<(r0-z0)*np.cos(angle):
-            return (x_len_on_cone - lm)*np.cos(angle) - 0.4
+       # if x_len_on_cone > lm and dist<r0_x and z_dist<(r0-z0)*np.cos(angle):
+       #     return (x_len_on_cone - lm)*np.cos(angle) - 0.4
+       
+        
+       
         
         return dist - r0_x
 
