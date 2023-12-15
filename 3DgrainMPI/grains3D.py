@@ -7,6 +7,7 @@ import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
 from matplotlib import pyplot as plt
 
+from tvtk.api import tvtk, write_data
 def UN_sampling(seed):
 
     ''' grid sampling'''  
@@ -78,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 10075)
     parser.add_argument("--save3Ddata", type=int, default = 0)
-    parser.add_argument("--meltpool", type=str, default = 'lineTemporal')
+    parser.add_argument("--meltpool", type=str, default = 'cone')
     parser.add_argument("--boundary", type=str, default = '000')
     parser.add_argument("--mpi", type=int, default = 1)
     parser.add_argument("--gr_sample", type=int, default = 0)
@@ -179,6 +180,7 @@ if __name__ == '__main__':
     x = np.linspace(0-BC,Lx+BC,nx)
     y = np.linspace(0-BC,Ly+BC,ny)
     z = np.linspace(0-BC,Lz+BC,nz)
+    xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
     
     therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
     
@@ -189,7 +191,7 @@ if __name__ == '__main__':
         print(t_end) 
         np.random.seed(seed)
         G_rand, R_rand = therm.RandGR(t, t_end, 2**(seed%10))
-        xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+        
         
         travelled = np.zeros(len(R_rand))
         travelled[1:] = 0.5*(R_rand[1:]+R_rand[:-1])*(t[1]-t[0])*1e6
@@ -210,13 +212,14 @@ if __name__ == '__main__':
         t = np.linspace(0, t_end, nt)
 
         T = np.zeros(nx*ny*nz*nt)
-        psi = np.zeros(nx*ny*nz)
+       # psi = np.zeros(nx*ny*nz)
       #  U = np.zeros(nx*ny*nz)
         if args.meltpool == 'cone':
             angle = np.arcsin(Rmax/V)
         else:
             angle = 0
         
+        """
         for i in range(nx*ny*nz*nt):
             
             xi = i%nx
@@ -230,10 +233,24 @@ if __name__ == '__main__':
             if ti==0:
                 
                psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0, angle = angle)  
+        """
+         
     
-        T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
-        psi3d = psi.reshape(nx,ny,nz, order='F')       
+    
+    
+       # T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
+       # psi3d = psi.reshape(nx,ny,nz, order='F')       
 
+        psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
+        psi = psi3d.reshape(nx*ny*nz)
+        grid = tvtk.ImageData(spacing=(6,0.5,0.5), origin=(0, 0, 0), 
+                              dimensions=psi3d.shape)
+    
+        grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
+  
+
+        write_data(grid, 'phi.vtk') 
+        
     print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
     print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
     
