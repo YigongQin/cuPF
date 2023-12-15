@@ -53,7 +53,7 @@ r0 = 0.9*Lz
 G = 10
 Rmax = 2e6
 underCoolingRate = 20
-
+V = 0
 # initial liquid param
 underCoolingRate0 = 20
 nuc_Nmax0 = 0.01

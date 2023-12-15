@@ -75,7 +75,7 @@ def GR_constant_sampling(seed):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
-    parser.add_argument("--outfile_folder", type=str, default = '/scratch/07428/ygqin/graph/cylinder/')
+    parser.add_argument("--outfile_folder", type=str, default = '/scratch/07428/ygqin/graph/cone/')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 10075)
     parser.add_argument("--save3Ddata", type=int, default = 0)
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         """
         for i in range(nx*ny*nz*nt):
             
-            xi = i%nx
+
             yi = int( (i%(nx*ny))/nx )
             zi = int( (i%(nx*ny*nz))/(nx*ny) )
             ti = int(i/(nx*ny*nz))
@@ -242,7 +242,7 @@ if __name__ == '__main__':
        # psi3d = psi.reshape(nx,ny,nz, order='F')       
 
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
-        psi = psi3d.reshape(nx*ny*nz)
+        psi = psi3d.reshape(nx*ny*nz, order='F')
         grid = tvtk.ImageData(spacing=(6,0.5,0.5), origin=(0, 0, 0), 
                               dimensions=psi3d.shape)
     

@@ -16,7 +16,7 @@ nuc_Nmax = 0.01                 # density [1/um^2]
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 23
+nx = 243
 ny = 83
 nz = 43
 nt = 5
@@ -46,13 +46,13 @@ Lx = 120
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = Lz
+top = 2*Lz
 z0 = 0.1*Lz
 r0 = Lz
 
-G = 10
+G = 5
 Rmax = 2e6
-underCoolingRate = 20
+underCoolingRate = 10
 V = 4e6
 
 # initial liquid param
