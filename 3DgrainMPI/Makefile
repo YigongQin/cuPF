@@ -1,3 +1,14 @@
+# set the of for different platforms
+CXX=icpc 
+CUDA_PATH=$(TACC_CUDA_DIR)
+HDF5_INC=$(TACC_HDF5_INC) 
+HDF5_LIB=$(TACC_HDF5_LIB)
+MPICXX=/opt/apps/intel19/mvapich2-gdr/2.3.6/bin/mpicxx
+MPI_INC=-I/opt/apps/intel19/mvapich2-gdr/2.3.6/include/
+
+
+###########################################################
+
 EXECUTABLE := phase_field
 CU_FILES   := PhaseField.cu APTPhaseField.cu MPIsettingCuda.cu 
 CU_DEPS    :=
@@ -10,14 +21,11 @@ LOGS	   := logs
 ###########################################################
 
 ARCH=$(shell uname | sed -e 's/-.*//g')
-CUDA_PATH=$(TACC_CUDA_DIR)
 OBJDIR=objs
-INC_FLAGS=-I../common -I$(TACC_HDF5_INC) 
-MPI_INC=-I/opt/apps/intel19/mvapich2-gdr/2.3.6/include/
-CXX=icpc 
+INC_FLAGS=-I../common -I$(HDF5_INC) 
 CXXFLAGS=-O3 -Wall $(INC_FLAGS) $(MPI_INC) -std=c++14
-HDF5_FLAGS=-Wl,-rpath,$(TACC_HDF5_LIB) -L$(TACC_HDF5_LIB) -lhdf5 -lz
-MPICXX=/opt/apps/intel19/mvapich2-gdr/2.3.6/bin/mpicxx
+HDF5_FLAGS=-Wl,-rpath,$(HDF5_LIB) -L$(HDF5_LIB) -lhdf5 -lz
+
 ################################################################################
 # When compiling with NVCC, the arch flag (-arch) specifies the name of 
 # the NVIDIA GPU architecture that the CUDA files will be compiled for.
@@ -38,11 +46,11 @@ GENCODE_SM60    := -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,
 GENCODE_SM70    := -gencode arch=compute_70,code=sm_70 -gencode arch=compute_70,code=compute_70
 GENCODE_FLAGS   := $(GENCODE_SM70) # For Pascal architecture
 ################################################################################
+
 NVCC_LDFLAGS=-L$(CUDA_PATH)/lib64/ -lcudart -Wl,-rpath=$(CUDA_PATH)/lib64
 NVCC=$(CUDA_PATH)/bin/nvcc -ccbin=$(MPICXX) 
 NVCC_FLAGS=-O3 -m64 $(GENCODE_FLAGS) $(INC_FLAGS) -std=c++14
 
-#CXXFLAGS += -I$(CUDA_PATH)/include/ -L$(CUDA_PATH)/lib64/ -lcudart
 
 OBJS=$(OBJDIR)/main.o $(OBJDIR)/helper.o $(OBJDIR)/PhaseFieldCpu.o $(OBJDIR)/MPIsetting.o $(OBJDIR)/QOI.o $(OBJDIR)/ThermalInputData.o $(OBJDIR)/DesignSettingData.o $(OBJDIR)/MovingDomain.o
 OBJS += $(OBJDIR)/PhaseField.o $(OBJDIR)/APTPhaseField.o $(OBJDIR)/MPIsettingCuda.o
