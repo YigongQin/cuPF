@@ -1,0 +1,6 @@
+scipy
+dill
+matplotlib
+shapely
+termcolor
+h5py
