@@ -21,12 +21,12 @@ If you are using the codes in this repository, please cite the following paper
 
 
 ## Build
-python3: pip3 install -r requirements.txt  
 The codes were deployed on TACC supercomputer systems. To run the codes on your system, in the Makefile, set/replace the following variables or paths:    
 CUDA: `$(CXX)`, `$(CUDA_PATH)`   
-HDF5: `$(HDF5_LIB)`, `$(HDF5_INC)`
+HDF5: `$(HDF5_LIB)`, `$(HDF5_INC)`  
+For python3: pip3 install -r requirements.txt 
 
-Optional -- MPI
+Optional -- MPI  
 MPI with CUDA-aware features such as MVAPICH2 should be installed and the following variables or paths should be set:    
 In Makefile: `$(MPICXX)`, `$(MPI_INC)`  
 In setCudaAwareMPI: `$(LD_PRELOAD)`
@@ -36,7 +36,7 @@ For example:
 ```sh
 cd 3DgrainMPI
 make
-./setCudaAwareMPI
+./setCudaAwareMPI    # set/export environment variables for CUDA/MPI
 ```
 
 ## 3D grain simulation with MPI
@@ -45,6 +45,7 @@ Examples of running 3D grain-scale simulations for different geometries, refer t
 ```sh
 python3 grains3D.py --meltpool=line --seed=0         # random seed for the substrate microstructure
 python3 grains3D.py --meltpool=line --boundary=110   # boundary condition for xyz axis. "1" for periodic, "0" for no-flux
+python3 grains3D.py --meltpool=line --mpi=2          # use two GPUs with CUDA-aware MPI
 python3 grains3D.py --meltpool=line --lineConfig     # use moving-domain technique to reduce the height 
 python3 grains3D.py --meltpool=line --lineConfig --nucleation     # include nucleation in the simulation
 ```
