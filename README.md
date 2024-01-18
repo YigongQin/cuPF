@@ -22,14 +22,14 @@ If you are using the codes in this repository, please cite the following paper
 
 ## Build
 python: pip3 install -r requirements.txt  
-The codes were deployed on TACC supercomputer systems. In the Makefile, set/replace the following variables or paths
-CUDA: $(CXX) $(CUDA_PATH)   
-HDF5: $(HDF5_LIB), $(HDF5_INC)
+The codes were deployed on TACC supercomputer systems. In the Makefile, set/replace the following variables or paths  
+CUDA: `$(CXX)`, `$(CUDA_PATH)`   
+HDF5: `$(HDF5_LIB)`, `$(HDF5_INC)`
 
 Optional -- MPI
 MPI with CUDA-aware features such as MVAPICH2 should be installed and the following variables or paths should be set
-In Makefile: $(MPICXX), $(MPI_INC)
-In setCudaAwareMPI: $(LD_PRELOAD)
+In Makefile: `$(MPICXX)`, `$(MPI_INC)`
+In setCudaAwareMPI: `$(LD_PRELOAD)`
   
 
 For example:
