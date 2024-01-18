@@ -1,7 +1,7 @@
 # cuPF
-Phase field solvers written in C++, CUDA. Scaling: CUDA-aware MPI. 
-The solvers model microstructure evolution of metals under various thermal conditions
-Support: (1) 2D/3D grain-scale simulation (2) 2D dendrite-scale simulation
+Phase field solvers written in C++, CUDA. Scaling: CUDA-aware MPI.   
+The solvers model microstructure evolution of metals under various thermal conditions.  
+Support: (1) 2D/3D grain-scale simulation (2) 2D dendrite-scale simulation  
 
 ## Cite
 
@@ -21,10 +21,10 @@ If you are using the codes in this repository, please cite the following paper
 
 
 ## Build
-python: pip3 install -r requirements.txt
-CUDA: set CUDA path in the Makefile
-HDF5: set HDF5 path in the Makefile
-MPI-related: MPI with CUDA-aware features such as MVAPICH2 should be installed, set MPI path in file setCudaAwareMPI
+python: pip3 install -r requirements.txt  
+CUDA: set CUDA path in the Makefile  
+HDF5: set HDF5 path in the Makefile  
+MPI-related: MPI with CUDA-aware features such as MVAPICH2 should be installed, set MPI path in file setCudaAwareMPI  
 
 For example:
 ```sh
