@@ -15,7 +15,7 @@ Created on Fri May 29 11:10:53 2020
     c_infm = 7.8                  # shift in melting temperature     K
     Dl = 3000                       # liquid diffusion coefficient      um**2/s
     d0 = 0.005                    # capillary length -- associated with GT coefficient   um
-    W0 = 0.1                     # interface thickness      um
+    W0 = 0.14                     # interface thickness      um
     
     lT = c_infm*( 1.0/k-1 )/G       # thermal length           um
     lamd = 5*np.sqrt(2)/8*W0/d0     # coupling constant
@@ -31,10 +31,10 @@ Created on Fri May 29 11:10:53 2020
     eps = 1e-8                      	# divide-by-zero treatment
     alpha0 = 0                    	# misorientation angle in degree
     
-    dx = 0.8                            # mesh width
+    dx = 3.2                            # mesh width
     dt = 0.8*(dx)**2/(4*Dl_tilde)       # time step size for forward euler
 
-    asp_ratio = 0.9                  	# aspect ratio
+    asp_ratio = 0.62                  	# aspect ratio
    # nx = 128            		# number of cells in x, number of grids is nx+1
     ny = asp_ratio*nx
 
@@ -54,11 +54,11 @@ Created on Fri May 29 11:10:53 2020
     direc = './'                        # saving directory
     
     ha_wd = 10;
-    xmin = -1280
-    ymin = -1152
+    xmin = -960
+    ymin = -595.2
     Ti = 877.6
-    num_theta = 90
+    num_theta = 75
     Nx = 513
-    Ny = 473 
-    Nt = 261
-    cfl = 0.8
+    Ny = 308
+    Nt = 80
+    cfl = 0.2

@@ -75,9 +75,16 @@ make
 
 ## 2D dendrite simulation  
 ```sh
+# DNS simulation
 cd 2DdendriteMPI/DNS
 make
-./phase_field INPUT_FILE MACRO_INPUTS_DIR   
+python3 thermal.py
+./phase_field input_file thermal_folder
+# line simulation
+cd 2DdendriteMPI/DNS
+make
+python3 thermal.py
+./phase_field input_file thermal_folder
 ```
 
 
@@ -93,7 +100,7 @@ https://user-images.githubusercontent.com/62076142/189384626-9093423b-6516-4eb5-
 ## Reference
 ```
 [1] Blas Echebarria, Roger Folch, Alain Karma, and Mathis Plapp. Quantitative phase-field model of alloy solidification. Physical Review E, 70(6):061604, 2004.
-[2] D. Tourret and A. Karma. Three-dimensional dendritic needle network model for alloy solidifi- cation. Acta Materialia, 120:240–254, 2016.
+[2] Pinomaa, T. et al. Process-Structure-Properties-Performance modeling for selective laser melting. Metals 9, 1138 (2019).
 ```
 ## Author
 This software was primarily written by Yigong Qin who is advised by Prof. George Biros.

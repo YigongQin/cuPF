@@ -292,14 +292,14 @@ U0[np.isnan(U0)] = U1[np.isnan(U0)]
 print('has nan in U', np.mean(np.isnan(U0)*1))
 print('has nan in psi', np.mean(np.isnan(psi0)*1))
 
-mac_folder = 'WD_deep/'
-print(len(xmac),len(zmac),len(tmac))
-np.savetxt(mac_folder+'x.txt', xmac, fmt='%2.6e',delimiter='\n')
-np.savetxt(mac_folder+'y.txt', zmac, fmt='%2.6e',delimiter='\n')
-np.savetxt(mac_folder+'t.txt', tmac, fmt='%2.6e',delimiter='\n')
-np.savetxt(mac_folder+'psi.txt', psi0.reshape((Nx*Ny),order='F'), fmt='%2.6e',delimiter='\n')
-np.savetxt(mac_folder+'U.txt', U0.reshape((Nx*Ny),order='F'), fmt='%2.6e',delimiter='\n')
-np.savetxt(mac_folder+'alpha.txt', -n_alpha0.reshape((Nx*Ny),order='F'), fmt='%2.6e',delimiter='\n')
+mac_folder = 'WD_shallow/'
+
+np.savetxt(mac_folder+'x.txt', xmac, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'y.txt', zmac, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'t.txt', tmac, fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'psi.txt', psi0.reshape((Nx*Ny),order='F'), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'U.txt', U0.reshape((Nx*Ny),order='F'), fmt='%1.4e',delimiter='\n')
+np.savetxt(mac_folder+'alpha.txt', -n_alpha0.reshape((Nx*Ny),order='F'), fmt='%1.4e',delimiter='\n')
 #np.savetxt(mac_folder+'Temp.txt', T_arr.reshape((Nx*Ny*Nt),order='F'), fmt='%1.6e',delimiter='\n')
 
 hf = h5py.File(mac_folder+'Temp.h5', 'w')
