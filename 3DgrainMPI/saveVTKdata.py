@@ -78,7 +78,8 @@ class grain_visual:
         
         print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
-        self.alpha_pde = self.theta_z[self.alpha_pde%num_theta]/pi*180
+        angle_pde = (self.alpha_pde<=num_theta)*self.alpha_pde + (self.alpha_pde>num_theta)*(self.alpha_pde%num_theta+1) 
+        self.alpha_pde = self.theta_z[angle_pde]/pi*180
         
        # print(self.alpha_pde)
         if self.rank == 0:
