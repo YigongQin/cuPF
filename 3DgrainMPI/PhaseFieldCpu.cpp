@@ -504,6 +504,12 @@ void PhaseField::OutputField(int currentStep)
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
+    h5write_1d(h5_file, "r0", &params.r0, 1, "float");
+    h5write_1d(h5_file, "z0", &params.z0, 1, "float");
+    h5write_1d(h5_file, "top", &params.top, 1, "float");
+    h5write_1d(h5_file, "angle", &params.angle, 1, "float");
+    h5write_1d(h5_file, "V", &params.V, 1, "float");
+
     if (designSetting->useLineConfig)
     {
         h5write_1d(h5_file, "alpha",  alpha_i_full, full_length, "int");
