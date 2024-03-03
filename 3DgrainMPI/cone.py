@@ -37,16 +37,16 @@ ictype = 0                      # initial condtion
 # simulation parameters
 dx = 0.8                        # mesh width
 W0 = 0.1                        # interface thickness [um]
-cfl = 1.0                       # cfl number
-asp_ratio_yx = 0.3333             # aspect ratio of domain z/x
-asp_ratio_zx = 0.1667             # aspect ratio of domain z/x
+cfl = 0.6                       # cfl number
+asp_ratio_yx = 0.25             # aspect ratio of domain z/x
+asp_ratio_zx = 0.125             # aspect ratio of domain z/x
 moving_ratio = 0.2
 nts = 1                         # number snapshots to save, Mt/nts must be int
-Lx = 120
+Lx = 240
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-top = 2*Lz
+top = 3*Lz
 z0 = 0.1*Lz
 r0 = Lz
 
@@ -58,4 +58,4 @@ V = 4e6
 # initial liquid param
 underCoolingRate0 = 20
 nuc_Nmax0 = 0.01
-preMt = 3000
+preMt = 4000

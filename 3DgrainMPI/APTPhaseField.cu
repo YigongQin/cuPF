@@ -739,7 +739,7 @@ void APTPhaseField::evolve()
 
       cudaMalloc((void **) &dStates, sizeof(curandState) * (lenCell+params.noi_period));
       cudaMalloc((void **) &nucleationStatus, sizeof(int) * lenCell);
-      init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, params.seed_val, lenCell+params.noi_period);
+      init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, mpiManager->rank, lenCell+params.noi_period);
       init_nucl_status<<<num_block_c, blocksize_2d>>>(phi_old, nucleationStatus, cnx, cny, cnz, fnx, fny);
     }
 
