@@ -61,7 +61,7 @@ class grain_visual:
             if rank<self.gpus-1:
                 self.x = self.x[:-1]
                 alpha_pde = alpha_pde[:-1,:,:]
-                
+
             x_list.append(self.x)
             alpha_list.append(alpha_pde)
 
@@ -79,6 +79,8 @@ class grain_visual:
                 self.physical_params = {'G':G, 'UC':UC}
                 print(self.physical_params)
 
+                self.geometry = {'r0':float(f['r0']), 'z0':float(f['z0']), 'angle':float(f['angle'])}
+                print(self.geometry)
  
         self.x = np.concatenate(x_list)
         self.alpha_pde = np.concatenate(alpha_list, axis=0)
@@ -120,7 +122,37 @@ class grain_visual:
         write_data(grid, self.dataname)
         
 
+    def updateh5(self, rawdat_dir):
 
+        data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '*rank0.h5'))[0]
+        f = h5py.File(data_file, 'r+')
+
+        lxd, lyd, lzd = self.x[-2], self.y[-2], self.z[-2]
+        xx, yy, zz = np.meshgrid(self.x[1:-1], self.y[1:-1], self.z[1:-1], indexing='ij')
+
+        center_height = lzd + self.geometry['z0']*np.cos(self.geometry['angle'])
+        radius = (self.geometry['r0'] - self.geometry['z0'])*np.cos(self.geometry['angle'])
+        print('center_height, radius', center_height, radius)
+
+        dx = self.x[1] - self.x[0]
+
+        y_span = np.sqrt(radius**2 - (center_height - lzd)**2)
+
+        self.alpha_pde = self.alpha_pde[(yy>lyd/2 - y_span) & (yy<lyd/2 + y_span)]
+        yy = yy[(yy>lyd/2 - y_span) & (yy<lyd/2 + y_span)] 
+        print('shape of alpha_pde, yy', self.alpha_pde.shape, yy.shape) 
+
+        surface_z = int(np.sqrt(radius**2 - (yy - lyd/2)**2)/dx )
+
+        surface_alpha = self.alpha_pde[:,:,surface_z]
+
+        f['manifold'] = surface_alpha
+        f['geodesic_y'] = radius*np.arcsin( (yy - lyd/2)/radius)
+        f['z0'] = self.geometry['z0']
+        f['r0'] = self.geometry['r0']
+
+        f.close()
+ 
 
 if __name__ == '__main__':
 
@@ -145,5 +177,5 @@ if __name__ == '__main__':
     if args.mode == 'truth':
         
         Gv.load(rawdat_dir=args.rawdat_dir)  
-        
+        Gv.updateh5(rawdat_dir=args.rawdat_dir)
 
