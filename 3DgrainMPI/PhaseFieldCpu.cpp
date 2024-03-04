@@ -520,11 +520,14 @@ void PhaseField::OutputField(int currentStep)
 
     H5Fclose(h5_file);
 
-    string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --rank=" + to_string(GetMPIManager()->rank) + " --seed=" + to_string(params.seed_val)
+    if (GetMPIManager()->rank == 0)
+    {
+        string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --seed=" + to_string(params.seed_val)
                     + " --lxd=" + to_string((int) params.lxd) + " --time=" + to_string(currentStep);
-    std::cout << cmd << std::endl;
-    int result = system(cmd.c_str()); 
-    assert(result == 0);
+        std::cout << cmd << std::endl;
+        int result = system(cmd.c_str()); 
+        assert(result == 0);
+    }
 }
 
 
