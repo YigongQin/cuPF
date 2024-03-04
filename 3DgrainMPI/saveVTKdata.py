@@ -55,7 +55,13 @@ class grain_visual:
             
             alpha_pde = np.asarray(f['alpha']).reshape((fnx, fny, fnz),order='F')    
          
-         
+            if rank>0:
+                self.x = self.x[1:]
+                alpha_pde = alpha_pde[1:,:,:]
+            if rank<self.gpus-1:
+                self.x = self.x[:-1]
+                alpha_pde = alpha_pde[:-1,:,:]
+                
             x_list.append(self.x)
             alpha_list.append(alpha_pde)
 
