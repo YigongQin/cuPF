@@ -79,7 +79,7 @@ class grain_visual:
                 self.physical_params = {'G':G, 'UC':UC}
                 print(self.physical_params)
 
-                self.geometry = {'r0':float(f['r0']), 'z0':float(f['z0']), 'angle':float(f['angle'])}
+                self.geometry = {'r0':float(np.array(f['r0'])), 'z0':float(np.array(f['z0'])), 'angle':float(np.array(f['angle']))}
                 print(self.geometry)
  
         self.x = np.concatenate(x_list)
@@ -96,9 +96,11 @@ class grain_visual:
         else:
             self.alpha_pde = self.alpha_pde[1:-1, 1:-1, 1:top_z]       
         
+        self.alpha_pde = self.alpha_pde[::self.subsample,::self.subsample,::self.subsample]
+        self.dx = dx*self.subsample
 
-        
-        print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
+    def save_vtk(self):
+        #print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
         angle_pde = (self.alpha_pde<=num_theta)*self.alpha_pde + (self.alpha_pde>num_theta)*(self.alpha_pde%num_theta+1) 
         self.alpha_pde = self.theta_z[angle_pde]/pi*180
@@ -106,7 +108,6 @@ class grain_visual:
         origin = (self.x[1], self.y[1], self.z[1]) 
 
     
-        self.alpha_pde = self.alpha_pde[::self.subsample,::self.subsample,::self.subsample]
         dx = dx*self.subsample
         grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
@@ -114,13 +115,10 @@ class grain_visual:
         grid.point_data.scalars = self.alpha_pde.ravel(order='F')
         grid.point_data.scalars.name = 'theta_z'
         
-        
-        
         self.dataname = rawdat_dir + '/seed'+str(self.seed) + '_time'+ str(self.time) +'.vtk'
                    #rawdat_dir + 'seed'+str(self.seed)+'_G'+str('%2.2f'%self.physical_params['G'])\
                    #+'_R'+str('%2.2f'%self.physical_params['R'])+'.vtk'
         write_data(grid, self.dataname)
-        
 
     def updateh5(self, rawdat_dir):
 
@@ -128,28 +126,41 @@ class grain_visual:
         f = h5py.File(data_file, 'r+')
 
         lxd, lyd, lzd = self.x[-2], self.y[-2], self.z[-2]
-        xx, yy, zz = np.meshgrid(self.x[1:-1], self.y[1:-1], self.z[1:-1], indexing='ij')
+        xx, yy, zz = np.meshgrid(self.x[1:-1:self.subsample], self.y[1:-1:self.subsample], self.z[1:-1:self.subsample], indexing='ij')
 
         center_height = lzd + self.geometry['z0']*np.cos(self.geometry['angle'])
-        radius = (self.geometry['r0'] - self.geometry['z0'])*np.cos(self.geometry['angle'])
+        radius = self.geometry['r0']*np.cos(self.geometry['angle'])
         print('center_height, radius', center_height, radius)
 
-        dx = self.x[1] - self.x[0]
 
         y_span = np.sqrt(radius**2 - (center_height - lzd)**2)
-
-        self.alpha_pde = self.alpha_pde[(yy>lyd/2 - y_span) & (yy<lyd/2 + y_span)]
-        yy = yy[(yy>lyd/2 - y_span) & (yy<lyd/2 + y_span)] 
+        y_half = int(np.round(lyd/2/self.dx))
+        y_range = int( y_span/self.dx ) 
+        self.alpha_pde = self.alpha_pde[:, y_half-y_range:y_half+y_range+1, :]
+        yy =  yy[:, y_half-y_range:y_half+y_range+1, :]
+        print('range of y', lyd/2 - y_span, lyd/2 + y_span)
         print('shape of alpha_pde, yy', self.alpha_pde.shape, yy.shape) 
+        assert np.all(radius**2 - (yy - lyd/2)**2)>0
+        surface_z = np.asarray((center_height-np.sqrt(radius**2 - (yy[:,:,0] - lyd/2)**2))/self.dx, dtype=int )
+        print(surface_z)
+        surface_alpha = 0*surface_z
+        for i in range(surface_z.shape[0]):
+            for j in range(surface_z.shape[1]):
 
-        surface_z = int(np.sqrt(radius**2 - (yy - lyd/2)**2)/dx )
+               surface_alpha[i,j] = self.alpha_pde[i,j,surface_z[i,j]]
 
-        surface_alpha = self.alpha_pde[:,:,surface_z]
-
-        f['manifold'] = surface_alpha
-        f['geodesic_y'] = radius*np.arcsin( (yy - lyd/2)/radius)
-        f['z0'] = self.geometry['z0']
-        f['r0'] = self.geometry['r0']
+        print(surface_alpha)
+        right_cut = 40
+        right_cut_grid = int(np.round(right_cut/self.dx))
+        if 'manifold' in f: del f['manifold']
+        f['manifold'] = surface_alpha[:-right_cut_grid,:]
+        if 'geodesic_y_coors' in f: del f['geodesic_y_coors']
+        f['geodesic_y_coors'] = radius*np.arcsin( (yy - lyd/2)/radius)[0,:,0]
+        if 'x_coordinates' in f: del f['x_coordinates']
+        f['x_coordinates'] = self.x[:-right_cut_grid]
+        print(self.x[:-right_cut_grid])
+       # f['z0'][:] = self.geometry['z0']
+       # f['r0'][:] = self.geometry['r0']
 
         f.close()
  
@@ -161,7 +172,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--rawdat_dir", type=str, default = './')
     parser.add_argument("--pvpython_dir", type=str, default = '')
-    parser.add_argument("--mode", type=str, default='truth')
+    parser.add_argument("--mode", type=str, default='plot')
     
     parser.add_argument("--seed", type=int, default = 0)
     parser.add_argument("--gpus", type=int, default = 0)
@@ -173,9 +184,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
         
    # Gv = grain_visual(lxd = 20, seed = args.seed, height=20)   
-    Gv = grain_visual(gpus = args.gpus, lxd=args.lxd, seed=args.seed, height=args.height, time=args.time, subsample=args.subsample)  
-    if args.mode == 'truth':
+    Gv = grain_visual(gpus = args.gpus, lxd=args.lxd, seed=args.seed, height=args.height, time=args.time, subsample=args.subsample) 
+    Gv.load(rawdat_dir=args.rawdat_dir)
+
+    if args.mode == 'plot':
         
-        Gv.load(rawdat_dir=args.rawdat_dir)  
+        Gv.save_vtk(rawdat_dir=args.rawdat_dir)  
+    if args.mode == 'manifold':
         Gv.updateh5(rawdat_dir=args.rawdat_dir)
 
