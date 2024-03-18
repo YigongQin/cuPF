@@ -69,6 +69,7 @@ class grain_visual:
             if rank == 0:
                 self.angles = np.asarray(f['angles']) 
                 num_theta = len(self.angles)//2
+                self.num_theta = num_theta
                 self.theta_z = np.zeros(1 + num_theta)
                 self.theta_z[1:] = self.angles[num_theta+1:]
                 
@@ -99,17 +100,16 @@ class grain_visual:
         self.alpha_pde = self.alpha_pde[::self.subsample,::self.subsample,::self.subsample]
         self.dx = dx*self.subsample
 
-    def save_vtk(self):
+    def save_vtk(self, rawdat_dir):
         #print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
-        angle_pde = (self.alpha_pde<=num_theta)*self.alpha_pde + (self.alpha_pde>num_theta)*(self.alpha_pde%num_theta+1) 
+        angle_pde = (self.alpha_pde<=self.num_theta)*self.alpha_pde + (self.alpha_pde>self.num_theta)*(self.alpha_pde%self.num_theta+1) 
         self.alpha_pde = self.theta_z[angle_pde]/pi*180
         
         origin = (self.x[1], self.y[1], self.z[1]) 
 
-    
-        dx = dx*self.subsample
-        grid = tvtk.ImageData(spacing=(dx, dx, dx), origin=origin, 
+
+        grid = tvtk.ImageData(spacing=(self.dx, self.dx, self.dx), origin=origin, 
                               dimensions=self.alpha_pde.shape)
         
         grid.point_data.scalars = self.alpha_pde.ravel(order='F')
@@ -125,42 +125,45 @@ class grain_visual:
         data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '*rank0.h5'))[0]
         f = h5py.File(data_file, 'r+')
 
-        lxd, lyd, lzd = self.x[-2], self.y[-2], self.z[-2]
-        xx, yy, zz = np.meshgrid(self.x[1:-1:self.subsample], self.y[1:-1:self.subsample], self.z[1:-1:self.subsample], indexing='ij')
-
-        center_height = lzd + self.geometry['z0']*np.cos(self.geometry['angle'])
-        radius = self.geometry['r0']*np.cos(self.geometry['angle'])
-        print('center_height, radius', center_height, radius)
-
-
-        y_span = np.sqrt(radius**2 - (center_height - lzd)**2)
-        y_half = int(np.round(lyd/2/self.dx))
-        y_range = int( y_span/self.dx ) 
-        self.alpha_pde = self.alpha_pde[:, y_half-y_range:y_half+y_range+1, :]
-        yy =  yy[:, y_half-y_range:y_half+y_range+1, :]
-        print('range of y', lyd/2 - y_span, lyd/2 + y_span)
-        print('shape of alpha_pde, yy', self.alpha_pde.shape, yy.shape) 
-        assert np.all(radius**2 - (yy - lyd/2)**2)>0
-        surface_z = np.asarray((center_height-np.sqrt(radius**2 - (yy[:,:,0] - lyd/2)**2))/self.dx, dtype=int )
-        print(surface_z)
-        surface_alpha = 0*surface_z
-        for i in range(surface_z.shape[0]):
-            for j in range(surface_z.shape[1]):
-
-               surface_alpha[i,j] = self.alpha_pde[i,j,surface_z[i,j]]
+        x_cutoff = 500
+        x = np.asarray(f['x_coordinates'])[:-x_cutoff]*np.cos(self.geometry['angle'])
+        dx = x[1] - x[0]
+        
+        y_max = 2*np.arccos(self.geometry['z0']/self.geometry['r0'])*self.geometry['r0']
+        
+        y_max_r = dx*int(y_max/dx)
+        y = np.arange(-dx, y_max_r+2*dx, dx)
+        
+        x_in = x[1:-1]
+        y_in = y[1:-1]
+        
+        surface_alpha = np.zeros((len(x_in), len(y_in)), dtype=int)
+        
+        for i in range(surface_alpha.shape[0]):
+            for j in range(surface_alpha.shape[1]):
+                
+                theta = dx*(j - (surface_alpha.shape[1]-1)/2 )/self.geometry['r0']
+                radial = self.geometry['r0']*(1 - np.cos(theta))
+                trav = y_max/2 + self.geometry['r0']*np.sin(theta)
+                
+                ai = i + int( radial*np.sin(self.geometry['angle'])/self.dx )
+                aj = int(trav/self.dx)
+                ak = int( radial*np.cos(self.geometry['angle'])/self.dx )
+                
+                surface_alpha[i,j] = self.alpha_pde[ai, aj, ak]
 
         print(surface_alpha)
-        right_cut = 40
-        right_cut_grid = int(np.round(right_cut/self.dx))
+        
+        
         if 'manifold' in f: del f['manifold']
-        f['manifold'] = surface_alpha[:-right_cut_grid,:]
-        if 'geodesic_y_coors' in f: del f['geodesic_y_coors']
-        f['geodesic_y_coors'] = radius*np.arcsin( (yy - lyd/2)/radius)[0,:,0]
+        f['manifold'] = surface_alpha
+        
         if 'x_coordinates' in f: del f['x_coordinates']
-        f['x_coordinates'] = self.x[:-right_cut_grid]
-        print(self.x[:-right_cut_grid])
-       # f['z0'][:] = self.geometry['z0']
-       # f['r0'][:] = self.geometry['r0']
+        f['x_coordinates'] = x
+        
+        if 'y_coordinates' in f: del f['y_coordinates']
+        f['y_coordinates'] = y
+
 
         f.close()
  
@@ -193,3 +196,27 @@ if __name__ == '__main__':
     if args.mode == 'manifold':
         Gv.updateh5(rawdat_dir=args.rawdat_dir)
 
+
+
+        """
+        lxd, lyd, lzd = self.x[-2], self.y[-2], self.z[-2]
+        xx, yy, zz = np.meshgrid(self.x[1:-1:self.subsample], self.y[1:-1:self.subsample], self.z[1:-1:self.subsample], indexing='ij')
+
+        center_height = lzd + self.geometry['z0']*np.cos(self.geometry['angle'])
+        radius = self.geometry['r0']*np.cos(self.geometry['angle'])
+        print('center_height, radius', center_height, radius)
+
+
+        y_span = np.sqrt(radius**2 - (center_height - lzd)**2)
+        y_half = int(np.round(lyd/2/self.dx))
+        y_range = int( y_span/self.dx ) 
+        self.alpha_pde = self.alpha_pde[:, y_half-y_range:y_half+y_range+1, :]
+        yy =  yy[:, y_half-y_range:y_half+y_range+1, :]
+        print('range of y', lyd/2 - y_span, lyd/2 + y_span)
+        print('shape of alpha_pde, yy', self.alpha_pde.shape, yy.shape) 
+        assert np.all(radius**2 - (yy - lyd/2)**2)>0
+        surface_z = np.asarray((center_height-np.sqrt(radius**2 - (yy[:,:,0] - lyd/2)**2))/self.dx, dtype=int )
+        print(surface_z)
+        surface_alpha = 0*surface_z
+        
+        """
