@@ -126,7 +126,7 @@ class grain_visual:
         f = h5py.File(data_file, 'r+')
 
         x_cutoff = 500
-        x = np.asarray(f['x_coordinates'])[:-x_cutoff]*np.cos(self.geometry['angle'])
+        x = self.x[:-x_cutoff]*np.cos(self.geometry['angle'])
         dx = x[1] - x[0]
         
         y_max = 2*np.arccos(self.geometry['z0']/self.geometry['r0'])*self.geometry['r0']
@@ -144,11 +144,12 @@ class grain_visual:
                 
                 theta = dx*(j - (surface_alpha.shape[1]-1)/2 )/self.geometry['r0']
                 radial = self.geometry['r0']*(1 - np.cos(theta))
-                trav = y_max/2 + self.geometry['r0']*np.sin(theta)
+                y_len = self.y[-2]/2 + self.geometry['r0']*np.sin(theta)
                 
                 ai = i + int( radial*np.sin(self.geometry['angle'])/self.dx )
-                aj = int(trav/self.dx)
-                ak = int( radial*np.cos(self.geometry['angle'])/self.dx )
+                aj = int(y_len/self.dx)
+                z_len = radial*np.cos(self.geometry['angle']) + self.z[-2] + (self.geometry['z0']- self.geometry['r0'])*np.cos(self.geometry['angle'])
+                ak = int( z_len/self.dx )
                 
                 surface_alpha[i,j] = self.alpha_pde[ai, aj, ak]
 
@@ -158,12 +159,14 @@ class grain_visual:
         if 'manifold' in f: del f['manifold']
         f['manifold'] = surface_alpha
         
-        if 'x_coordinates' in f: del f['x_coordinates']
-        f['x_coordinates'] = x
+        if 'x_manifold' in f: del f['x_manifold']
+        f['x_manifold'] = x
         
-        if 'y_coordinates' in f: del f['y_coordinates']
-        f['y_coordinates'] = y
+        if 'y_manifold' in f: del f['y_manifold']
+        f['y_manifold'] = y
 
+        if 'x_coordinates' in f: del f['x_coordinates']
+        f['x_coordinates'] = self.x
 
         f.close()
  
