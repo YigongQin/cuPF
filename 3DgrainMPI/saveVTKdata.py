@@ -128,7 +128,6 @@ class grain_visual:
         x_cutoff = 500
         x = self.x[:-x_cutoff]*np.cos(self.geometry['angle'])
         dx = x[1] - x[0]
-        
         y_max = 2*np.arccos(self.geometry['z0']/self.geometry['r0'])*self.geometry['r0']
         
         y_max_r = dx*int(y_max/dx)
@@ -138,14 +137,13 @@ class grain_visual:
         y_in = y[1:-1]
         
         surface_alpha = np.zeros((len(x_in), len(y_in)), dtype=int)
-        
+        print(dx, self.dx, surface_alpha.shape) 
         for i in range(surface_alpha.shape[0]):
             for j in range(surface_alpha.shape[1]):
                 
                 theta = dx*(j - (surface_alpha.shape[1]-1)/2 )/self.geometry['r0']
                 radial = self.geometry['r0']*(1 - np.cos(theta))
                 y_len = self.y[-2]/2 + self.geometry['r0']*np.sin(theta)
-                
                 ai = i + int( radial*np.sin(self.geometry['angle'])/self.dx )
                 aj = int(y_len/self.dx)
                 z_len = radial*np.cos(self.geometry['angle']) + self.z[-2] + (self.geometry['z0']- self.geometry['r0'])*np.cos(self.geometry['angle'])
