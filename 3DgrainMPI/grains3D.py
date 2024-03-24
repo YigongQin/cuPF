@@ -184,6 +184,7 @@ if __name__ == '__main__':
     
     therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
     
+    angle = 0
     if args.meltpool == 'lineTemporal':
         minR = 0.2*1e6
         t_end = top/minR     # make sure at t_end the interface will reach top (has travelled distance=top)
@@ -216,8 +217,6 @@ if __name__ == '__main__':
       #  U = np.zeros(nx*ny*nz)
         if args.meltpool == 'cone':
             angle = np.arcsin(Rmax/V)
-        else:
-            angle = 0
         
         """
         for i in range(nx*ny*nz*nt):

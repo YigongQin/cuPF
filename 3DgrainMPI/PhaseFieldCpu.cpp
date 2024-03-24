@@ -463,6 +463,12 @@ void PhaseField::OutputQoIs()
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
+    h5write_1d(h5_file, "r0", &params.r0, 1, "float");
+    h5write_1d(h5_file, "z0", &params.z0, 1, "float");
+    h5write_1d(h5_file, "top", &params.top, 1, "float");
+    h5write_1d(h5_file, "angle", &params.angle, 1, "float");
+    h5write_1d(h5_file, "V", &params.V, 1, "float");
+    
     for (auto & qoi : qois->mQoIVectorFloatData)
     {
         h5write_1d(h5_file, qoi.first.c_str(), qoi.second.data(), qoi.second.size(), "float");
@@ -504,11 +510,7 @@ void PhaseField::OutputField(int currentStep)
     h5write_1d(h5_file, "z_coordinates", z_full, params.fnz_f, "float");
     h5write_1d(h5_file, "angles",    mac.theta_arr, (2*params.num_theta+1), "float");
 
-    h5write_1d(h5_file, "r0", &params.r0, 1, "float");
-    h5write_1d(h5_file, "z0", &params.z0, 1, "float");
-    h5write_1d(h5_file, "top", &params.top, 1, "float");
-    h5write_1d(h5_file, "angle", &params.angle, 1, "float");
-    h5write_1d(h5_file, "V", &params.V, 1, "float");
+
 
     if (designSetting->useLineConfig)
     {
@@ -520,6 +522,7 @@ void PhaseField::OutputField(int currentStep)
 
     H5Fclose(h5_file);
 
+    /*
     if (GetMPIManager()->rank == 0)
     {
         string cmd = "python3 saveVTKdata.py --rawdat_dir=" + designSetting->outputFolder + " --seed=" + to_string(params.seed_val)
@@ -528,6 +531,7 @@ void PhaseField::OutputField(int currentStep)
         int result = system(cmd.c_str()); 
         assert(result == 0);
     }
+    */
 }
 
 

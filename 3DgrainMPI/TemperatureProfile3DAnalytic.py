@@ -93,21 +93,14 @@ class ThermalProfile:
     def coneProfile(self, x, y, z, z0, r0, centerline, angle):
         
         yc, zc = centerline
-        lm = (r0-z0)/np.sin(angle)
+        lm = (r0-z0)/np.tan(angle)
         x_start = 0
-        z_dist = zc - z
-        z_tilt = z_dist/np.cos(angle)
-        x_len_on_cone = x + (z_dist - z0)*np.tan(angle) - x_start
+        x_len_on_cone = x - x_start
 
         r0_x = z0 + (r0-z0)*x_len_on_cone/lm
         r0_x = np.clip(r0_x, a_min=None, a_max=r0)
         
-        dist = np.sqrt((y-yc)**2 + z_tilt**2)
-
-       # if x_len_on_cone > lm and dist<r0_x and z_dist<(r0-z0)*np.cos(angle):
-       #     return (x_len_on_cone - lm)*np.cos(angle) - 0.4
-       
-        
+        dist = np.sqrt((y - yc)**2 + (z - zc)**2)
        
         
         return dist - r0_x
