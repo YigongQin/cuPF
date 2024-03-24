@@ -293,19 +293,9 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 else if (cP.thermalType == 3)
                 {
                     float lm = (cP.r0 - cP.z0)/tanf(cP.angle);
-                    float x_start = cP.V*t*1e6;                  
+                    float x_start = 0;                  
                     float x_len_on_cone = x[i] - x_start;
                     float r0_x = cP.z0 + (cP.r0 - cP.z0)*x_len_on_cone/lm;
-
-                    if (r0_x>cP.r0)
-                    {
-                        r0_x = cP.r0;
-                    }
-                    if (r0_x<cP.z0)
-                    {
-                        r0_x = cP.z0;
-                    }
-
                     float z_tilt = cP.z0 + cP.lzd - z[k];
                     float dist = cosf(cP.angle)*(sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - r0_x);
 
@@ -313,14 +303,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     {
                         continue;
                     }
-                    if (x[i] > lm) 
-                    {
-                        Tinterp = -cP.G*dist - cP.underCoolingRate*(1e6*t-(x[i] - lm)/cP.V);
-                    }
-                    else
-                    {
-                        Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
-                    }  
+                    Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
                 
                 float Up = Tinterp/(cP.L_cp);  
