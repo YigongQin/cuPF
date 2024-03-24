@@ -301,6 +301,10 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     {
                         r0_x = cP.r0;
                     }
+                    if (r0_x<cP.z0)
+                    {
+                        r0_x = cP.z0;
+                    }
 
                     float z_tilt = cP.z0 + cP.lzd - z[k];
                     float dist = cosf(cP.angle)*(sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - r0_x);
