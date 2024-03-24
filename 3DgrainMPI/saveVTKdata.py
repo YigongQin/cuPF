@@ -74,14 +74,7 @@ class grain_visual:
                 self.theta_z[1:] = self.angles[num_theta+1:]
                 
                 dx = self.x[1] - self.x[0]
-                G = re.search('G(\d+\.\d+)', self.data_file).group(1)
-                UC = re.search('UC(\d+\.\d+)', self.data_file).group(1)
-              #  data_frames = int(re.search('frames(\d+)', self.data_file).group(1))+1
-                self.physical_params = {'G':G, 'UC':UC}
-                print(self.physical_params)
 
-                self.geometry = {'r0':float(np.array(f['r0'])), 'z0':float(np.array(f['z0'])), 'angle':float(np.array(f['angle']))}
-                print(self.geometry)
  
         self.x = np.concatenate(x_list)
         self.alpha_pde = np.concatenate(alpha_list, axis=0)
@@ -101,6 +94,9 @@ class grain_visual:
         self.dx = dx*self.subsample
 
     def save_vtk(self, rawdat_dir):
+        
+        
+        
         #print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
         angle_pde = (self.alpha_pde<=self.num_theta)*self.alpha_pde + (self.alpha_pde>self.num_theta)*(self.alpha_pde%self.num_theta+1) 
@@ -124,9 +120,9 @@ class grain_visual:
 
         data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '*rank0.h5'))[0]
         f = h5py.File(data_file, 'r+')
+        self.geometry = {'r0':float(np.array(f['r0'])), 'z0':float(np.array(f['z0'])), 'angle':float(np.array(f['angle']))}
 
-        x_cutoff = 500
-        x = self.x[:-x_cutoff]*np.cos(self.geometry['angle'])
+        x = self.x*np.cos(self.geometry['angle'])
         dx = x[1] - x[0]
         y_max = 2*np.arccos(self.geometry['z0']/self.geometry['r0'])*self.geometry['r0']
         
@@ -142,11 +138,10 @@ class grain_visual:
             for j in range(surface_alpha.shape[1]):
                 
                 theta = dx*(j - (surface_alpha.shape[1]-1)/2 )/self.geometry['r0']
-                radial = self.geometry['r0']*(1 - np.cos(theta))
                 y_len = self.y[-2]/2 + self.geometry['r0']*np.sin(theta)
-                ai = i + int( radial*np.sin(self.geometry['angle'])/self.dx )
-                aj = int(y_len/self.dx)
-                z_len = radial*np.cos(self.geometry['angle']) + self.z[-2] + (self.geometry['z0']- self.geometry['r0'])*np.cos(self.geometry['angle'])
+                ai = i 
+                aj = int( y_len/self.dx )
+                z_len = self.z[-2] + self.geometry['z0'] - self.geometry['r0']*np.cos(theta)
                 ak = int( z_len/self.dx )
                 
                 surface_alpha[i,j] = self.alpha_pde[ai, aj, ak]
