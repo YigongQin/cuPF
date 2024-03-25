@@ -299,7 +299,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     float z_tilt = cP.z0 + cP.lzd - z[k];
                     float dist = cosf(cP.angle)*(sqrtf((y[j] - 0.5f*cP.lyd)*(y[j] - 0.5f*cP.lyd) + z_tilt*z_tilt) - r0_x);
 
-                    if (x_len_on_cone > lm)
+                    if (x_len_on_cone > lm + cP.V*t*1e6)
                     {
                         continue;
                     }
