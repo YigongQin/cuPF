@@ -166,8 +166,8 @@ if __name__ == '__main__':
         
         theta_x = np.zeros(1 + num_nucleatioon_theta)
         theta_z = np.zeros(1 + num_nucleatioon_theta)
-        theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
-        theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+        theta_x[1:] = np.arctan2(uy, ux)%(pi)
+        theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi)
 
         NG += num_nucleatioon_theta
         theta = np.hstack([0, g1.theta_x[1:], theta_x[1:], g1.theta_z[1:], theta_z[1:]])

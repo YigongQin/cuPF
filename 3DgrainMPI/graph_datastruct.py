@@ -258,7 +258,7 @@ class graph:
             uz = np.random.randn(self.num_regions)
             self.theta_x = np.zeros(1 + self.num_regions)
             self.theta_z = np.zeros(1 + self.num_regions)
-            self.theta_x[1:] = np.arctan2(uy, ux)%(pi/2)
+            self.theta_x[1:] = np.arctan2(uy, ux)%(pi)
             
             if adjust_grain_orien:
                 low, up = 0, pi/2
@@ -266,7 +266,7 @@ class graph:
                 gen = truncnorm((low - mean) / sd, (up - mean) / sd, loc=mean, scale=sd)
                 self.theta_z[1:] = gen.rvs(self.num_regions)
             else:
-                self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi/2)
+                self.theta_z[1:] = np.arctan2(np.sqrt(ux**2+uy**2), uz)%(pi)
 
         self.layer_grain_distribution()    
 
