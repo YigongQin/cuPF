@@ -305,7 +305,12 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     }
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-                
+                if (cP.thermalType == 2 || cP.thermalType == 3){
+                    if (Tinterp < -cP.G*6.4 - cP.underCoolingRate/cP.G*1e6/cP.mu_k)
+                    {
+                        continue;
+                    }
+                }
                 float Up = Tinterp/(cP.L_cp);  
                 float repul=0.0f;
                 for (int pf_id=0; pf_id<NUM_PF; pf_id++)
