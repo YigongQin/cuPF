@@ -40,7 +40,7 @@ class grain_visual:
        
         x_list = []
         alpha_list = []
-       
+        save_file = None
         for rank in range(self.gpus):
             
             self.data_file = (glob.glob(rawdat_dir + '/*seed'+str(self.seed)+ '*rank'+str(rank) + '_' + '*time'+str(self.time) + '*.h5'))[0]
@@ -74,14 +74,17 @@ class grain_visual:
                 self.theta_z[1:] = self.angles[num_theta+1:]
                 
                 dx = self.x[1] - self.x[0]
-
+                save_file = self.data_file
  
         self.x = np.concatenate(x_list)
         self.alpha_pde = np.concatenate(alpha_list, axis=0)
         print('x, y, z', self.x.shape, self.y.shape, self.z.shape)
         print('alpha_pde', self.alpha_pde.shape)
  
-    
+        f = h5py.File(self.data_file, 'w')
+        if 'alpha' in f: del f['alpha']
+        f['alpha'] = self.alpha_pde.reshape(len(self.x)*fny*fnz, order='F')  
+        
         top_z = int(np.round(self.height/dx))
         
         if self.height == -1:
@@ -92,6 +95,9 @@ class grain_visual:
         
         self.alpha_pde = self.alpha_pde[::self.subsample,::self.subsample,::self.subsample]
         self.dx = dx*self.subsample
+
+
+
 
     def save_vtk(self, rawdat_dir):
         
