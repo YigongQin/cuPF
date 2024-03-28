@@ -75,16 +75,17 @@ class grain_visual:
                 
                 dx = self.x[1] - self.x[0]
                 save_file = self.data_file
- 
+            f.close() 
         self.x = np.concatenate(x_list)
         self.alpha_pde = np.concatenate(alpha_list, axis=0)
         print('x, y, z', self.x.shape, self.y.shape, self.z.shape)
         print('alpha_pde', self.alpha_pde.shape)
  
-        f = h5py.File(self.data_file, 'w')
-        if 'alpha' in f: del f['alpha']
-        f['alpha'] = self.alpha_pde.reshape(len(self.x)*fny*fnz, order='F')  
-        
+        f = h5py.File(rawdat_dir+'seed'+str(self.seed)+'_time'+str(self.time)+'.h5', 'w')
+        f.create_dataset('alpha', data=self.alpha_pde.reshape(len(self.x)*fny*fnz, order='F'))
+        f.create_dataset('subsample', data=self.subsample)
+        f.close()
+
         top_z = int(np.round(self.height/dx))
         
         if self.height == -1:
@@ -101,7 +102,7 @@ class grain_visual:
 
     def save_vtk(self, rawdat_dir):
         
-        
+        print('save vtk data') 
         
         #print(len(np.unique(self.alpha_pde)), np.unique(self.alpha_pde))
       #  self.alpha_pde[self.alpha_pde == 0] = np.nan
