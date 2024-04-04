@@ -127,13 +127,13 @@ void PhaseField::parseInputParams(std::string fileName)
     H5Sclose(dataspaceT);
     H5Sclose(memspace);
     H5Fclose(h5in_file);
-    
+    /* 
     if (designSetting->includeNucleation)
     {
         float domainScaleFactor = cbrt(0.01/params.nuc_Nmax);
         params.lxd = 2*((int) (params.lxd*domainScaleFactor/2));
     }
-
+    */
     float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
