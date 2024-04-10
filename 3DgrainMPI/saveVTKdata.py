@@ -81,10 +81,6 @@ class grain_visual:
         print('x, y, z', self.x.shape, self.y.shape, self.z.shape)
         print('alpha_pde', self.alpha_pde.shape)
  
-        f = h5py.File(rawdat_dir+'seed'+str(self.seed)+'_time'+str(self.time)+'.h5', 'w')
-        f.create_dataset('alpha', data=self.alpha_pde.reshape(len(self.x)*fny*fnz, order='F'))
-        f.create_dataset('subsample', data=self.subsample)
-        f.close()
 
         top_z = int(np.round(self.height/dx))
         
@@ -97,7 +93,10 @@ class grain_visual:
         self.alpha_pde = self.alpha_pde[::self.subsample,::self.subsample,::self.subsample]
         self.dx = dx*self.subsample
 
-
+        f = h5py.File(rawdat_dir+'seed'+str(self.seed)+'_time'+str(self.time)+'.h5', 'w')
+        f.create_dataset('alpha', data=self.alpha_pde.reshape(self.alpha_pde.shape[0]*self.alpha_pde.shape[1]*self.alpha_pde.shape[2], order='F'))
+        f.create_dataset('subsample', data=self.subsample)
+        f.close()
 
 
     def save_vtk(self, rawdat_dir):
