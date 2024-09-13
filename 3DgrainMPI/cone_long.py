@@ -36,20 +36,19 @@ ictype = 0                      # initial condtion
 
 # simulation parameters
 dx = 0.8                        # mesh width
-W0 = 0.125                        # interface thickness [um]
+W0 = 0.1                        # interface thickness [um]
 cfl = 0.6                       # cfl number
-asp_ratio_yx = 1             # aspect ratio of domain z/x
-asp_ratio_zx = 0.5             # aspect ratio of domain z/x
+asp_ratio_yx = 0.25             # aspect ratio of domain z/x
+asp_ratio_zx = 0.125             # aspect ratio of domain z/x
 moving_ratio = 0.2
 nts = 1                         # number snapshots to save, Mt/nts must be int
-Lx = 80
+Lx = 240
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-track = 75
-top = 75
-z0 = 3
-#r0 = Lz
+top = 3*Lz
+z0 = 0.1*Lz
+r0 = Lz
 
 G = 5
 Rmax = 2e6

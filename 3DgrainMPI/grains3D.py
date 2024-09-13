@@ -68,9 +68,21 @@ def GR_constant_sampling(seed):
     
     return G, R*1e6
     
-    
-    
-    
+def geo_sampling(seed, stride=5):
+
+    G_list = np.array([10, 6, 4, 2, 0.5])
+    R_list = np.array([2, 1.6, 1.2, 0.7, 0.2])
+    sin_gamma_list = np.linspace(0.3, 0.7, stride)
+
+    Gid = seed%stride
+    Rid = (seed//stride)%stride
+    sid = seed//stride**2
+
+    G = G_list[Gid]
+    Rmax = 1e6*R_list[Rid]        
+    sin_gamma = sin_gamma_list[sid]
+
+    return G, Rmax, sin_gamma
 
 if __name__ == '__main__':
     
@@ -84,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument("--mpi", type=int, default = 1)
     parser.add_argument("--gr_sample", type=int, default = 0)
     parser.add_argument("--nucl_sample", type=int, default = 0)
+    parser.add_argument("--geo_sample", type=int, default = 0)
     parser.add_argument("--cylinder_scale_param", type=int, default = 0)
 
     parser.add_argument("--nucleation", dest='nucl', action='store_true')
@@ -109,6 +122,8 @@ if __name__ == '__main__':
 
     if args.meltpool == 'lineTemporal':
         from lineTemporal import *   
+    if args.meltpool == 'cone_long':
+        from cone_long import *
     if args.meltpool == 'cone':
         from cone import *
 
@@ -136,7 +151,14 @@ if __name__ == '__main__':
             Ly = Ly/10*(seed%10)
             Lz = Ly/2
     
-    
+    if args.meltpool == 'cone':
+        G, Rmax, sin_gamma = geo_sampling(seed, stride=5)
+        underCoolingRate = G*Rmax/1e6
+        V = Rmax/sin_gamma
+        cos_gamma = np.sqrt(1-sin_gamma**2)
+        r0 = track*sin_gamma*cos_gamma
+        assert r0>z0 
+
     '''create a planar graph'''
     bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
     g1 = graph(lxd = Lx, seed = seed, BC = bc) 
@@ -208,37 +230,19 @@ if __name__ == '__main__':
         Rmax = np.mean(R_rand)*1e6
 
     else:
+        if args.meltpool == 'cone': 
+            t_end = track/V
+        else:
+            t_end = top/Rmax
 
-        t_end = top/Rmax     
         t = np.linspace(0, t_end, nt)
-
         T = np.zeros(nx*ny*nz*nt)
-       # psi = np.zeros(nx*ny*nz)
-      #  U = np.zeros(nx*ny*nz)
-        if args.meltpool == 'cone':
-            angle = np.arcsin(Rmax/V)
-        
-        """
-        for i in range(nx*ny*nz*nt):
-            
 
-            yi = int( (i%(nx*ny))/nx )
-            zi = int( (i%(nx*ny*nz))/(nx*ny) )
-            ti = int(i/(nx*ny*nz))
-        
-        
-            T[i] = therm.pointwiseTempConstGR(args.meltpool, x[xi], y[yi], z[zi], t[ti], z0=z0, r0=r0, angle = angle)
-    
-            if ti==0:
-                
-               psi[i] = therm.dist2Interface(args.meltpool, x[xi], y[yi], z[zi], z0=z0, r0=r0, angle = angle)  
-        """
-         
-    
-    
-    
-       # T3d0 = T[:nx*ny*nz].reshape(nx,ny,nz, order='F')
-       # psi3d = psi.reshape(nx,ny,nz, order='F')       
+        if args.meltpool == 'cone':
+            angle = np.arcsin(Rmax/V)   
+        else:
+            angle = 0
+
 
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
