@@ -7,7 +7,7 @@ import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
 from matplotlib import pyplot as plt
 
-from tvtk.api import tvtk, write_data
+#from tvtk.api import tvtk, write_data
 def UN_sampling(seed):
 
     ''' grid sampling'''  
@@ -75,8 +75,8 @@ def geo_sampling(seed, stride=5):
     sin_gamma_list = np.linspace(0.3, 0.7, stride)
 
     Gid = seed%stride
-    Rid = (seed//stride)%stride
-    sid = seed//stride**2
+    sid = (seed//stride)%stride
+    Rid = seed//stride**2
 
     G = G_list[Gid]
     Rmax = 1e6*R_list[Rid]        
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     else:
         if args.meltpool == 'cone': 
-            t_end = track/V
+            t_end = (track+10)/V
         else:
             t_end = top/Rmax
 
@@ -246,13 +246,13 @@ if __name__ == '__main__':
 
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
-        grid = tvtk.ImageData(spacing=(6,0.5,0.5), origin=(0, 0, 0), 
-                              dimensions=psi3d.shape)
+        #grid = tvtk.ImageData(spacing=(6,0.5,0.5), origin=(0, 0, 0), 
+        #                      dimensions=psi3d.shape)
     
-        grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
+        #grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
   
 
-        write_data(grid, 'phi.vtk') 
+       # write_data(grid, 'phi.vtk') 
         
     print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
     print('nucleation density, radius: ', nuc_Nmax, nuc_rad)

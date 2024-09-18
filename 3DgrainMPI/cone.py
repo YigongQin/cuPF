@@ -16,7 +16,7 @@ nuc_Nmax = 0.01                 # density [1/um^2]
 nuc_rad = 0.4                   # radius of a nucleai
 
 # macro grid parameters
-nx = 243
+nx = 83
 ny = 83
 nz = 43
 nt = 5
@@ -46,9 +46,9 @@ Lx = 80
 Ly = Lx*asp_ratio_yx
 Lz = Lx*asp_ratio_zx
 BC = Lx/(nx-3) 
-track = 75
-top = 75
-z0 = 3
+track = Lx-4
+top = track
+z0 = 0
 #r0 = Lz
 
 G = 5
