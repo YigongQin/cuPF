@@ -305,14 +305,20 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     }
                     Tinterp = -cP.G*dist - cP.underCoolingRate*1e6*t;
                 }
-		/*
-                if (cP.thermalType == 2 || cP.thermalType == 3){
-                    if (Tinterp < -cP.G*6.4 - cP.underCoolingRate/cP.G*1e6/cP.mu_k)
+                else if (cP.thermalType == 4)
+                {
+                    float x_query = x[i] - cP.V*t*1e6;
+
+                    if (x_len_on_cone > cP.box_len or x_query < 0.0f)
                     {
                         continue;
                     }
+
+                    Tinterp = -cP.G*interp3Dtemperature(thm.psi_3D, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], 
+                        cP.Nx, cP.Ny, cP.Nz, cP.dx);
+            
                 }
-		*/
+
                 float Up = Tinterp/(cP.L_cp);  
                 float repul=0.0f;
                 for (int pf_id=0; pf_id<NUM_PF; pf_id++)
@@ -607,6 +613,7 @@ void APTPhaseField::cudaSetup()
     cudaMalloc((void **)&(Mgpu.Y_mac),  sizeof(float) * mac.Ny);
     cudaMalloc((void **)&(Mgpu.Z_mac),  sizeof(float) * mac.Nz);
     cudaMalloc((void **)&(Mgpu.t_mac),    sizeof(float) * mac.Nt);
+    cudaMalloc((void **)&(Mgpu.psi_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nz);
     cudaMalloc((void **)&(Mgpu.T_3D),    sizeof(float) * mac.Nx*mac.Ny*mac.Nz*mac.Nt);
     cudaMalloc((void **)&(Mgpu.theta_arr),    sizeof(float) * (2*params.num_theta+1) );
     cudaMalloc((void **)&(Mgpu.cost),    sizeof(float) * (2*params.num_theta+1) );
@@ -614,7 +621,8 @@ void APTPhaseField::cudaSetup()
     cudaMemcpy(Mgpu.X_mac, mac.X_mac, sizeof(float) * mac.Nx, cudaMemcpyHostToDevice);  
     cudaMemcpy(Mgpu.Y_mac, mac.Y_mac, sizeof(float) * mac.Ny, cudaMemcpyHostToDevice); 
     cudaMemcpy(Mgpu.Z_mac, mac.Z_mac, sizeof(float) * mac.Nz, cudaMemcpyHostToDevice);  
-    cudaMemcpy(Mgpu.t_mac, mac.t_mac, sizeof(float) * mac.Nt, cudaMemcpyHostToDevice);  
+    cudaMemcpy(Mgpu.t_mac, mac.t_mac, sizeof(float) * mac.Nt, cudaMemcpyHostToDevice);
+    cudaMemcpy(Mgpu.psi_3D, mac.psi_mac, sizeof(float) * mac.Nx* mac.Ny* mac.Nz, cudaMemcpyHostToDevice);  
     cudaMemcpy(Mgpu.T_3D, mac.T_3D, sizeof(float) * mac.Nt* mac.Nx* mac.Ny* mac.Nz, cudaMemcpyHostToDevice);   
     cudaMemcpy(Mgpu.theta_arr, mac.theta_arr, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);
     cudaMemcpy(Mgpu.cost, mac.cost, sizeof(float) * (2*params.num_theta+1), cudaMemcpyHostToDevice);

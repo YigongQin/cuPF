@@ -7,7 +7,7 @@ import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
 from matplotlib import pyplot as plt
 
-#from tvtk.api import tvtk, write_data
+
 def UN_sampling(seed):
 
     ''' grid sampling'''  
@@ -68,15 +68,16 @@ def GR_constant_sampling(seed):
     
     return G, R*1e6
     
-def geo_sampling(seed, stride=5):
+def geo_sampling(seed):
 
-    G_list = np.array([10, 6, 4, 2, 0.5])
-    R_list = np.array([2, 1.6, 1.2, 0.7, 0.2])
-    sin_gamma_list = np.linspace(0.3, 0.7, stride)
+    G_list = np.array([10, 8, 6, 5, 4, 3, 2, 1])
+    R_list = np.array([2, 1.8, 1.6, 1.4, 1.2, 1, 0.7, 0.2])
+    sin_gamma_list = np.linspace(0.25, 0.7, 10)
 
-    Gid = seed%stride
-    sid = (seed//stride)%stride
-    Rid = seed//stride**2
+    Gid = seed%len(G_list)
+   # sid = (seed//stride)%stride
+    sid = (seed//len(G_list))%len(sin_gamma_list)
+    Rid = seed//len(G_list*len(sin_gamma_list))
 
     G = G_list[Gid]
     Rmax = 1e6*R_list[Rid]        
@@ -87,7 +88,7 @@ def geo_sampling(seed, stride=5):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
-    parser.add_argument("--outfile_folder", type=str, default = '/scratch/07428/ygqin/graph/cone/')
+    parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cone_test/')
     parser.add_argument("--mode", type=str, default = 'check')
     parser.add_argument("--seed", type=int, default = 10075)
     parser.add_argument("--save3Ddata", type=int, default = 0)
@@ -98,6 +99,9 @@ if __name__ == '__main__':
     parser.add_argument("--nucl_sample", type=int, default = 0)
     parser.add_argument("--geo_sample", type=int, default = 0)
     parser.add_argument("--cylinder_scale_param", type=int, default = 0)
+    parser.add_argument("--G", type=float, default = 8)
+    parser.add_argument("--Rmax", type=float, default = 1.5)
+    parser.add_argument("--sin_gamma", type=float, default = 0.7)
 
     parser.add_argument("--nucleation", dest='nucl', action='store_true')
     parser.set_defaults(nucl=False)
@@ -107,7 +111,12 @@ if __name__ == '__main__':
 
     parser.add_argument("--lineConfig", dest='line', action='store_true')
     parser.set_defaults(line=False)
-    
+
+    parser.add_argument("--save_phi", dest='save_phi', action='store_true')
+    parser.set_defaults(save_phi=False)
+
+    parser.add_argument("--save_T", dest='save_T', action='store_true')
+    parser.set_defaults(save_T=True)    
     
     args = parser.parse_args()     
     
@@ -121,11 +130,16 @@ if __name__ == '__main__':
         from line import *    
 
     if args.meltpool == 'lineTemporal':
-        from lineTemporal import *   
+        from lineTemporal import *
+
     if args.meltpool == 'cone_long':
         from cone_long import *
+
     if args.meltpool == 'cone':
         from cone import *
+
+    if args.meltpool == 'paraboloid':
+        from paraboloid import *
 
     if args.gr_sample>0:
         if args.gr_sample == 1:
@@ -152,12 +166,20 @@ if __name__ == '__main__':
             Lz = Ly/2
     
     if args.meltpool == 'cone':
-        G, Rmax, sin_gamma = geo_sampling(seed, stride=5)
+        if args.geo_sample == 1:
+            G, Rmax, sin_gamma = geo_sampling(seed)
+        else:
+            G = args.G
+            Rmax = args.Rmax
+            sin_gamma = args.sin_gamma
         underCoolingRate = G*Rmax/1e6
         V = Rmax/sin_gamma
         cos_gamma = np.sqrt(1-sin_gamma**2)
-        r0 = track*sin_gamma*cos_gamma
+        r0 = 76*sin_gamma*cos_gamma
         assert r0>z0 
+
+    if args.meltpool == 'paraboloid':
+        underCoolingRate = G*Rmax/1e6 
 
     '''create a planar graph'''
     bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
@@ -207,6 +229,7 @@ if __name__ == '__main__':
     therm = ThermalProfile([Lx, Ly, Lz], [G, Rmax, underCoolingRate], seed=seed)
     
     angle = 0
+    min_angle = 0
     if args.meltpool == 'lineTemporal':
         minR = 0.2*1e6
         t_end = top/minR     # make sure at t_end the interface will reach top (has travelled distance=top)
@@ -230,29 +253,27 @@ if __name__ == '__main__':
         Rmax = np.mean(R_rand)*1e6
 
     else:
-        if args.meltpool == 'cone': 
-            t_end = (track+10)/V
+        if args.meltpool == 'cone' or args.meltpool == 'paraboloid': 
+            t_end = (track+40)/V
         else:
             t_end = top/Rmax
 
         t = np.linspace(0, t_end, nt)
         T = np.zeros(nx*ny*nz*nt)
 
-        if args.meltpool == 'cone':
+        if args.meltpool == 'cone' or args.meltpool == 'paraboloid':
             angle = np.arcsin(Rmax/V)   
         else:
             angle = 0
 
+        if args.meltpool == 'paraboloid':
+            min_angle = np.arcsin(Rmin/V)
+        else:
+            min_angle = 0
 
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
-        #grid = tvtk.ImageData(spacing=(6,0.5,0.5), origin=(0, 0, 0), 
-        #                      dimensions=psi3d.shape)
-    
-        #grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
-  
 
-       # write_data(grid, 'phi.vtk') 
         
     print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
     print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
@@ -287,7 +308,19 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'r0.txt', np.asarray([r0]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'angle.txt', np.asarray([angle]), fmt='%1.4e',delimiter='\n')
+    np.savetxt(mac_folder+'min_angle.txt', np.asarray([min_angle]), fmt='%1.4e',delimiter='\n')
+
+
+    if args.save_phi:
+        from tvtk.api import tvtk, write_data
+        grid = tvtk.ImageData(spacing=(1,1,1), origin=(0, 0, 0), 
+                              dimensions=psi3d.shape)
     
+        grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
+  
+        write_data(grid, 'phi.vtk') 
+
+
     hf = h5py.File(mac_folder+'Temp.h5', 'w')
     hf.create_dataset('Temp', data=T)
     hf.close()

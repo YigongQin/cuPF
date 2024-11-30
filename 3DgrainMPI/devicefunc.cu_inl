@@ -81,3 +81,45 @@ interp4Dtemperature(float* u_3d, float x, float y, float z, float t,
               +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_z;
   return (1.0f - delta_t)*u_p + delta_t*u_n;
 }
+
+__inline__ __device__ float
+interp3Dtemperature(float* u_3d, float x, float y, float z, int Nx, int Ny, int Nz, float Dx)
+{
+
+  int kx = (int) (x/Dx);
+  int ky = (int) (y/Dx);
+  int kz = (int) (z/Dx);
+
+
+  float delta_x = x/Dx - kx;
+  float delta_y = y/Dx - ky;
+  float delta_z = z/Dx - kz;
+
+
+  if (kx==Nx-1) 
+  {
+    kx = Nx-2; 
+    delta_x = 1.0f;
+  }
+  if (ky==Ny-1) 
+  {
+    ky = Ny-2; 
+    delta_y = 1.0f;
+  }
+  if (kz==Nz-1) 
+  {
+    kz = Nz-2; 
+    delta_z = 1.0f;
+  }
+
+
+  int offset =  kx + ky*Nx + kz*Nx*Ny + kt*Nx*Ny*Nz;
+  int offset_n =  kx + ky*Nx + (kz+1)*Nx*Ny + kt*Nx*Ny*Nz;
+
+  float u_p = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] 
+             +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_z) + 
+              ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset_n ] + (1.0f-delta_x)*delta_y*u_3d[ offset_n+Nx ] 
+             +delta_x*(1.0f-delta_y)*u_3d[ offset_n+1 ] +   delta_x*delta_y*u_3d[ offset_n+Nx+1 ] )*delta_z;
+
+  return u_p;
+}
