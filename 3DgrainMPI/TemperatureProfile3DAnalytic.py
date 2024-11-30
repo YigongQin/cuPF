@@ -109,7 +109,7 @@ class ThermalProfile:
 
 
     def paraboloidProfile(self, x, y, z, z0, r0, centerline, angle, min_angle):        
- 
+        self.mp_len = 2*(r0-z0)/(np.tan(angle)+np.tan(min_angle)) 
         Lx, Ly, Lz = self.lx, self.ly, self.lz
 
         dx = 0.5

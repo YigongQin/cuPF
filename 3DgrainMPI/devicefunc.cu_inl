@@ -113,8 +113,8 @@ interp3Dtemperature(float* u_3d, float x, float y, float z, int Nx, int Ny, int 
   }
 
 
-  int offset =  kx + ky*Nx + kz*Nx*Ny + kt*Nx*Ny*Nz;
-  int offset_n =  kx + ky*Nx + (kz+1)*Nx*Ny + kt*Nx*Ny*Nz;
+  int offset =  kx + ky*Nx + kz*Nx*Ny;
+  int offset_n =  kx + ky*Nx + (kz+1)*Nx*Ny;
 
   float u_p = ( (1.0f-delta_x)*(1.0f-delta_y)*u_3d[ offset ] + (1.0f-delta_x)*delta_y*u_3d[ offset+Nx ] 
              +delta_x*(1.0f-delta_y)*u_3d[ offset+1 ] +   delta_x*delta_y*u_3d[ offset+Nx+1 ] )*(1.0f-delta_z) + 

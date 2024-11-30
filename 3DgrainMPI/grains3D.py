@@ -309,6 +309,8 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'angle.txt', np.asarray([angle]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'min_angle.txt', np.asarray([min_angle]), fmt='%1.4e',delimiter='\n')
+    if args.meltpool == 'paraboloid':
+        np.savetxt(mac_folder+'mp_len.txt', np.asarray([therm.mp_len]), fmt='%1.4e',delimiter='\n')
 
 
     if args.save_phi:

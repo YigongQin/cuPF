@@ -214,7 +214,9 @@ void PhaseField::parseInputParams(std::string fileName)
         cout << "r0: " << params.r0 << endl;
         cout << "angle: " << params.angle << endl;
         cout << "min_angle: " << params.min_angle << endl;
-        cout << "speed: " << params.V << endl;        
+        cout << "speed: " << params.V << endl;
+        read_input(mac.folder+"/mp_len.txt", &params.mp_len);
+        cout << "meltpool length: " << params.mp_len << endl;	
     }
     else
     {
