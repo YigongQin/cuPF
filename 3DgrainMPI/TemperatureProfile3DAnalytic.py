@@ -8,7 +8,7 @@ Created on Tue Sep 26 17:11:06 2023
 
 import numpy as np
 from math import pi
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, interp1d
 
 class ThermalProfile:
     def __init__(self, domainSize, thermal, seed):
@@ -113,7 +113,8 @@ class ThermalProfile:
         Lx, Ly, Lz = self.lx, self.ly, self.lz
 
         dx = 0.5
-
+        x0 = 20
+        
         x1d = np.linspace(0, Lx, int(Lx/dx)+1)
         y1d = np.linspace(0, Ly, int(Ly/dx)+1)
         z1d = np.linspace(0, Lz, int(Lz/dx)+1)    
@@ -132,106 +133,85 @@ class ThermalProfile:
         y_on = ys[z0**2 + (ys-Ly/2)**2 <= rs**2]
         z_on = zs[z0**2 + (ys-Ly/2)**2 <= rs**2]
 
-        x_out = xs[z0**2 + (ys-Ly/2)**2 > rs**2]
-        y_out = ys[z0**2 + (ys-Ly/2)**2 > rs**2]
-        z_out = zs[z0**2 + (ys-Ly/2)**2 > rs**2]
-        rs_out = query_r(x_out, z0, r0, angle, min_angle)
-
         
 
         x_sam, y_sam, z_sam = x_on.copy(), y_on.copy(), z_on.copy()
 
         values = 0*x_sam
 
-        x_sam, y_sam, z_sam = np.concatenate((x_sam, x_out)), np.concatenate((y_sam, y_out)), np.concatenate((z_sam, z_out))
-        values = -np.concatenate((values, np.absolute(y_out-Ly/2) - np.sqrt(rs_out**2-z0**2) )) #
+       # x_sam, y_sam, z_sam = np.concatenate((x_sam, x_out)), np.concatenate((y_sam, y_out)), np.concatenate((z_sam, z_out))
+       # values = -np.concatenate((values, np.absolute(y_out-Ly/2) - np.sqrt(rs_out**2-z0**2) )) #
 
         xs, ys, zs = x_sam.copy(), y_sam.copy(), z_sam.copy()
-        xb, yb, zb, values_b = x_sam.copy(), y_sam.copy(), z_sam.copy(), values.copy()
+        xb, yb, zb = x_sam.copy(), y_sam.copy(), z_sam.copy()
 
-        
-        for k in range(int(Lz/dx)):
-            x_loc = xs.copy()
+        tan_gamma = query_slope(xs, z0, r0, angle, min_angle)
+        sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
 
-            rs = query_r(x_loc, z0, r0, angle, min_angle)
+        values_b = values.copy()
+        cur_val = values_b.copy()
+
+        for k in range(int(self.mp_len/dx)):
+
             
-            tan_gamma = query_slope(x_loc, z0, r0, angle, min_angle)
-            sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
-            cos_gamma = 1/np.sqrt(1+tan_gamma**2)
+            f = interp1d(xs, cur_val, kind='linear', fill_value=(cur_val[0], cur_val[-1]), bounds_error=False)
 
-            sin_beta = (ys - Ly/2)/rs
-            cos_beta = np.sqrt(1-sin_beta**2)
-            normal = np.array([sin_gamma, -cos_gamma*sin_beta, cos_gamma*cos_beta])
-
-            xs, ys, zs = xs + normal[0]*dx, ys + normal[1]*dx, zs + normal[2]*dx
+            xs = xs + dx
             x_sam, y_sam, z_sam = np.concatenate((x_sam, xs.flatten())), np.concatenate((y_sam, ys.flatten())), np.concatenate((z_sam, zs.flatten()))
 
-            values = np.concatenate((values, values_b+(k+1)*dx))
+            cur_val = f(xs - dx*sin_gamma**2) + dx*sin_gamma
+            print(cur_val)
 
-            x_loc = x_loc - normal[0]*dx
+            values = np.concatenate((values, cur_val))
 
-        for k in range(int(Lz/dx)):
-            x_loc = xb.copy()
+        cur_val = values_b.copy()
+        for k in range(int(x0/dx)):
 
-            rb = query_r(x_loc, z0, r0, angle, min_angle)
-            
-            tan_gamma = query_slope(x_loc, z0, r0, angle, min_angle)
-            sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
-            cos_gamma = 1/np.sqrt(1+tan_gamma**2)
+            f = interp1d(xb, cur_val, kind='linear', fill_value=(cur_val[0], cur_val[-1]), bounds_error=False)
 
-            sin_beta = (yb - Ly/2)/rb
-            cos_beta = np.sqrt(1-sin_beta**2)
-            normal = np.array([sin_gamma, -cos_gamma*sin_beta, cos_gamma*cos_beta])
-            xb, yb, zb = xb - normal[0]*dx, yb - normal[1]*dx, zb - normal[2]*dx
+            xb = xb - dx
             x_sam, y_sam, z_sam = np.concatenate((x_sam, xb.flatten())), np.concatenate((y_sam, yb.flatten())), np.concatenate((z_sam, zb.flatten()))
 
-            values = np.concatenate((values, values_b-(k+1)*dx))
+            cur_val = f(xb + dx*sin_gamma**2) - dx*sin_gamma
 
-            x_loc = x_loc + normal[0]*dx
+            values = np.concatenate((values, cur_val))
+
+        print(np.min(values), np.max(values))
+
 
         y_sam = y_sam[x_sam<=Lx]
         z_sam = z_sam[x_sam<=Lx]
         values = values[x_sam<=Lx]
         x_sam = x_sam[x_sam<=Lx]
 
-        x_sam = x_sam[z_sam<=Lz]
-        y_sam = y_sam[z_sam<=Lz]
-        values = values[z_sam<=Lz]
-        z_sam = z_sam[z_sam<=Lz]
-
         y_sam = y_sam[x_sam>=0]
         z_sam = z_sam[x_sam>=0]
         values = values[x_sam>=0]
         x_sam = x_sam[x_sam>=0]
-
-        x_sam = x_sam[z_sam>=0]
-        y_sam = y_sam[z_sam>=0]
-        values = values[z_sam>=0]
-        z_sam = z_sam[z_sam>=0]
 
         distance = griddata((x_sam, y_sam, z_sam), values, (x, y, z), method='nearest')       
         
         return -distance
 
 
-def query_r(x, z0, r0, angle, min_angle):
+def query_r(x, z0, r0, angle, min_angle, x0=20):
     k1 = np.tan(angle)
     k2 = np.tan(min_angle)
     lm = 2*(r0-z0)/(k1+k2)
-    clip_x = np.clip(x, a_min=None, a_max=lm)
+    clip_x = np.clip(x-x0, a_min=0, a_max=lm)
 
    # r0_x = z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
    # r = 2+0.5*x 
    # return np.clip(r, a_min=2, a_max=20)
     return z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
 
-def query_slope(x, z0, r0, angle, min_angle):
+def query_slope(x, z0, r0, angle, min_angle, x0=20):
     
    # slope = 0.5
     k1 = np.tan(angle)
     k2 = np.tan(min_angle)
     lm = 2*(r0-z0)/(k1+k2)
-    clip_x = np.clip(x, a_min=None, a_max=lm)
+    clip_x = np.clip(x-x0, a_min=0, a_max=lm)
 
     return k1*clip_x + (k2-k1)/(lm)*clip_x
 
