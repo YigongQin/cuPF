@@ -115,7 +115,8 @@ class ThermalProfile:
         dx = 0.5
         x0 = 20
         
-        x1d = np.linspace(0, Lx, int(Lx/dx)+1)
+        window_len = self.mp_len + x0
+        x1d = np.linspace(0, window_len, int(window_len/dx)+1)
         y1d = np.linspace(0, Ly, int(Ly/dx)+1)
         z1d = np.linspace(0, Lz, int(Lz/dx)+1)    
         xx, yy, zz = np.meshgrid(x1d, y1d, z1d, indexing='ij')
@@ -150,7 +151,7 @@ class ThermalProfile:
 
         values_b = values.copy()
         cur_val = values_b.copy()
-
+       # print(xs)
         for k in range(int(self.mp_len/dx)):
 
             
@@ -160,7 +161,7 @@ class ThermalProfile:
             x_sam, y_sam, z_sam = np.concatenate((x_sam, xs.flatten())), np.concatenate((y_sam, ys.flatten())), np.concatenate((z_sam, zs.flatten()))
 
             cur_val = f(xs - dx*sin_gamma**2) + dx*sin_gamma
-            print(cur_val)
+           # print(cur_val)
 
             values = np.concatenate((values, cur_val))
 
@@ -179,18 +180,26 @@ class ThermalProfile:
         print(np.min(values), np.max(values))
 
 
-        y_sam = y_sam[x_sam<=Lx]
-        z_sam = z_sam[x_sam<=Lx]
-        values = values[x_sam<=Lx]
-        x_sam = x_sam[x_sam<=Lx]
+        y_sam = y_sam[x_sam<=window_len]
+        z_sam = z_sam[x_sam<=window_len]
+        values = values[x_sam<=window_len]
+        x_sam = x_sam[x_sam<=window_len]
 
         y_sam = y_sam[x_sam>=0]
         z_sam = z_sam[x_sam>=0]
         values = values[x_sam>=0]
         x_sam = x_sam[x_sam>=0]
 
-        distance = griddata((x_sam, y_sam, z_sam), values, (x, y, z), method='nearest')       
-        
+        distance = 0*x
+        window_len_n = int(window_len/(x[1,0,0]-x[0,0,0]))
+        print("window_len_n", window_len_n)
+
+        distance[:window_len_n] = griddata((x_sam, y_sam, z_sam), values, (x[:window_len_n], y[:window_len_n], z[:window_len_n]), method='nearest')
+        dist = np.sqrt((y - Ly/2)**2 + (z - Lz - z0)**2) 
+        distance[window_len_n:] = r0 - dist[window_len_n:]
+
+        distance[dist>r0] = r0 - dist[dist>r0] 
+
         return -distance
 
 
@@ -213,5 +222,5 @@ def query_slope(x, z0, r0, angle, min_angle, x0=20):
     lm = 2*(r0-z0)/(k1+k2)
     clip_x = np.clip(x-x0, a_min=0, a_max=lm)
 
-    return k1*clip_x + (k2-k1)/(lm)*clip_x
+    return k1 + (k2-k1)/(lm)*clip_x
 
