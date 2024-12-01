@@ -184,7 +184,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
   int k, PF_id;
   int fnx = cP.fnx, fny = cP.fny, fnz = cP.fnz, NUM_PF = cP.NUM_PF, length = cP.length;
  // G2L_3D(C, i, j, k, PF_id, fnx, fny, fnz);
-
+  float Dx = thm.X_mac[1]-thm.X_mac[0];
   if ( (i>0) && (i<fnx-1) && (j>0) && (j<fny-1) ) //&& (k>0) && (k<fnz-1) ) 
   {
     for (k = 1; k<fnz-1; k++){
@@ -309,13 +309,12 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                     float x_query = x[i] - cP.V*t*1e6;
 
-                    if (x_query > cP.mp_len or x_query < 0.0f)
+                    if (x_query > cP.mp_len + 20.0f or x_query < 0.0f)
                     {
                         continue;
                     }
 
-                    Tinterp = -cP.G*interp3Dtemperature(thm.psi_mac, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], 
-                        cP.Nx, cP.Ny, cP.Nz, cP.dx);
+                    Tinterp = -cP.G*interp3Dtemperature(thm.psi_mac, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], cP.Nx, cP.Ny, cP.Nz, Dx);
             
                 }
 
