@@ -271,7 +271,7 @@ if __name__ == '__main__':
         else:
             min_angle = 0
 
-        psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle)  
+        psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle, min_angle=min_angle)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
 
         
@@ -318,7 +318,7 @@ if __name__ == '__main__':
         grid = tvtk.ImageData(spacing=(1,1,1), origin=(0, 0, 0), 
                               dimensions=psi3d.shape)
     
-        grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
+        grid.point_data.scalars = psi3d.ravel(order='F')
   
         write_data(grid, 'phi.vtk') 
 

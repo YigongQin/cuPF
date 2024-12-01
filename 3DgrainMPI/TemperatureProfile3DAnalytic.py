@@ -108,8 +108,10 @@ class ThermalProfile:
         return dist - r0_x
 
 
-    def paraboloidProfile(self, x, y, z, z0, r0, centerline, angle, min_angle):        
-        self.mp_len = 2*(r0-z0)/(np.tan(angle)+np.tan(min_angle)) 
+    def paraboloidProfile(self, x, y, z, z0, r0, centerline, angle, min_angle):
+        print('angle, min angle: ', angle, min_angle)        
+        self.mp_len = 2*(r0-z0)/(np.tan(angle)+np.tan(min_angle))
+        print('mp len: ', self.mp_len)
         Lx, Ly, Lz = self.lx, self.ly, self.lz
 
         dx = 0.5
@@ -122,14 +124,14 @@ class ThermalProfile:
         xx, yy, zz = np.meshgrid(x1d, y1d, z1d, indexing='ij')
 
         
-        rr = query_r(xx, z0, r0, angle, min_angle)
+        rr = query_r(xx, z0, r0, angle, min_angle, x0)
         dist = np.sqrt((zz-Lz-z0)**2 + (yy-Ly/2)**2)
         diff = np.absolute(dist-rr)
         xs, ys = np.meshgrid(x1d, y1d, indexing='ij') 
         zs = z1d[np.argmin(diff, axis=-1)]
         
         xs, ys, zs = xs.flatten(), ys.flatten(), zs.flatten()
-        rs = query_r(xs, z0, r0, angle, min_angle)
+        rs = query_r(xs, z0, r0, angle, min_angle, x0)
         x_on = xs[z0**2 + (ys-Ly/2)**2 <= rs**2]
         y_on = ys[z0**2 + (ys-Ly/2)**2 <= rs**2]
         z_on = zs[z0**2 + (ys-Ly/2)**2 <= rs**2]
@@ -146,7 +148,7 @@ class ThermalProfile:
         xs, ys, zs = x_sam.copy(), y_sam.copy(), z_sam.copy()
         xb, yb, zb = x_sam.copy(), y_sam.copy(), z_sam.copy()
 
-        tan_gamma = query_slope(xs, z0, r0, angle, min_angle)
+        tan_gamma = query_slope(xs, z0, r0, angle, min_angle, x0)
         sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
 
         values_b = values.copy()
@@ -161,7 +163,7 @@ class ThermalProfile:
             x_sam, y_sam, z_sam = np.concatenate((x_sam, xs.flatten())), np.concatenate((y_sam, ys.flatten())), np.concatenate((z_sam, zs.flatten()))
 
             cur_val = f(xs - dx*sin_gamma**2) + dx*sin_gamma
-           # print(cur_val)
+            print(cur_val)
 
             values = np.concatenate((values, cur_val))
 
@@ -207,7 +209,7 @@ def query_r(x, z0, r0, angle, min_angle, x0=20):
     k1 = np.tan(angle)
     k2 = np.tan(min_angle)
     lm = 2*(r0-z0)/(k1+k2)
-    clip_x = np.clip(x-x0, a_min=0, a_max=lm)
+    clip_x = np.clip(x-x0, a_min=-0.1, a_max=lm)
 
    # r0_x = z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
    # r = 2+0.5*x 
@@ -220,7 +222,7 @@ def query_slope(x, z0, r0, angle, min_angle, x0=20):
     k1 = np.tan(angle)
     k2 = np.tan(min_angle)
     lm = 2*(r0-z0)/(k1+k2)
-    clip_x = np.clip(x-x0, a_min=0, a_max=lm)
+    clip_x = np.clip(x-x0, a_min=-0.1, a_max=lm)
 
     return k1 + (k2-k1)/(lm)*clip_x
 
