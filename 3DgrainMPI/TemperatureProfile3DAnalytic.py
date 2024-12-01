@@ -151,11 +151,15 @@ class ThermalProfile:
 
         
         for k in range(int(Lz/dx)):
-            rs = query_r(xs, z0, r0, angle, min_angle)
-            sin_beta = (ys - Ly/2)/rs
-            tan_gamma = query_slope(xs, z0, r0, angle, min_angle)
+            x_loc = xs.copy()
+
+            rs = query_r(x_loc, z0, r0, angle, min_angle)
+            
+            tan_gamma = query_slope(x_loc, z0, r0, angle, min_angle)
             sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
             cos_gamma = 1/np.sqrt(1+tan_gamma**2)
+
+            sin_beta = (ys - Ly/2)/rs
             cos_beta = np.sqrt(1-sin_beta**2)
             normal = np.array([sin_gamma, -cos_gamma*sin_beta, cos_gamma*cos_beta])
 
@@ -164,13 +168,18 @@ class ThermalProfile:
 
             values = np.concatenate((values, values_b+(k+1)*dx))
 
+            x_loc = x_loc - normal[0]*dx
 
         for k in range(int(Lz/dx)):
-            rs = query_r(xb, z0, r0, angle, min_angle)
-            sin_beta = (yb - Ly/2)/rs
-            tan_gamma = query_slope(xb, z0, r0, angle, min_angle)
+            x_loc = xb.copy()
+
+            rb = query_r(x_loc, z0, r0, angle, min_angle)
+            
+            tan_gamma = query_slope(x_loc, z0, r0, angle, min_angle)
             sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
             cos_gamma = 1/np.sqrt(1+tan_gamma**2)
+
+            sin_beta = (yb - Ly/2)/rb
             cos_beta = np.sqrt(1-sin_beta**2)
             normal = np.array([sin_gamma, -cos_gamma*sin_beta, cos_gamma*cos_beta])
             xb, yb, zb = xb - normal[0]*dx, yb - normal[1]*dx, zb - normal[2]*dx
@@ -178,7 +187,7 @@ class ThermalProfile:
 
             values = np.concatenate((values, values_b-(k+1)*dx))
 
-
+            x_loc = x_loc + normal[0]*dx
 
         y_sam = y_sam[x_sam<=Lx]
         z_sam = z_sam[x_sam<=Lx]
