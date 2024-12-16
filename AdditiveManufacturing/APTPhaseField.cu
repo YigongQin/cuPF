@@ -799,21 +799,26 @@ void APTPhaseField::evolve()
             APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, true);
         }
         
-    
+    /* get alpha field after initial nucleation, this is used as initial condition for actual simulation */
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_new, alpha_m, active_args_new);
-  //  cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
+
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_old,length*NUM_PF);
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);    
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
     }
+
+    /* use initial phi field to initialize alpha field */
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
     APTini_PF<<< num_block_PF, blocksize_2d >>>(PFs_new, phi_old, alpha_m, active_args_new);
 
     cudaMemset(alpha_m, 0, sizeof(int) * length);
     APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_new, phi_new, alpha_m, active_args_new);
-    cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);    
+    cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
+    
+    /* initial quantities of interest */
+
     if (designSetting->useLineConfig)
     {
         movingDomainManager->allocateMovingDomain(params.num_theta, fnz);
@@ -873,6 +878,7 @@ void APTPhaseField::evolve()
 
         setBC(designSetting->useLineConfig, PFs_old, active_args_old);
 
+        /* save qoIs */
         if (designSetting->useLineConfig)
         {
             getLineQoIs(movingDomainManager);
@@ -896,6 +902,7 @@ void APTPhaseField::evolve()
             }
         }
 
+        /* save fields */
         if ((2*kt+2)%fieldkts==0)
         {
             cudaMemset(alpha_m, 0, sizeof(int) * length);
@@ -912,7 +919,7 @@ void APTPhaseField::evolve()
 
         t_cur_step = (2*kt+2)*params.dt*params.tau0;
         APTrhs_psi<<< gridDim, blockDim >>>(t_cur_step, x_device, y_device, z_device, PFs_old, PFs_new, active_args_old, active_args_new, Mgpu, false);
-        //kt++;
+        
    }
 
         //if ( (2*kt+2 <fieldkts) && (designSetting->inputFile.compare("lineTemporal.py")==0 || designSetting->inputFile.compare("line.py")==0)  )
@@ -926,8 +933,7 @@ void APTPhaseField::evolve()
                 cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
                 cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
             }
-           // qois->Manifold(params, alpha, x, y, z, 0.0f);
-          //  OutputField(2*kt+2);
+
         }
 
    cudaDeviceSynchronize();
@@ -936,9 +942,6 @@ void APTPhaseField::evolve()
    printf("no. communications performed %d \n", numComm);
    params.Mt = 2*kt; // the actual no. time steps
    
-  // cudaMemset(alpha_m, 0, sizeof(int) * length);
-  // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
-  // cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
 
 
 }
