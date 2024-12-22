@@ -123,7 +123,7 @@ void PhaseField::parseInputParams(std::string fileName)
     memspace = H5Screate_simple(1,dimT,NULL);
     status = H5Dread(datasetT, H5T_NATIVE_FLOAT, memspace, dataspaceT,
                      H5P_DEFAULT, mac.T_3D);
-    printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nz*mac.Nt-1]); 
+  //  printf("mac.T %f\n",mac.T_3D[mac.Nx*mac.Ny*mac.Nz*mac.Nt-1]); 
     H5Dclose(datasetT);
     H5Sclose(dataspaceT);
     H5Sclose(memspace);
@@ -432,6 +432,25 @@ void PhaseField::initField(){
       }
     }
 
+    if (GetSetDesignSetting()->pureNucleation == false && GetSetDesignSetting()->useLineConfig == false)
+    {
+        /* read alpha field from h5 file*/
+        hid_t  h5in_file, dataset, dataspace, memspace;
+        hsize_t dim[1];
+        herr_t  status;
+        dim[0] = mac.Nx*mac.Ny*mac.Nz*mac.Nt; 
+        h5in_file = H5Fopen( (mac.folder+"/alpha3D.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        dataset = H5Dopen2(h5in_file, "alpha", H5P_DEFAULT);
+        dataspace = H5Dget_space(dataset);
+        memspace = H5Screate_simple(1, dim, NULL);
+        status = H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace,
+                        H5P_DEFAULT, alpha);
+
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        H5Sclose(memspace);
+        H5Fclose(h5in_file);
+    }
 
 
 }
@@ -508,11 +527,18 @@ void PhaseField::OutputField(int currentStep)
     {
         grainType = "Epita_grains"+to_string(params.num_theta);
     }
-    outputFormat = designSetting->inputFile.substr(0, 4) + "seed"+to_string(params.seed_val) +"_lxd"+to_string(params.lxd) + "_G"+to_stringp(params.G,3) + "_Rmax"+to_stringp(params.R,3) + \
-                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + grainType + "_nodes"+to_string(params.num_nodes)+ \
-                   "_frames"+to_string(params.nts) + "_Mt"+to_string(params.Mt);     
-    string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
 
+    string outputFile;
+    if (designSetting->useLaser == false)
+    {
+        OutputFile = "Powder_seed" + to_string(params.seed_val) + ".h5";
+    }
+    else
+    {
+    outputFormat = designSetting->inputFile.substr(0, 4) + "_seed"+to_string(params.seed_val) +"_lxd"+to_string(params.lxd) + "_G"+to_stringp(params.G,3) + "_Rmax"+to_stringp(params.R,3) + \
+                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + "_Mt"+to_string(params.Mt);     
+    outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
+    }
     outputFile = designSetting->outputFolder + '/' + outputFile;
     cout << "save file name " << outputFile << endl;
 

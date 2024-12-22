@@ -770,7 +770,7 @@ void APTPhaseField::evolve()
 
     float t_cur_step;
     int kt = 0;
-    if (params.preMt>0)
+    if (params.preMt>0 && designSetting->useLaser == false)
     {
         cudaMemset(nucleationStatus, 0,sizeof(int) * cnx*cny*cnz);
         for (kt=0; kt<params.preMt/2; kt++)
@@ -807,6 +807,13 @@ void APTPhaseField::evolve()
     set_minus1<<< num_block_PF, blocksize_2d>>>(PFs_new,length*NUM_PF);    
     cudaMemset(active_args_old,-1,sizeof(int) * length * NUM_PF);
     cudaMemset(active_args_new,-1,sizeof(int) * length * NUM_PF);
+    }
+
+    if (designSetting->useLaser == false)
+    {
+        cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
+        OutputFields(0);
+        return;
     }
 
     /* use initial phi field to initialize alpha field */

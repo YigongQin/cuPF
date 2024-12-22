@@ -16,6 +16,7 @@ public:
     bool includeNucleation;
     bool pureNucleation;
     bool useAPT;
+    bool useLaser;
     int save3DField;
 
     int mpiDim;

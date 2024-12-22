@@ -6,6 +6,73 @@ from math import pi
 import argparse
 from TemperatureProfile3DAnalytic import ThermalProfile
 from matplotlib import pyplot as plt
+import glob
+
+def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack = 20, y_stack=40):
+
+    f_cur = h5py.File(outfile_folder + 'Powder_seed'+str(current_layer)+'.h5', 'r')
+    cur_alpha = f_cur['alpha']
+
+    x = np.asarray(f_cur['x_coordinates'])
+    y = np.asarray(f_cur['y_coordinates'])
+    z = np.asarray(f_cur['z_coordinates'])
+    fnx, fny, fnz = len(x), len(y), len(z)
+    cur_alpha = cur_alpha.reshape((fnx, fny, fnz), order='F')
+
+    f_cur.close()
+
+    if current_layer == 1:
+        f_prev = h5py.File(outfile_folder + 'Powder_seed0.h5', 'r')
+    else:
+        file = glob.glob(outfile_folder + '*seed'+str(current_layer-1)+'*Rmax*'+'.h5')[0]
+        f_prev = h5py.File(file, 'r')
+
+    prev_alpha = f_prev['alpha']
+    f_prev.close()
+
+
+    f = h5py.File(input_folder+'alpha3D.h5.h5', 'w')
+    
+    f.create_dataset('x_coordinates', data=x)
+
+
+    if direction == 'y':
+        y_dim = 2*fny-3
+        alpha_save = np.zeros((fnx, y_dim, fnz), order='F')
+        if current_layer == 1:
+            prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
+            alpha_save[:, :fny-1, :] = prev_alpha[:, :fny-1, :]
+            alpha_save[:, fny-2:, :] = cur_alpha[:, 1:, :]
+        else:
+            prev_alpha = prev_alpha.reshape((fnx, y_dim, fnz), order='F')
+            alpha_save[:, :fny-1, :] = prev_alpha[:, fny-2:, :]
+            alpha_save[:, fny-2:, :] = cur_alpha[:, 1:, :]
+
+        f.create_dataset('alpha', data=alpha_save.reshape(-1, order='F'))
+        f.create_dataset('y_coordinates', data=y+y_stack)
+        f.create_dataset('z_coordinates', data=z)
+
+    elif direction == 'z':
+        z_dim = 2*fnz-3
+        alpha_save = np.zeros((fnx, fny, z_dim), order='F')
+        if current_layer == 1:
+            prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
+            alpha_save[:, :, :fnz-1] = prev_alpha[:, :, :fnz-1]
+            alpha_save[:, :, fnz-2:] = cur_alpha[:, :, 1:]
+        else:
+            prev_alpha = prev_alpha.reshape((fnx, fny, z_dim), order='F')
+            alpha_save[:, :, :fnz-1] = prev_alpha[:, :, fnz-2:]
+            alpha_save[:, :, fnz-2:] = cur_alpha[:, :, 1:]
+
+        f.create_dataset('alpha', data=alpha_save.reshape(-1, order='F'))
+        f.create_dataset('y_coordinates', data=y)
+        f.create_dataset('z_coordinates', data=z+z_stack)
+    
+    else:
+        print('wrong direction')
+        return
+
+    f.close()
 
 
 
@@ -37,7 +104,16 @@ if __name__ == '__main__':
 
     parser.add_argument("--save_T", dest='save_T', action='store_true')
     parser.set_defaults(save_T=True)    
-    
+
+    parser.add_argument("--powder", dest='powder', action='store_true')
+    parser.set_defaults(powder=False)
+
+    parser.add_argument("--scan", dest='scan', action='store_true')
+    parser.set_defaults(scan=False)
+
+    parser.add_argument("--layers", type=int, default = 1)
+    parser.add_argument("--build_direction", type=str, default = 'z')
+
     args = parser.parse_args()     
     
 
@@ -111,8 +187,7 @@ if __name__ == '__main__':
     angle = 0
     min_angle = 0
 
-    if args.meltpool == 'cone' or args.meltpool == 'paraboloid': 
-        t_end = (track+40)/V
+    t_end = (track+40)/V
 
     t = np.linspace(0, t_end, nt)
     T = np.zeros(nx*ny*nz*nt)
@@ -182,24 +257,28 @@ if __name__ == '__main__':
     hf = h5py.File(mac_folder+'Temp.h5', 'w')
     hf.create_dataset('Temp', data=T)
     hf.close()
-    
-    cmd = "./phase_field " + args.meltpool + ".py"
-    
-    cmd = cmd + " -s " + str(args.seed) + " -b " + args.boundary + " -o " + args.outfile_folder
-    
-    if args.liquid:
-        cmd = cmd + " -n 1"
-    elif args.nucl:
-        cmd = cmd + " -n 2"
-    else:
-        cmd = cmd
-        
+
+
+    cmd = "./phase_field " + args.meltpool + ".py" + " -b " + args.boundary + " -o " + args.outfile_folder
+
     if args.mpi>1:
         cmd = "ibrun -n " + str(args.mpi) + " " + cmd
         
     if args.line:
         cmd = cmd + " -l 1"
-    
-    print(cmd)
-    
-    os.system(cmd)  
+
+    if args.powder:
+        for layer in range(args.layers+1):
+            runcmd = cmd + " -s " + str(layer) +  " -n 1"
+            print(runcmd)
+            os.system(runcmd) 
+
+    if args.scan:
+        for layer in range(args.layers):
+            stack_grid(args.output_folder, mac_folder, args.build_direction, layer+1)
+            runcmd = cmd + " -s " + str(layer) + " -p 1"
+            print(runcmd)
+            os.system(runcmd)
+
+
+
