@@ -36,39 +36,31 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
     f.create_dataset('x_coordinates', data=x)
 
 
-    if direction == 'y':
-        y_dim = 2*fny-3
-        alpha_save = np.zeros((fnx, y_dim, fnz), order='F')
-        if current_layer == 1:
-            prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
-            alpha_save[:, :fny-1, :] = prev_alpha[:, :fny-1, :]
-            alpha_save[:, fny-2:, :] = cur_alpha[:, 1:, :]
-        else:
-            prev_alpha = prev_alpha.reshape((fnx, y_dim, fnz), order='F')
-            alpha_save[:, :fny-1, :] = prev_alpha[:, fny-2:, :]
-            alpha_save[:, fny-2:, :] = cur_alpha[:, 1:, :]
-
-        f.create_dataset('alpha', data=alpha_save.reshape(-1, order='F'))
-        f.create_dataset('y_coordinates', data=y+y_stack)
-        f.create_dataset('z_coordinates', data=z)
-
-    elif direction == 'z':
+    if direction == 'z':
         z_dim = 2*fnz-3
         print('alpha dim:', fnx, fny, z_dim)
         alpha_save = np.zeros((fnx, fny, z_dim), order='F', dtype=np.int32)
         if current_layer == 1:
             prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
             alpha_save[:, :, :fnz-1] = prev_alpha[:, :, :fnz-1]
-            alpha_save[:, :, fnz-2:] = cur_alpha[:, :, 1:]
+            alpha_save[:, :, fnz-1:] = cur_alpha[:, :, 2:]
         else:
             prev_alpha = prev_alpha.reshape((fnx, fny, z_dim), order='F')
             alpha_save[:, :, :fnz-1] = prev_alpha[:, :, fnz-2:]
-            alpha_save[:, :, fnz-2:] = cur_alpha[:, :, 1:]
+            alpha_save[:, :, fnz-1:] = cur_alpha[:, :, 2:]
 
         f.create_dataset('alpha', data=alpha_save.reshape(fnx*fny*z_dim, order='F'))
-        f.create_dataset('y_coordinates', data=y)
-        f.create_dataset('z_coordinates', data=z+z_stack)
-    
+
+    elif direction == 'y':
+        y_dim = 2*fny-3
+        print('alpha dim:', fnx, y_dim, fnz)
+        alpha_save = np.zeros((fnx, y_dim, fnz), order='F', dtype=np.int32)
+
+
+        f.create_dataset('alpha', data=alpha_save.reshape(fnx*y_dim*fnz, order='F'))
+
+
+
     else:
         print('wrong direction')
         return
@@ -158,6 +150,7 @@ if __name__ == '__main__':
     num_nucleatioon_theta = 1000
     
     # sample orientations
+    np.random.seed(args.seed)
     ux = np.random.randn(num_nucleatioon_theta)
     uy = np.random.randn(num_nucleatioon_theta)
     uz = np.random.randn(num_nucleatioon_theta)
@@ -279,7 +272,7 @@ if __name__ == '__main__':
         y_stack = 0.5*Ly
         for layer in range(args.layers):
             stack_grid(args.outfile_folder, mac_folder, args.build_direction, layer+1, z_stack, y_stack)
-            runcmd = cmd + " -s " + str(layer) + " -p 1"
+            runcmd = cmd + " -s " + str(layer+1) + " -p 1"
             print(runcmd)
             os.system(runcmd)
 
