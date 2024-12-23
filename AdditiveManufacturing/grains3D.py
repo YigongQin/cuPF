@@ -55,8 +55,6 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
         y_dim = 2*fny-3
         print('alpha dim:', fnx, y_dim, fnz)
         alpha_save = np.zeros((fnx, y_dim, fnz), order='F', dtype=np.int32)
-        if current_layer>1:
-            prev_alpha = prev_alpha[:, ::-1, :]
 
         if current_layer == 1:
             prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
@@ -64,6 +62,7 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
             alpha_save[:, fny-1:, :] = cur_alpha[:, 2:, :]
         else:
             prev_alpha = prev_alpha.reshape((fnx, y_dim, fnz), order='F')
+            prev_alpha = prev_alpha[:, ::-1, :]
             alpha_save[:, :fny-1, :] = prev_alpha[:, fny-2:, :]
             alpha_save[:, fny-1:, :] = cur_alpha[:, 2:, :]
 
