@@ -10,8 +10,8 @@ import glob
 
 def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack = 20, y_stack=40):
 
-    f_cur = h5py.File(outfile_folder + 'Powder_seed'+str(current_layer)+'.h5', 'r')
-    cur_alpha = f_cur['alpha']
+    f_cur = h5py.File(outfile_folder + '/Powder_seed'+str(current_layer)+'.h5', 'r')
+    cur_alpha = np.asarray(f_cur['alpha'])
 
     x = np.asarray(f_cur['x_coordinates'])
     y = np.asarray(f_cur['y_coordinates'])
@@ -22,16 +22,16 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
     f_cur.close()
 
     if current_layer == 1:
-        f_prev = h5py.File(outfile_folder + 'Powder_seed0.h5', 'r')
+        f_prev = h5py.File(outfile_folder + '/Powder_seed0.h5', 'r')
     else:
         file = glob.glob(outfile_folder + '*seed'+str(current_layer-1)+'*Rmax*'+'.h5')[0]
         f_prev = h5py.File(file, 'r')
 
-    prev_alpha = f_prev['alpha']
+    prev_alpha = np.asarray(f_prev['alpha'])
     f_prev.close()
 
 
-    f = h5py.File(input_folder+'alpha3D.h5.h5', 'w')
+    f = h5py.File(input_folder+'/alpha3D.h5', 'w')
     
     f.create_dataset('x_coordinates', data=x)
 
@@ -54,7 +54,8 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
 
     elif direction == 'z':
         z_dim = 2*fnz-3
-        alpha_save = np.zeros((fnx, fny, z_dim), order='F')
+        print('alpha dim:', fnx, fny, z_dim)
+        alpha_save = np.zeros((fnx, fny, z_dim), order='F', dtype=np.int32)
         if current_layer == 1:
             prev_alpha = prev_alpha.reshape((fnx, fny, fnz), order='F')
             alpha_save[:, :, :fnz-1] = prev_alpha[:, :, :fnz-1]
@@ -64,7 +65,7 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
             alpha_save[:, :, :fnz-1] = prev_alpha[:, :, fnz-2:]
             alpha_save[:, :, fnz-2:] = cur_alpha[:, :, 1:]
 
-        f.create_dataset('alpha', data=alpha_save.reshape(-1, order='F'))
+        f.create_dataset('alpha', data=alpha_save.reshape(fnx*fny*z_dim, order='F'))
         f.create_dataset('y_coordinates', data=y)
         f.create_dataset('z_coordinates', data=z+z_stack)
     
@@ -81,7 +82,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Generate thermal input for PF")
     parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cone_test/')
     parser.add_argument("--mode", type=str, default = 'check')
-    parser.add_argument("--seed", type=int, default = 10075)
+    parser.add_argument("--seed", type=int, default = 0)
     parser.add_argument("--save3Ddata", type=int, default = 0)
     parser.add_argument("--meltpool", type=str, default = 'paraboloid')
     parser.add_argument("--boundary", type=str, default = '000')
@@ -100,7 +101,7 @@ if __name__ == '__main__':
     parser.set_defaults(line=False)
 
     parser.add_argument("--save_phi", dest='save_phi', action='store_true')
-    parser.set_defaults(save_phi=True)
+    parser.set_defaults(save_phi=False)
 
     parser.add_argument("--save_T", dest='save_T', action='store_true')
     parser.set_defaults(save_T=True)    
@@ -274,8 +275,10 @@ if __name__ == '__main__':
             os.system(runcmd) 
 
     if args.scan:
+        z_stack = 0.5*Lz
+        y_stack = 0.5*Ly
         for layer in range(args.layers):
-            stack_grid(args.output_folder, mac_folder, args.build_direction, layer+1)
+            stack_grid(args.outfile_folder, mac_folder, args.build_direction, layer+1, z_stack, y_stack)
             runcmd = cmd + " -s " + str(layer) + " -p 1"
             print(runcmd)
             os.system(runcmd)

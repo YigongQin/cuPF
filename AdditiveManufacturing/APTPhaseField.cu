@@ -734,7 +734,7 @@ void APTPhaseField::evolve()
 
       cudaMalloc((void **) &dStates, sizeof(curandState) * (lenCell+params.noi_period));
       cudaMalloc((void **) &nucleationStatus, sizeof(int) * lenCell);
-      init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, mpiManager->rank, lenCell+params.noi_period);
+      init_rand_num<<<(lenCell+params.noi_period)/blocksize_2d, blocksize_2d>>>(dStates, 1e6*mpiManager->rank + params.seed_val, lenCell+params.noi_period);
       init_nucl_status<<<num_block_c, blocksize_2d>>>(phi_old, nucleationStatus, cnx, cny, cnz, fnx, fny);
     }
 
@@ -812,7 +812,7 @@ void APTPhaseField::evolve()
     if (designSetting->useLaser == false)
     {
         cudaMemcpy(alpha, alpha_m, length * sizeof(int), cudaMemcpyDeviceToHost);
-        OutputFields(0);
+        OutputField(0);
         return;
     }
 

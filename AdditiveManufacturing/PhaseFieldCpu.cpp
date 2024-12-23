@@ -112,7 +112,7 @@ void PhaseField::parseInputParams(std::string fileName)
     mac.cost = new float[2*params.num_theta+1];
     mac.sint = new float[2*params.num_theta+1];
     read_input(mac.folder+"/theta.txt", mac.theta_arr);
-
+    /*
     hid_t  h5in_file,  datasetT, dataspaceT, memspace;
     hsize_t dimT[1];
     herr_t  status;
@@ -128,13 +128,9 @@ void PhaseField::parseInputParams(std::string fileName)
     H5Sclose(dataspaceT);
     H5Sclose(memspace);
     H5Fclose(h5in_file);
-    /* 
-    if (designSetting->includeNucleation)
-    {
-        float domainScaleFactor = cbrt(0.01/params.nuc_Nmax);
-        params.lxd = 2*((int) (params.lxd*domainScaleFactor/2));
-    }
     */
+
+
     float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;
@@ -438,12 +434,12 @@ void PhaseField::initField(){
         hid_t  h5in_file, dataset, dataspace, memspace;
         hsize_t dim[1];
         herr_t  status;
-        dim[0] = mac.Nx*mac.Ny*mac.Nz*mac.Nt; 
+        dim[0] = params.length; 
         h5in_file = H5Fopen( (mac.folder+"/alpha3D.h5").c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
         dataset = H5Dopen2(h5in_file, "alpha", H5P_DEFAULT);
         dataspace = H5Dget_space(dataset);
         memspace = H5Screate_simple(1, dim, NULL);
-        status = H5Dread(dataset, H5T_NATIVE_FLOAT, memspace, dataspace,
+        status = H5Dread(dataset, H5T_NATIVE_INT, memspace, dataspace,
                         H5P_DEFAULT, alpha);
 
         H5Dclose(dataset);
@@ -531,7 +527,7 @@ void PhaseField::OutputField(int currentStep)
     string outputFile;
     if (designSetting->useLaser == false)
     {
-        OutputFile = "Powder_seed" + to_string(params.seed_val) + ".h5";
+        outputFile = "Powder_seed" + to_string(params.seed_val) + ".h5";
     }
     else
     {

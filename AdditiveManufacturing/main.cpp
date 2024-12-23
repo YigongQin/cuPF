@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 
     PFSolver->SetDesignSetting(designSetting);
     PFSolver->SetMPIManager(mpiManager);
-    PFSolver->mac.folder = designSetting->thermalInputFolder + to_string(designSetting->seedValue);
+    PFSolver->mac.folder = designSetting->thermalInputFolder + to_string(0);
 
     PFSolver->params.seed_val = designSetting->seedValue;
     PFSolver->parseInputParams(designSetting->inputFile);
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
     cout << "cuda setup" <<endl;
     PFSolver->cudaSetup();
     PFSolver->evolve();
-    PFSolver->OutputQoIs();
+   // PFSolver->OutputQoIs();
 
     MPI_Finalize();
 
