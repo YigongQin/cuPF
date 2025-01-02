@@ -337,7 +337,6 @@ void PhaseField::cpuSetup(MPIsetting* mpiManager){
     phi = new float[length];
   //  Uc = new float[length];
     alpha = new int[length];
-    alpha_i_full = new int[full_length];
 
   //  cout<<"x= ";
   //  for(int i=0; i<fnx; i++){

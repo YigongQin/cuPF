@@ -17,7 +17,7 @@ def stack_grid(outfile_folder, input_folder, direction, current_layer, z_stack =
     y = np.asarray(f_cur['y_coordinates'])
     z = np.asarray(f_cur['z_coordinates'])
     fnx, fny, fnz = len(x), len(y), len(z)
-    cur_alpha = cur_alpha.reshape((fnx, fny, fnz), order='F')
+    cur_alpha = cur_alpha.reshape((fnx, fny, fnz), order='F') + current_layer
 
     f_cur.close()
 
