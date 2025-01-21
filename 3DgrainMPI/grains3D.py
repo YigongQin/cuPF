@@ -70,14 +70,16 @@ def GR_constant_sampling(seed):
     
 def geo_sampling(seed):
 
-    G_list = np.array([10, 8, 6, 5, 4, 3, 2, 1])
-    R_list = np.array([2, 1.8, 1.6, 1.4, 1.2, 1, 0.7, 0.2])
-    sin_gamma_list = np.linspace(0.25, 0.7, 10)
+    G_list = np.array([10, 8, 6, 5, 4, 3, 2.5, 2, 1.5, 1])
+    R_list = np.array([2, 1.95, 1.9, 1.85, 1.8, 1.7, 1.6, 1.5, 1.4, 1.2, 1, 0.7, 0.2])
+    #R_list = np.array([0.2, 0.7, 1])
+    #sin_gamma_list = np.linspace(0.2, 0.8, 16)
+    sin_gamma_list = np.array([0.2, 0.28, 0.36, 0.4, 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72])
 
     Gid = seed%len(G_list)
    # sid = (seed//stride)%stride
     sid = (seed//len(G_list))%len(sin_gamma_list)
-    Rid = seed//len(G_list*len(sin_gamma_list))
+    Rid = seed//(len(G_list)*len(sin_gamma_list))
 
     G = G_list[Gid]
     Rmax = 1e6*R_list[Rid]        
@@ -180,7 +182,6 @@ if __name__ == '__main__':
 
     if args.meltpool == 'paraboloid':
         underCoolingRate = G*Rmax/1e6 
-
     '''create a planar graph'''
     bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
     g1 = graph(lxd = Lx, seed = seed, BC = bc) 
@@ -254,7 +255,7 @@ if __name__ == '__main__':
 
     else:
         if args.meltpool == 'cone' or args.meltpool == 'paraboloid': 
-            t_end = (track+40)/V
+            t_end = 1.5*Lx/V
         else:
             t_end = top/Rmax
 

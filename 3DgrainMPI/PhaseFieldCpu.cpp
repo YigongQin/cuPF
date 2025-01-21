@@ -135,6 +135,19 @@ void PhaseField::parseInputParams(std::string fileName)
         params.lxd = 2*((int) (params.lxd*domainScaleFactor/2));
     }
     */
+    
+    if (params.R<0.3)
+    {
+        params.cfl *= 2;
+        params.underCoolingRate0 /= 2;	
+    }
+
+    if (params.R>0.3 && params.R<1)
+    {
+	params.cfl *= 1.5;
+	params.underCoolingRate0 /= 1.5;
+    }
+
     float dxd = params.dx*params.W0;
     params.c_infm = params.c_infty*params.m_slope;
     params.Tliq = params.Tmelt - params.c_infm;

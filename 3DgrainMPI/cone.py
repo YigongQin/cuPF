@@ -36,7 +36,7 @@ ictype = 0                      # initial condtion
 
 # simulation parameters
 dx = 0.8                        # mesh width
-W0 = 0.125                        # interface thickness [um]
+W0 = 0.15625                        # interface thickness [um]
 cfl = 0.6                       # cfl number
 asp_ratio_yx = 1             # aspect ratio of domain z/x
 asp_ratio_zx = 0.5             # aspect ratio of domain z/x
