@@ -51,7 +51,7 @@ public:
   float undcool_mean, undcool_std, nuc_Nmax, nuc_rad, pts_cell; 
 
 
-  
+  int walltime; 
 
 };
 

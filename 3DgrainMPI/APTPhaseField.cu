@@ -932,6 +932,7 @@ void APTPhaseField::evolve()
 
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
+   params.walltime = (int) (endTime-startTime);
    printf("time for %d iterations: %f s\n", 2*kt, endTime-startTime);
    printf("no. communications performed %d \n", numComm);
    params.Mt = 2*kt; // the actual no. time steps
