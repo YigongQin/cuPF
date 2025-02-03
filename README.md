@@ -29,14 +29,13 @@ For python3: pip3 install -r requirements.txt
 Optional -- MPI  
 MPI with CUDA-aware features such as MVAPICH2 should be installed and the following variables or paths should be set:    
 In Makefile: `$(MPICXX)`, `$(MPI_INC)`  
-In setCudaAwareMPI: `$(LD_PRELOAD)`
-  
+Also remeber to set the `$(LD_PRELOAD)` path to include installed libmpi.so  
 
 For example:
 ```sh
 cd 3DgrainMPI
 make
-./setCudaAwareMPI    # set/export environment variables for CUDA/MPI
+export LD_PRELOAD=/opt/apps/intel23/mvapich2-gdr/2.3.7/lib64/libmpi.so    # set/export environment variables for CUDA/MPI
 ```
 
 ## 3D grain simulation with MPI
@@ -49,7 +48,10 @@ python3 grains3D.py --meltpool=line --mpi=2          # use two GPUs with CUDA-aw
 python3 grains3D.py --meltpool=line --lineConfig     # use moving-domain technique to reduce the height 
 python3 grains3D.py --meltpool=line --lineConfig --nucleation     # include nucleation in the simulation
 ```
-set material/process/simulation parameters in line.py. If temperature gradients change over time, use lineTemporal.py
+set material/process/simulation parameters in line.py. If temperature gradients change over time, use lineTemporal.py. To visualize the output data, transform the h5 data to vtk data and use tools such as paraview:
+```sh
+python3 saveVTKdata.py --seed=0 --gpus=1 --subsample=4 --lxd=40 --rawdat_dir=../outputs/   # set gpus if using MPI, lxd is the domain width, rawdat_dir is the folder of h5 file
+```
 ![Alt text](figures/line.png)
 
 ### cylindrical geometry
