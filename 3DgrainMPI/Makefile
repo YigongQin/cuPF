@@ -3,8 +3,8 @@ CXX=icpc
 CUDA_PATH=$(TACC_CUDA_DIR)
 HDF5_INC=$(TACC_HDF5_INC) 
 HDF5_LIB=$(TACC_HDF5_LIB)
-MPICXX=/opt/apps/intel19/mvapich2-gdr/2.3.6/bin/mpicxx
-MPI_INC=-I/opt/apps/intel19/mvapich2-gdr/2.3.6/include/
+MPICXX=/opt/apps/intel23/mvapich2-gdr/2.3.7/bin/mpicxx
+MPI_INC=-I/opt/apps/intel23/mvapich2-gdr/2.3.7/include/
 
 
 ###########################################################

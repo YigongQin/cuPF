@@ -70,11 +70,13 @@ def GR_constant_sampling(seed):
     
 def geo_sampling(seed):
 
-    G_list = np.array([10, 8, 6, 5, 4, 3, 2.5, 2, 1.5, 1])
-    R_list = np.array([2, 1.95, 1.9, 1.85, 1.8, 1.7, 1.6, 1.5, 1.4, 1.2, 1, 0.7, 0.2])
-    #R_list = np.array([0.2, 0.7, 1])
-    #sin_gamma_list = np.linspace(0.2, 0.8, 16)
-    sin_gamma_list = np.array([0.2, 0.28, 0.36, 0.4, 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72])
+    G_list = np.array([9, 6.6, 4.2, 1.8])
+    R_list = np.array([1.75, 1.27, 0.79, 0.31])
+    sin_gamma_list = np.array([0.24, 0.39, 0.54, 0.69])
+
+   # G_list = np.array([10, 8, 6, 5, 4, 3, 2.5, 2, 1.5, 1])
+   # R_list = np.array([2, 1.95, 1.9, 1.85, 1.8, 1.7, 1.6, 1.5, 1.4, 1.2, 1, 0.7, 0.2])
+   # sin_gamma_list = np.array([0.2, 0.28, 0.36, 0.4, 0.44, 0.48, 0.52, 0.56, 0.6, 0.64, 0.68, 0.72])
 
     Gid = seed%len(G_list)
    # sid = (seed//stride)%stride
@@ -173,11 +175,12 @@ if __name__ == '__main__':
         else:
             G = args.G
             Rmax = args.Rmax
+            Rmax = Rmax*1e6
             sin_gamma = args.sin_gamma
         underCoolingRate = G*Rmax/1e6
         V = Rmax/sin_gamma
         cos_gamma = np.sqrt(1-sin_gamma**2)
-        r0 = 76*sin_gamma*cos_gamma
+        r0 = 38 #76*sin_gamma*cos_gamma
         assert r0>z0 
 
     if args.meltpool == 'paraboloid':
@@ -255,7 +258,7 @@ if __name__ == '__main__':
 
     else:
         if args.meltpool == 'cone' or args.meltpool == 'paraboloid': 
-            t_end = 1.5*Lx/V
+            t_end = (Lx+50)/V  # 1.5*Lx/V
         else:
             t_end = top/Rmax
 
