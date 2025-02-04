@@ -99,7 +99,7 @@ def shape_sampling(seed):
     G = G_list[(seed//len(V_list))%len(G_list)]
     shape_id = seed//(len(V_list)*len(G_list))
 
-    return V, G, V*sin_gamma_max[shape_id], V*sin_gamma_min[shape_id], order_list[shape_id]
+    return 1e6*V, G, 1e6*V*sin_gamma_max[shape_id], 1e6*V*sin_gamma_min[shape_id], order_list[shape_id]
 
 
 if __name__ == '__main__':
@@ -293,6 +293,7 @@ if __name__ == '__main__':
         else:
             min_angle = 0
             x0 = 0
+            order = 2
 
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, x0=x0, angle = angle, min_angle=min_angle, order=order)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
