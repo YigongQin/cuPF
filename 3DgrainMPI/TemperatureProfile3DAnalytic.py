@@ -47,7 +47,7 @@ class ThermalProfile:
         
         return -self.G*self.dist2Interface(profile, x, y, z, z0, r0, angle) - self.U*t*1e6
     
-    def dist2Interface(self, profile, x, y, z, z0=0, r0=0, angle = 0, min_angle = 0):
+    def dist2Interface(self, profile, x, y, z, z0=0, r0=0, x0 = 0, angle = 0, min_angle = 0, order = 2):
         
         if profile == 'uniform':
             return -10
@@ -68,7 +68,7 @@ class ThermalProfile:
             return self.coneProfile(x, y, z, z0, r0, [self.ly/2, self.lz + z0], angle)
             
         if profile == 'paraboloid':
-            return self.paraboloidProfile(x, y, z, z0, r0, [self.ly/2, self.lz + z0], angle, min_angle)
+            return self.paraboloidProfile(x, y, z, z0, r0, x0, [self.ly/2, self.lz + z0], angle, min_angle, order)
 
     def lineProfile(self, x, y, z, z0):        
 
@@ -108,14 +108,15 @@ class ThermalProfile:
         return dist - r0_x
 
 
-    def paraboloidProfile(self, x, y, z, z0, r0, centerline, angle, min_angle):
-        print('angle, min angle: ', angle, min_angle)        
-        self.mp_len = 2*(r0-z0)/(np.tan(angle)+np.tan(min_angle))
+    def paraboloidProfile(self, x, y, z, z0, r0, x0, centerline, angle, min_angle, order):
+        print('angle, min angle: ', angle, min_angle)
+        k1, k2 = np.tan(angle), np.tan(min_angle)
+        self.mp_len = order*(r0-z0)/(k2+(order-1)*k1)        
+       # self.mp_len = 2*(r0-z0)/(np.tan(angle)+np.tan(min_angle))
         print('mp len: ', self.mp_len)
         Lx, Ly, Lz = self.lx, self.ly, self.lz
 
         dx = 0.5
-        x0 = 20
         
         window_len = self.mp_len + x0
         x1d = np.linspace(0, window_len, int(window_len/dx)+1)
@@ -124,14 +125,14 @@ class ThermalProfile:
         xx, yy, zz = np.meshgrid(x1d, y1d, z1d, indexing='ij')
 
         
-        rr = query_r(xx, z0, r0, angle, min_angle, x0)
+        rr = query_r(xx, z0, r0, k1, k2, x0, order)
         dist = np.sqrt((zz-Lz-z0)**2 + (yy-Ly/2)**2)
         diff = np.absolute(dist-rr)
         xs, ys = np.meshgrid(x1d, y1d, indexing='ij') 
         zs = z1d[np.argmin(diff, axis=-1)]
         
         xs, ys, zs = xs.flatten(), ys.flatten(), zs.flatten()
-        rs = query_r(xs, z0, r0, angle, min_angle, x0)
+        rs = query_r(xs, z0, r0, k1, k2, x0, order)
         x_on = xs[z0**2 + (ys-Ly/2)**2 <= rs**2]
         y_on = ys[z0**2 + (ys-Ly/2)**2 <= rs**2]
         z_on = zs[z0**2 + (ys-Ly/2)**2 <= rs**2]
@@ -148,7 +149,7 @@ class ThermalProfile:
         xs, ys, zs = x_sam.copy(), y_sam.copy(), z_sam.copy()
         xb, yb, zb = x_sam.copy(), y_sam.copy(), z_sam.copy()
 
-        tan_gamma = query_slope(xs, z0, r0, angle, min_angle, x0)
+        tan_gamma = query_slope(xs, z0, r0, k1, k2, x0, order)
         sin_gamma = tan_gamma/np.sqrt(1+tan_gamma**2)
 
         values_b = values.copy()
@@ -205,24 +206,17 @@ class ThermalProfile:
         return -distance
 
 
-def query_r(x, z0, r0, angle, min_angle, x0=20):
-    k1 = np.tan(angle)
-    k2 = np.tan(min_angle)
-    lm = 2*(r0-z0)/(k1+k2)
+def query_r(x, z0, r0, k1, k2, x0=20, order=2):
+    lm = order*(r0-z0)/(k2+(order-1)*k1)
     clip_x = np.clip(x-x0, a_min=-0.1, a_max=lm)
 
-   # r0_x = z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
-   # r = 2+0.5*x 
-   # return np.clip(r, a_min=2, a_max=20)
-    return z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
+    return z0 + k1*clip_x + (k2-k1)/(order*lm**(order-1))*clip_x**order
+   # return z0 + k1*clip_x + (k2-k1)/(2*lm)*clip_x**2
 
-def query_slope(x, z0, r0, angle, min_angle, x0=20):
-    
-   # slope = 0.5
-    k1 = np.tan(angle)
-    k2 = np.tan(min_angle)
-    lm = 2*(r0-z0)/(k1+k2)
+def query_slope(x, z0, r0, k1, k2, x0=20, order=2):
+    lm = order*(r0-z0)/(k2+(order-1)*k1)
     clip_x = np.clip(x-x0, a_min=-0.1, a_max=lm)
 
-    return k1 + (k2-k1)/(lm)*clip_x
+    return k1 + (k2-k1)/(lm**(order-1))*clip_x**(order-1)
+   # return k1 + (k2-k1)/(lm)*clip_x
 

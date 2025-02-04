@@ -309,7 +309,7 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                 {
                     float x_query = x[i] - cP.V*t*1e6;
 
-                    if (x_query > cP.mp_len + 20.0f or x_query < 0.0f)
+                    if (x_query > cP.mp_len + cP.x0 or x_query < 0.0f)
                     {
                         continue;
                     }
@@ -906,7 +906,7 @@ void APTPhaseField::evolve()
                 cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
                 cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);        
             }           
-            qois->Manifold(params, alpha, x, y, z, 0.0f);
+           // qois->Manifold(params, alpha, x, y, z, 0.0f);
             OutputField(2*kt+2);
         }
 
@@ -915,7 +915,7 @@ void APTPhaseField::evolve()
         //kt++;
    }
 
-        //if ( (2*kt+2 <fieldkts) && (designSetting->inputFile.compare("lineTemporal.py")==0 || designSetting->inputFile.compare("line.py")==0)  )
+    /*
         {
             cudaMemset(alpha_m, 0, sizeof(int) * length);
             APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old);
@@ -926,9 +926,9 @@ void APTPhaseField::evolve()
                 cudaMemcpy(alpha_i_full, d_alpha_full, fnx*fny*fnz_f * sizeof(int),cudaMemcpyDeviceToHost);
                 cudaMemcpy(alpha_i_full+movingDomainManager->move_count*fnx*fny, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
             }
-           // qois->Manifold(params, alpha, x, y, z, 0.0f);
-          //  OutputField(2*kt+2);
+            OutputField(2*kt+2);
         }
+   */
 
    cudaDeviceSynchronize();
    double endTime = CycleTimer::currentSeconds();
@@ -936,11 +936,6 @@ void APTPhaseField::evolve()
    printf("time for %d iterations: %f s\n", 2*kt, endTime-startTime);
    printf("no. communications performed %d \n", numComm);
    params.Mt = 2*kt; // the actual no. time steps
-   
-  // cudaMemset(alpha_m, 0, sizeof(int) * length);
-  // APTcollect_PF<<< num_block_2d, blocksize_2d >>>(PFs_old, phi_old, alpha_m, active_args_old); 
-  // cudaMemcpy(alpha, alpha_m, length * sizeof(int),cudaMemcpyDeviceToHost);
-
 
 }
 

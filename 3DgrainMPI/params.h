@@ -26,7 +26,7 @@ public:
   float lx, lxd, lyd, lzd, tmax;
   float xmin, ymin, zmin; 
   float asp_ratio_yx, asp_ratio_zx, moving_ratio;
-  float z0, r0, top, angle, min_angle;
+  float z0, r0, x0, top, angle, min_angle;
   float mp_len;
   // grid parameters
   int nx, ny, nz, nz_full, fnx, fny, fnz, fnz_f, length, full_length, haloWidth;

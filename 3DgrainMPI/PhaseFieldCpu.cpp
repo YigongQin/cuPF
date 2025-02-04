@@ -104,6 +104,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/Nmax.txt", &params.nuc_Nmax);
     read_input(mac.folder+"/z0.txt", &params.z0);
     read_input(mac.folder+"/r0.txt", &params.r0);
+    read_input(mac.folder+"/x0.txt", &params.x0);
     read_input(mac.folder+"/top.txt", &params.top);
     read_input(mac.folder+"/angle.txt", &params.angle);
     read_input(mac.folder+"/min_angle.txt", &params.min_angle);
@@ -225,6 +226,7 @@ void PhaseField::parseInputParams(std::string fileName)
         cout << "profile: paraboloid" << endl;
         cout << "z0: " << params.z0 << endl;
         cout << "r0: " << params.r0 << endl;
+        cout << "x0: " << params.x0 << endl;
         cout << "angle: " << params.angle << endl;
         cout << "min_angle: " << params.min_angle << endl;
         cout << "speed: " << params.V << endl;
@@ -354,12 +356,10 @@ void PhaseField::cpuSetup(MPIsetting* mpiManager){
     phi = new float[length];
   //  Uc = new float[length];
     alpha = new int[length];
-    alpha_i_full = new int[full_length];
-
-  //  cout<<"x= ";
-  //  for(int i=0; i<fnx; i++){
-  //      cout<<x[i]<<" ";
-  //  }
+    if (GetSetDesignSetting()->useLineConfig)
+    {
+        alpha_i_full = new int[full_length];
+    }
 
     cout<< "rank "<< mpiManager->rank<< " xmin " << x[0] << " xmax "<<x[fnx-1]<<endl;
     cout<< "rank "<< mpiManager->rank<< " ymin " << y[0] << " ymax "<<y[fny-1]<<endl;

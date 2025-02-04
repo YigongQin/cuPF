@@ -89,6 +89,19 @@ def geo_sampling(seed):
 
     return G, Rmax, sin_gamma
 
+def shape_sampling(seed):
+    V_list = [1, 2.5]
+    G_list= [2.5, 7,5]
+    sin_gamma_max = [0.72, 0.32, 0.72, 0.72, 0.9]
+    sin_gamma_min = [0.2, 0.2, 0.2, 0.2, 0.2]
+    order_list = [2,2,1.5,1.2,1.5]
+    V = V_list[seed%len(V_list)]
+    G = G_list[(seed//len(V_list))%len(G_list)]
+    shape_id = seed//(len(V_list)*len(G_list))
+
+    return V, G, V*sin_gamma_max[shape_id], V*sin_gamma_min[shape_id], order_list[shape_id]
+
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
@@ -184,7 +197,11 @@ if __name__ == '__main__':
         assert r0>z0 
 
     if args.meltpool == 'paraboloid':
-        underCoolingRate = G*Rmax/1e6 
+        if args.geo_sample == 1:            
+            V, G, Rmax, Rmin, order = shape_sampling(seed)
+        underCoolingRate = G*Rmax/1e6
+        r0 = 38
+        assert r0>z0  
     '''create a planar graph'''
     bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
     g1 = graph(lxd = Lx, seed = seed, BC = bc) 
@@ -272,10 +289,12 @@ if __name__ == '__main__':
 
         if args.meltpool == 'paraboloid':
             min_angle = np.arcsin(Rmin/V)
+            x0 = 20
         else:
             min_angle = 0
+            x0 = 0
 
-        psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, angle = angle, min_angle=min_angle)  
+        psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, x0=x0, angle = angle, min_angle=min_angle, order=order)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
 
         
@@ -310,6 +329,7 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'NN.txt', np.asarray([NN]), fmt='%d',delimiter='\n')
     np.savetxt(mac_folder+'z0.txt', np.asarray([z0]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'r0.txt', np.asarray([r0]), fmt='%1.4e',delimiter='\n')
+    np.savetxt(mac_folder+'x0.txt', np.asarray([x0]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'angle.txt', np.asarray([angle]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'min_angle.txt', np.asarray([min_angle]), fmt='%1.4e',delimiter='\n')
