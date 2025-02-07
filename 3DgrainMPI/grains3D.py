@@ -91,7 +91,7 @@ def geo_sampling(seed):
 
 def shape_sampling(seed):
     V_list = [1, 2.5]
-    G_list= [2.5, 7,5]
+    G_list = [2.5, 7.5]
     sin_gamma_max = [0.72, 0.32, 0.72, 0.72, 0.9]
     sin_gamma_min = [0.2, 0.2, 0.2, 0.2, 0.2]
     order_list = [2,2,1.5,1.2,1.5]
