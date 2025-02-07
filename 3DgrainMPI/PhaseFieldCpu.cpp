@@ -108,6 +108,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/top.txt", &params.top);
     read_input(mac.folder+"/angle.txt", &params.angle);
     read_input(mac.folder+"/min_angle.txt", &params.min_angle);
+    read_input(mac.folder+"/order.txt", &params.order);
 
     mac.theta_arr = new float[2*params.num_theta+1];
     mac.cost = new float[2*params.num_theta+1];
@@ -230,6 +231,7 @@ void PhaseField::parseInputParams(std::string fileName)
         cout << "angle: " << params.angle << endl;
         cout << "min_angle: " << params.min_angle << endl;
         cout << "speed: " << params.V << endl;
+        cout << "profile order" << params.order << endl; 
         read_input(mac.folder+"/mp_len.txt", &params.mp_len);
         cout << "meltpool length: " << params.mp_len << endl;	
     }
@@ -445,7 +447,13 @@ void PhaseField::initField(){
       }
     }
 
+    const float EPSILON = 1e-3; // Tolerance for floating-point comparison
 
+    if (fabs(params.order - (-1.0f)) < EPSILON)
+    {
+        cout << "overwrite psi field with static temperature profiel" << endl;
+        read_input(mac.folder+"/statTemp.txt",mac.psi_mac);
+    }
 
 }
 
@@ -474,7 +482,7 @@ void PhaseField::OutputQoIs()
         grainType = "Epita_grains"+to_string(params.num_theta);
     } 
     outputFormat = designSetting->inputFile.substr(0, 4) + "seed"+to_string(params.seed_val) +"_lxd"+to_string(params.lxd) + "_G"+to_stringp(params.G,3) + "_Rmax"+to_stringp(params.R,3) + \
-                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + grainType + "_walltime"+to_string(params.walltime)+ \
+                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + + "_order"+to_string((int) params.order) + grainType + "_walltime"+to_string(params.walltime)+ \
                    "_frames"+to_string(params.nts) + "_Mt"+to_string(params.Mt);  
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank)+".h5";
 
@@ -522,7 +530,7 @@ void PhaseField::OutputField(int currentStep)
         grainType = "Epita_grains"+to_string(params.num_theta);
     }
     outputFormat = designSetting->inputFile.substr(0, 4) + "seed"+to_string(params.seed_val) +"_lxd"+to_string(params.lxd) + "_G"+to_stringp(params.G,3) + "_Rmax"+to_stringp(params.R,3) + \
-                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + grainType + \
+                   "_V" + to_stringp(params.V,3) + "_angle"+to_stringp(params.angle,3) + "_minangle"+to_stringp(params.min_angle,3) + "_order"+to_string((int) params.order) + grainType + \
                    "_frames"+to_string(params.nts) + "_Mt"+to_string(params.Mt);     
     string outputFile = outputFormat+ "_rank"+to_string(GetMPIManager()->rank) + "_time" + to_string(currentStep) + ".h5";
 

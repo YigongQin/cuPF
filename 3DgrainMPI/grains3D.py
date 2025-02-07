@@ -101,20 +101,36 @@ def shape_sampling(seed):
 
     return 1e6*V, G, 1e6*V*sin_gamma_max[shape_id], 1e6*V*sin_gamma_min[shape_id], order_list[shape_id]
 
+def size_sampling(seed):
+
+    nuc_Nmax_list = [0.005, 0.01, 0.02, 0.03]
+    sin_gamma_max = [0.72, 0.32, 0.72, 0.72, 0.9]
+    sin_gamma_min = [0.2, 0.2, 0.2, 0.2, 0.2]
+    order_list = [2,2,1.5,1.2,1.5]
+
+    nuc_Nmax = nuc_Nmax_list[seed%len(nuc_Nmax_list)]
+    shape_id = seed//len(nuc_Nmax_list)
+    V = 2.5
+    G = 5
+
+    return 1e6*V, G, 1e6*V*sin_gamma_max[shape_id], 1e6*V*sin_gamma_min[shape_id], order_list[shape_id], nuc_Nmax
+
+
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser("Generate thermal input for PF")
     parser.add_argument("--outfile_folder", type=str, default = '/scratch1/07428/ygqin/graph/cone_test/')
     parser.add_argument("--mode", type=str, default = 'check')
-    parser.add_argument("--seed", type=int, default = 10075)
+    parser.add_argument("--seed", type=int, default = 1)
     parser.add_argument("--save3Ddata", type=int, default = 0)
-    parser.add_argument("--meltpool", type=str, default = 'cone')
+    parser.add_argument("--meltpool", type=str, default = 'paraboloid')
     parser.add_argument("--boundary", type=str, default = '000')
     parser.add_argument("--mpi", type=int, default = 1)
     parser.add_argument("--gr_sample", type=int, default = 0)
     parser.add_argument("--nucl_sample", type=int, default = 0)
     parser.add_argument("--geo_sample", type=int, default = 0)
+    parser.add_argument("--size_sample", type=int, default = 0)
     parser.add_argument("--cylinder_scale_param", type=int, default = 0)
     parser.add_argument("--G", type=float, default = 8)
     parser.add_argument("--Rmax", type=float, default = 1.5)
@@ -133,7 +149,9 @@ if __name__ == '__main__':
     parser.set_defaults(save_phi=False)
 
     parser.add_argument("--save_T", dest='save_T', action='store_true')
-    parser.set_defaults(save_T=True)    
+    parser.set_defaults(save_T=True)
+
+    parser.add_argument("--macro_dir", type=str, default = './solvedMeltpool/')  
     
     args = parser.parse_args()     
     
@@ -149,14 +167,15 @@ if __name__ == '__main__':
     if args.meltpool == 'lineTemporal':
         from lineTemporal import *
 
-    if args.meltpool == 'cone_long':
-        from cone_long import *
-
     if args.meltpool == 'cone':
         from cone import *
 
     if args.meltpool == 'paraboloid':
         from paraboloid import *
+        if args.macro_dir != '':
+            print('melt pool is solved from the thermal simulation')
+            order = 100
+            z0 = np.load(args.macro_dir+'center.npy')           
 
     if args.gr_sample>0:
         if args.gr_sample == 1:
@@ -199,6 +218,8 @@ if __name__ == '__main__':
     if args.meltpool == 'paraboloid':
         if args.geo_sample == 1:            
             V, G, Rmax, Rmin, order = shape_sampling(seed)
+        elif args.size_sample == 1:
+            V, G, Rmax, Rmin, order, nuc_Nmax = size_sampling(seed)
         underCoolingRate = G*Rmax/1e6
         r0 = 38
         assert r0>z0  
@@ -295,10 +316,12 @@ if __name__ == '__main__':
             x0 = 0
             order = 2
 
+        therm.macro_dir = args.macro_dir
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, x0=x0, angle = angle, min_angle=min_angle, order=order)  
         psi = psi3d.reshape(nx*ny*nz, order='F')
-
-        
+        if args.macro_dir != '':
+            statTemp = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, x0=x0, angle = angle, min_angle=min_angle, order=order, includeG=True)  
+            statTemp = statTemp.reshape(nx*ny*nz, order='F')
     print('sampled undercooling, G, R values: ', underCoolingRate, G, Rmax)
     print('nucleation density, radius: ', nuc_Nmax, nuc_rad)
     
@@ -334,16 +357,18 @@ if __name__ == '__main__':
     np.savetxt(mac_folder+'top.txt', np.asarray([top]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'angle.txt', np.asarray([angle]), fmt='%1.4e',delimiter='\n')
     np.savetxt(mac_folder+'min_angle.txt', np.asarray([min_angle]), fmt='%1.4e',delimiter='\n')
+    np.savetxt(mac_folder+'order.txt', np.asarray([order]), fmt='%1.4e',delimiter='\n')
     if args.meltpool == 'paraboloid':
         np.savetxt(mac_folder+'mp_len.txt', np.asarray([therm.mp_len]), fmt='%1.4e',delimiter='\n')
-
+        if args.macro_dir != '':
+            np.savetxt(mac_folder+'statTemp.txt', statTemp, fmt='%1.4e',delimiter='\n')
 
     if args.save_phi:
         from tvtk.api import tvtk, write_data
-        grid = tvtk.ImageData(spacing=(1,1,1), origin=(0, 0, 0), 
+        grid = tvtk.ImageData(spacing=(0.5,0.5,0.5), origin=(0, 0, 0), 
                               dimensions=psi3d.shape)
     
-        grid.point_data.scalars = psi3d.ravel(order='F')
+        grid.point_data.scalars = np.tanh(psi3d).ravel(order='F')
   
         write_data(grid, 'phi.vtk') 
 

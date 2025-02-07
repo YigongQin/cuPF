@@ -313,9 +313,14 @@ APTrhs_psi(float t, float* x, float* y, float* z, float* ph, float* ph_new, int*
                     {
                         continue;
                     }
-
-                    Tinterp = -cP.G*interp3Dtemperature(thm.psi_mac, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], cP.Nx, cP.Ny, cP.Nz, Dx);
-            
+                    if ( cP.order == 100)
+                    {
+                        Tintep = -interp3Dtemperature(thm.psi_mac, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], cP.Nx, cP.Ny, cP.Nz, Dx);
+                    }
+                    else
+                    {
+                        Tinterp = -cP.G*interp3Dtemperature(thm.psi_mac, x_query - thm.X_mac[0], y[j] - thm.Y_mac[0], z[k] - thm.Z_mac[0], cP.Nx, cP.Ny, cP.Nz, Dx);
+                    }
                 }
 
                 float Up = Tinterp/(cP.L_cp);  
