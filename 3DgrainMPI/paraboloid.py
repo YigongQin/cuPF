@@ -49,13 +49,14 @@ BC = Lx/(nx-3)
 track = Lx-4
 top = track
 z0 = 2
-#r0 = Lz
+r0 = 38
+x0 = 40
 
 G = 5
-Rmax = 2e6
-Rmin = 1e6
-underCoolingRate = 10
-V = 3e6
+Rmax = 0.6e6
+Rmin = 0.6e6
+underCoolingRate = 3
+V = 1.2e6
 order = 2
 # initial liquid param
 underCoolingRate0 = 20

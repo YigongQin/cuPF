@@ -109,7 +109,7 @@ void PhaseField::parseInputParams(std::string fileName)
     read_input(mac.folder+"/angle.txt", &params.angle);
     read_input(mac.folder+"/min_angle.txt", &params.min_angle);
     read_input(mac.folder+"/order.txt", &params.order);
-
+    params.nuc_Nmax0 = params.nuc_Nmax;
     mac.theta_arr = new float[2*params.num_theta+1];
     mac.cost = new float[2*params.num_theta+1];
     mac.sint = new float[2*params.num_theta+1];
@@ -225,6 +225,7 @@ void PhaseField::parseInputParams(std::string fileName)
     {
         params.thermalType = 4;
         cout << "profile: paraboloid" << endl;
+	cout << "seed: " << params.seed_val << endl;
         cout << "z0: " << params.z0 << endl;
         cout << "r0: " << params.r0 << endl;
         cout << "x0: " << params.x0 << endl;
@@ -449,7 +450,7 @@ void PhaseField::initField(){
 
     const float EPSILON = 1e-3; // Tolerance for floating-point comparison
 
-    if (fabs(params.order - (-1.0f)) < EPSILON)
+    if (fabs(params.order - (100.0f)) < EPSILON)
     {
         cout << "overwrite psi field with static temperature profiel" << endl;
         read_input(mac.folder+"/statTemp.txt",mac.psi_mac);
@@ -500,6 +501,7 @@ void PhaseField::OutputQoIs()
 
     h5write_1d(h5_file, "r0", &params.r0, 1, "float");
     h5write_1d(h5_file, "z0", &params.z0, 1, "float");
+    h5write_1d(h5_file, "x0", &params.x0, 1, "float");
     h5write_1d(h5_file, "top", &params.top, 1, "float");
     h5write_1d(h5_file, "angle", &params.angle, 1, "float");
     h5write_1d(h5_file, "V", &params.V, 1, "float");

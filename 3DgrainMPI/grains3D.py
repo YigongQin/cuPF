@@ -212,7 +212,7 @@ if __name__ == '__main__':
         underCoolingRate = G*Rmax/1e6
         V = Rmax/sin_gamma
         cos_gamma = np.sqrt(1-sin_gamma**2)
-        r0 = 38 #76*sin_gamma*cos_gamma
+       # r0 = 38 #76*sin_gamma*cos_gamma
         assert r0>z0 
 
     if args.meltpool == 'paraboloid':
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         elif args.size_sample == 1:
             V, G, Rmax, Rmin, order, nuc_Nmax = size_sampling(seed)
         underCoolingRate = G*Rmax/1e6
-        r0 = 38
+       # r0 = 38
         assert r0>z0  
     '''create a planar graph'''
     bc = 'periodic' if (args.boundary)[:2] == '11' else 'noflux'
@@ -310,11 +310,11 @@ if __name__ == '__main__':
 
         if args.meltpool == 'paraboloid':
             min_angle = np.arcsin(Rmin/V)
-            x0 = 20
+           # x0 = 20
         else:
             min_angle = 0
-            x0 = 0
-            order = 2
+           # x0 = 0
+            order = 1
 
         therm.macro_dir = args.macro_dir
         psi3d = therm.dist2Interface(args.meltpool, xx, yy, zz, z0=z0, r0=r0, x0=x0, angle = angle, min_angle=min_angle, order=order)  

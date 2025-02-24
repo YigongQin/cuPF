@@ -49,7 +49,8 @@ BC = Lx/(nx-3)
 track = Lx-4
 top = track
 z0 = 2
-#r0 = Lz
+r0 = 38
+x0 = 0
 
 G = 5
 Rmax = 2e6
